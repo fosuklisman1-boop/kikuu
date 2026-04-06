@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme inline {
+  --font-sans: var(--font-dm-sans);
+}
+
 /* ── Brand tokens ─────────────────────────────────── */
 :root {
   /* Base */
@@ -173,10 +177,4 @@ body {
 .card-hover:hover {
   transform: translateY(-4px) scale(1.005);
   box-shadow: var(--shadow-hover);
-}
-
-/* ── Pulse ring ──────────────────────────────────── */
-@keyframes pulse-ring {
-  0%   { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2);   opacity: 0; }
 }
