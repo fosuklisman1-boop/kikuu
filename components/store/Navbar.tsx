@@ -79,7 +79,7 @@ export default function Navbar() {
 
   return (
     <motion.header
-      className="sticky top-0 z-50 bg-[#fafaf8] border-b border-[#ede8df]"
+      className="sticky top-0 z-50 bg-[#fafaf8]/95 backdrop-blur-sm border-b border-[#ede8df]"
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -131,7 +131,7 @@ export default function Navbar() {
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                     active
                       ? 'bg-[#fdf6ec] text-[#b45309]'
-                      : 'text-[#0a0a0a] hover:bg-[#fdf6ec]'
+                      : 'text-[#6b6360] hover:bg-[#fdf6ec]'
                   }`}
                 >
                   <Icon size={13} />
@@ -145,7 +145,7 @@ export default function Navbar() {
             {/* Wishlist */}
             <Link href={user ? '/account/wishlist' : '/account/login?redirect=/account/wishlist'}>
               <motion.div
-                className="relative p-2.5 rounded-xl transition-colors duration-200 cursor-pointer hidden md:flex text-[#0a0a0a] hover:bg-[#fdf6ec]"
+                className="relative p-2.5 rounded-xl transition-colors duration-200 cursor-pointer hidden md:flex text-[#6b6360] hover:bg-[#fdf6ec]"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.92 }}
                 title="Wishlist"
@@ -170,7 +170,7 @@ export default function Navbar() {
             {/* Cart */}
             <Link href="/cart">
               <motion.div
-                className="relative p-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-[#0a0a0a] hover:bg-[#fdf6ec]"
+                className="relative p-2.5 rounded-xl transition-colors duration-200 cursor-pointer text-[#6b6360] hover:bg-[#fdf6ec]"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.92 }}
               >
@@ -216,11 +216,11 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-[#ede8df] overflow-hidden z-50"
                     >
-                      <div className="px-4 py-3 border-b border-gray-50">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{displayName}</p>
-                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                      <div className="px-4 py-3 border-b border-[#f5f0e8]">
+                        <p className="font-semibold text-[#0a0a0a] text-sm truncate">{displayName}</p>
+                        <p className="text-xs text-[#a89e96] truncate">{user.email}</p>
                       </div>
                       {[
                         { href: '/account', label: 'Dashboard', icon: LayoutDashboard },
@@ -232,13 +232,13 @@ export default function Navbar() {
                           key={href}
                           href={href}
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-[#fdf6ec] transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-3 text-sm text-[#6b6360] hover:bg-[#fdf6ec] hover:text-[#b45309] transition-colors"
                         >
-                          <Icon size={15} className="text-[#b45309]" />
+                          <Icon size={15} className="text-[#a89e96]" />
                           {label}
                         </Link>
                       ))}
-                      <div className="border-t border-gray-50">
+                      <div className="border-t border-[#f5f0e8]">
                         <button
                           onClick={handleSignOut}
                           className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
@@ -266,7 +266,7 @@ export default function Navbar() {
 
             {/* Mobile menu toggle */}
             <motion.button
-              className="lg:hidden p-2.5 rounded-xl transition-colors duration-200 text-[#0a0a0a] hover:bg-[#fdf6ec]"
+              className="lg:hidden p-2.5 rounded-xl transition-colors duration-200 text-[#6b6360] hover:bg-[#fdf6ec]"
               onClick={() => setMenuOpen(!menuOpen)}
               whileTap={{ scale: 0.9 }}
             >
