@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import type { SavedAddress } from '@/app/(store)/account/profile/page'
+import type { SavedAddress } from '@/lib/supabase/types'
 import { MapPin, User as UserIcon, Zap, LogIn, Tag, X, CreditCard, Banknote, CalendarClock } from 'lucide-react'
 import Link from 'next/link'
 
@@ -86,7 +86,7 @@ export default function CheckoutForm() {
       region: addr.region,
       district: addr.district,
       city: addr.city,
-      landmark: addr.landmark,
+      landmark: addr.landmark ?? '',
       digital_address: addr.digital_address ?? '',
     }))
     setSelectedSavedId(addr.id)

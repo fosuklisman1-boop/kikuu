@@ -180,7 +180,7 @@ export default function ProductForm({ product, categories }: Props) {
           <select
             name="status"
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => setSelectedStatus(e.target.value as 'active' | 'draft' | 'out_of_stock' | 'pre_order')}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
           >
             <option value="draft">Draft</option>

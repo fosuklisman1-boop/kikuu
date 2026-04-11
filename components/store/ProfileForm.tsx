@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { GHANA_REGIONS } from '@/lib/utils'
 import { User, MapPin, Plus, Trash2, Star, CheckCircle2 } from 'lucide-react'
-import type { SavedAddress } from '@/app/(store)/account/profile/page'
+import type { SavedAddress } from '@/lib/supabase/types'
 
 interface Props {
   email: string

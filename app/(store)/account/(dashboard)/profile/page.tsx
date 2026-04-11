@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import ProfileForm from '@/components/store/ProfileForm'
+import type { SavedAddress } from '@/lib/supabase/types'
+
+export type { SavedAddress }
 
 export const metadata: Metadata = { title: 'Profile & Addresses' }
 
@@ -22,14 +25,3 @@ export default async function ProfilePage() {
   )
 }
 
-export interface SavedAddress {
-  id: string
-  recipient_name: string
-  phone: string
-  region: string
-  district: string
-  city: string
-  landmark: string
-  digital_address?: string
-  is_default: boolean
-}

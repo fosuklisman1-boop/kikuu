@@ -118,6 +118,18 @@ export interface OrderItem {
   preorder_ship_date: string | null
 }
 
+export interface SavedAddress {
+  id: string
+  recipient_name: string
+  phone: string
+  region: string
+  district: string
+  city: string
+  landmark: string
+  digital_address?: string
+  is_default: boolean
+}
+
 // Ghana address format
 export interface GhanaAddress {
   recipient_name: string
