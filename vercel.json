@@ -1,3 +1,0 @@
-{
-  "buildCommand": "npm install framer-motion zustand && npm run build"
-}
