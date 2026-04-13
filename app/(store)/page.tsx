@@ -17,7 +17,6 @@ export default async function HomePage() {
       .from('products')
       .select('*')
       .eq('status', 'active')
-      .eq('featured', true)
       .order('created_at', { ascending: false })
       .limit(8),
     supabase
@@ -107,8 +106,8 @@ export default async function HomePage() {
         <AnimateIn direction="up">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <p className="text-[#b45309] font-semibold text-xs mb-1 uppercase tracking-widest">Handpicked</p>
-              <h2 className="text-3xl font-extrabold text-[#0a0a0a]">Featured Products</h2>
+              <p className="text-[#b45309] font-semibold text-xs mb-1 uppercase tracking-widest">Just In</p>
+              <h2 className="text-3xl font-extrabold text-[#0a0a0a]">New Arrivals</h2>
             </div>
             <Link href="/products" className="hidden sm:flex items-center gap-1.5 text-[#b45309] hover:text-[#92400e] font-semibold text-sm transition-all hover:gap-2.5 group">
               View all <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
