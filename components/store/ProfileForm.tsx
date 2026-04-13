@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { GHANA_REGIONS } from '@/lib/utils'
-import { User, MapPin, Plus, Trash2, Star, CheckCircle2 } from 'lucide-react'
+import { User, MapPin, Plus, Trash2, Star, CheckCircle2, Lock } from 'lucide-react'
 import type { SavedAddress } from '@/lib/supabase/types'
 
 interface Props {
@@ -23,6 +23,12 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [profileError, setProfileError] = useState('')
+
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
 
   const [addresses, setAddresses] = useState<SavedAddress[]>(initialAddresses)
   const [addrLoading, setAddrLoading] = useState(false)
@@ -49,6 +55,22 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
     if (error) { setProfileError(error.message); return }
     setProfileSuccess(true)
     setTimeout(() => setProfileSuccess(false), 3000)
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordError('')
+    if (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters.'); return }
+    if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); return }
+    setPasswordLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setPasswordLoading(false)
+    if (error) { setPasswordError(error.message); return }
+    setPasswordSuccess(true)
+    setNewPassword('')
+    setConfirmPassword('')
+    setTimeout(() => setPasswordSuccess(false), 3000)
   }
 
   async function persistAddresses(updated: SavedAddress[]) {
@@ -93,8 +115,8 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
       {/* Profile details */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-50">
-          <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
-            <User size={16} className="text-green-600" />
+          <div className="w-8 h-8 bg-[#fdf6ec] rounded-xl flex items-center justify-center">
+            <User size={16} className="text-[#b45309]" />
           </div>
           <h2 className="font-bold text-gray-900">Personal Details</h2>
         </div>
@@ -106,7 +128,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
               onChange={(e) => setName(e.target.value)}
               required
               placeholder="Kwame Mensah"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
             />
           </div>
           <div>
@@ -124,7 +146,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="024 000 0000"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
             />
           </div>
 
@@ -134,13 +156,64 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
             <button
               type="submit"
               disabled={profileLoading}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors"
+              className="bg-[#b45309] hover:bg-[#92400e] disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors"
             >
               {profileLoading ? 'Saving...' : 'Save Changes'}
             </button>
             {profileSuccess && (
-              <span className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
+              <span className="flex items-center gap-1.5 text-[#b45309] text-sm font-medium">
                 <CheckCircle2 size={16} /> Saved!
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* Change password */}
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-50">
+          <div className="w-8 h-8 bg-[#fdf6ec] rounded-xl flex items-center justify-center">
+            <Lock size={16} className="text-[#b45309]" />
+          </div>
+          <h2 className="font-bold text-gray-900">Change Password</h2>
+        </div>
+        <form onSubmit={changePassword} className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">New Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              placeholder="At least 8 characters"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Confirm New Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              placeholder="Repeat new password"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
+            />
+          </div>
+
+          {passwordError && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{passwordError}</p>}
+
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="bg-[#b45309] hover:bg-[#92400e] disabled:opacity-60 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              {passwordLoading ? 'Updating...' : 'Update Password'}
+            </button>
+            {passwordSuccess && (
+              <span className="flex items-center gap-1.5 text-[#b45309] text-sm font-medium">
+                <CheckCircle2 size={16} /> Password updated!
               </span>
             )}
           </div>
@@ -151,14 +224,14 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
-              <MapPin size={16} className="text-purple-600" />
+            <div className="w-8 h-8 bg-[#fdf6ec] rounded-xl flex items-center justify-center">
+              <MapPin size={16} className="text-[#b45309]" />
             </div>
             <h2 className="font-bold text-gray-900">Saved Addresses</h2>
           </div>
           <button
             onClick={() => setShowAddForm((v) => !v)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition-all"
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#b45309] hover:text-[#92400e] bg-[#fdf6ec] hover:bg-[#faecd8] px-3 py-1.5 rounded-xl transition-all"
           >
             <Plus size={13} /> Add new
           </button>
@@ -185,7 +258,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
                       onChange={(e) => setNewAddr((a) => ({ ...a, [name]: e.target.value }))}
                       required={name !== 'digital_address'}
                       placeholder={placeholder}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500 bg-white"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b45309] bg-white"
                     />
                   </div>
                 ))}
@@ -195,7 +268,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
                     value={newAddr.region}
                     onChange={(e) => setNewAddr((a) => ({ ...a, region: e.target.value }))}
                     required
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-500 bg-white"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b45309] bg-white"
                   >
                     <option value="">Select Region</option>
                     {GHANA_REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -203,7 +276,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
                 </div>
               </div>
               <div className="flex items-center gap-2 pt-1">
-                <button type="submit" disabled={addrLoading} className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">
+                <button type="submit" disabled={addrLoading} className="bg-[#b45309] hover:bg-[#92400e] disabled:opacity-60 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">
                   {addrLoading ? 'Saving...' : 'Save Address'}
                 </button>
                 <button type="button" onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-gray-700 px-4 py-2 text-sm">
@@ -215,9 +288,9 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
 
           {addresses.length > 0 ? (
             addresses.map((addr) => (
-              <div key={addr.id} className={`rounded-xl border p-4 relative ${addr.is_default ? 'border-green-200 bg-green-50/50' : 'border-gray-100 bg-white'}`}>
+              <div key={addr.id} className={`rounded-xl border p-4 relative ${addr.is_default ? 'border-[#e8c98a] bg-[#fdf6ec]/60' : 'border-gray-100 bg-white'}`}>
                 {addr.is_default && (
-                  <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                  <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-[#b45309] bg-[#fdf6ec] px-2 py-0.5 rounded-full">
                     <Star size={9} className="fill-green-600" /> Default
                   </span>
                 )}
@@ -233,7 +306,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
                     <button
                       onClick={() => setDefault(addr.id)}
                       disabled={addrLoading}
-                      className="text-xs text-green-600 font-semibold hover:underline disabled:opacity-50"
+                      className="text-xs text-[#b45309] font-semibold hover:underline disabled:opacity-50"
                     >
                       Set as default
                     </button>

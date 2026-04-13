@@ -47,7 +47,7 @@ export default function AccountSidebar({ displayName, email, initials }: Props) 
       {/* Profile card */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-extrabold text-base shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#b45309] to-[#92400e] flex items-center justify-center text-white font-extrabold text-base shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
@@ -68,11 +68,11 @@ export default function AccountSidebar({ displayName, email, initials }: Props) 
               href={href}
               className={`flex items-center gap-3 px-5 py-3.5 text-sm font-medium transition-all border-b border-gray-50 last:border-0 ${
                 active
-                  ? 'bg-green-50 text-green-700 border-l-2 border-l-green-600'
+                  ? 'bg-[#fdf6ec] text-[#b45309] border-l-2 border-l-[#b45309]'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <Icon size={17} className={active ? 'text-green-600' : 'text-gray-400'} />
+              <Icon size={17} className={active ? 'text-[#b45309]' : 'text-gray-400'} />
               <span className="flex-1">{label}</span>
               {badge && (
                 <span className="bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">

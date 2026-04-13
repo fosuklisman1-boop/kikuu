@@ -63,6 +63,18 @@ export default async function OrderPage({ params }: Props) {
   const items = order.items as OrderItem[]
   const address = order.shipping_address as GhanaAddress
 
+  const PROGRESS_STEPS = ['pending', 'paid', 'processing', 'shipped', 'delivered']
+  const isCancelled = order.status === 'cancelled' || order.status === 'refunded'
+  const currentStep = isCancelled ? -1 : PROGRESS_STEPS.indexOf(order.status)
+
+  const STEP_LABELS: Record<string, string> = {
+    pending: 'Order Placed',
+    paid: 'Payment Confirmed',
+    processing: 'Being Packed',
+    shipped: 'On the Way',
+    delivered: 'Delivered',
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -76,6 +88,48 @@ export default async function OrderPage({ params }: Props) {
           {STATUS_LABELS[order.status]}
         </span>
       </div>
+
+      {/* Progress tracker */}
+      {isCancelled ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-6 text-center">
+          <p className="text-red-700 font-semibold text-sm">
+            {order.status === 'refunded' ? 'This order has been refunded.' : 'This order was cancelled.'}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-100 rounded-2xl px-5 py-5 mb-6">
+          <div className="flex items-center">
+            {PROGRESS_STEPS.map((step, i) => {
+              const done = i < currentStep
+              const active = i === currentStep
+              return (
+                <div key={step} className="flex-1 flex flex-col items-center relative">
+                  {/* Connector line */}
+                  {i > 0 && (
+                    <div className={`absolute left-0 right-1/2 top-3.5 h-0.5 -translate-y-1/2 ${done || active ? 'bg-[#b45309]' : 'bg-gray-200'}`} style={{ right: '50%', left: '-50%' }} />
+                  )}
+                  {i < PROGRESS_STEPS.length - 1 && (
+                    <div className={`absolute top-3.5 h-0.5 -translate-y-1/2 ${done ? 'bg-[#b45309]' : 'bg-gray-200'}`} style={{ left: '50%', right: '-50%' }} />
+                  )}
+                  {/* Dot */}
+                  <div className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+                    done ? 'bg-[#b45309] border-[#b45309] text-white'
+                    : active ? 'bg-white border-[#b45309] text-[#b45309]'
+                    : 'bg-white border-gray-200 text-gray-300'
+                  }`}>
+                    {done ? '✓' : i + 1}
+                  </div>
+                  <p className={`mt-2 text-[10px] font-semibold text-center leading-tight ${
+                    active ? 'text-[#b45309]' : done ? 'text-gray-500' : 'text-gray-300'
+                  }`}>
+                    {STEP_LABELS[step]}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Items */}
       <div className="bg-white rounded-xl border divide-y mb-6">
@@ -137,7 +191,7 @@ export default async function OrderPage({ params }: Props) {
           <ol className="relative border-l border-gray-200 space-y-4 ml-3">
             {(order.order_events as any[]).map((evt) => (
               <li key={evt.id} className="ml-4">
-                <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-green-500" />
+                <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-[#b45309]" />
                 <p className="text-sm font-medium text-gray-900">{evt.event}</p>
                 {evt.description && (
                   <p className="text-xs text-gray-500">{evt.description}</p>

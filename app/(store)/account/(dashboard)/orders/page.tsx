@@ -108,7 +108,7 @@ export default async function MyOrdersPage() {
           <p className="text-gray-400 text-sm mb-5">When you place orders, they&apos;ll appear here.</p>
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm"
+            className="inline-flex items-center gap-2 bg-[#0a0a0a] hover:bg-[#1a1a1a] text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm"
           >
             Start Shopping <ArrowRight size={16} />
           </Link>
