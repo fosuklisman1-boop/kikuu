@@ -46,6 +46,39 @@ export default async function HomePage() {
         <CategoryGrid categories={categories ?? []} />
       </section>
 
+      {/* New Arrivals */}
+      <section className="max-w-7xl mx-auto px-4 pb-20">
+        <AnimateIn direction="up">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-[#b45309] font-semibold text-xs mb-1 uppercase tracking-widest">Just In</p>
+              <h2 className="text-3xl font-extrabold text-[#0a0a0a]">New Arrivals</h2>
+            </div>
+            <Link href="/products" className="hidden sm:flex items-center gap-1.5 text-[#b45309] hover:text-[#92400e] font-semibold text-sm transition-all hover:gap-2.5 group">
+              View all <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </AnimateIn>
+
+        {products && products.length > 0 ? (
+          <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {products.map((product) => (
+              <StaggerItem key={(product as any).id}>
+                <ProductCard product={product as any} />
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        ) : (
+          <AnimateIn direction="up">
+            <div className="text-center py-24 text-gray-400">
+              <div className="text-6xl mb-4">🛍️</div>
+              <p className="text-lg font-medium">No products yet</p>
+              <p className="text-sm mt-1">Check back soon!</p>
+            </div>
+          </AnimateIn>
+        )}
+      </section>
+
       {/* Why Choose Us */}
       <AnimateIn direction="up">
         <section className="bg-[#f5f2ed] border-y border-[#ede8df]">
@@ -100,39 +133,6 @@ export default async function HomePage() {
           <div className="absolute -right-20 bottom-0 w-72 h-72 rounded-full bg-[#b45309]/5" />
         </div>
       </AnimateIn>
-
-      {/* Featured Products */}
-      <section className="max-w-7xl mx-auto px-4 pb-20">
-        <AnimateIn direction="up">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <p className="text-[#b45309] font-semibold text-xs mb-1 uppercase tracking-widest">Just In</p>
-              <h2 className="text-3xl font-extrabold text-[#0a0a0a]">New Arrivals</h2>
-            </div>
-            <Link href="/products" className="hidden sm:flex items-center gap-1.5 text-[#b45309] hover:text-[#92400e] font-semibold text-sm transition-all hover:gap-2.5 group">
-              View all <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </AnimateIn>
-
-        {products && products.length > 0 ? (
-          <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product) => (
-              <StaggerItem key={(product as any).id}>
-                <ProductCard product={product as any} />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        ) : (
-          <AnimateIn direction="up">
-            <div className="text-center py-24 text-gray-400">
-              <div className="text-6xl mb-4">🛍️</div>
-              <p className="text-lg font-medium">No products yet</p>
-              <p className="text-sm mt-1">Check back soon!</p>
-            </div>
-          </AnimateIn>
-        )}
-      </section>
 
       {/* Newsletter CTA */}
       <AnimateIn direction="up" className="max-w-7xl mx-auto px-4 pb-16">
