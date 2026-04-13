@@ -14,6 +14,7 @@ interface Props {
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Payment Pending',
+  confirmed: 'Order Confirmed',
   paid: 'Payment Confirmed',
   processing: 'Being Prepared',
   shipped: 'On the Way',
@@ -24,8 +25,9 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
   paid: 'bg-blue-100 text-blue-800',
-  processing: 'bg-blue-100 text-blue-800',
+  processing: 'bg-indigo-100 text-indigo-800',
   shipped: 'bg-purple-100 text-purple-800',
   delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
@@ -63,17 +65,16 @@ export default async function OrderPage({ params }: Props) {
   const items = order.items as OrderItem[]
   const address = order.shipping_address as GhanaAddress
 
-  const PROGRESS_STEPS = ['pending', 'paid', 'processing', 'shipped', 'delivered']
+  const isCod = order.payment_type === 'cod'
+  const PROGRESS_STEPS = isCod
+    ? ['confirmed', 'processing', 'shipped', 'delivered']
+    : ['pending', 'paid', 'processing', 'shipped', 'delivered']
+  const STEP_LABELS: Record<string, string> = isCod
+    ? { confirmed: 'Order Confirmed', processing: 'Being Packed', shipped: 'On the Way', delivered: 'Delivered' }
+    : { pending: 'Order Placed', paid: 'Payment Confirmed', processing: 'Being Packed', shipped: 'On the Way', delivered: 'Delivered' }
+
   const isCancelled = order.status === 'cancelled' || order.status === 'refunded'
   const currentStep = isCancelled ? -1 : PROGRESS_STEPS.indexOf(order.status)
-
-  const STEP_LABELS: Record<string, string> = {
-    pending: 'Order Placed',
-    paid: 'Payment Confirmed',
-    processing: 'Being Packed',
-    shipped: 'On the Way',
-    delivered: 'Delivered',
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

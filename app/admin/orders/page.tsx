@@ -46,7 +46,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
 
   const { data: orders, count } = await query
 
-  const statuses = ['', 'pending', 'confirmed', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']
+  const statuses = ['', 'pending', 'confirmed', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
 
   return (
     <div>
