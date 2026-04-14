@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Logo from '@/components/store/Logo'
 import { ShoppingCart, Search, Heart, User, ChevronDown, Package, LayoutDashboard, LogOut } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
@@ -73,18 +74,7 @@ export default function NavbarRow1() {
         <div className="flex items-center h-14 gap-4">
 
           {/* Logo */}
-          <Link href="/" className="shrink-0 flex items-center gap-2">
-            <motion.div
-              className="w-8 h-8 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-black text-sm"
-              whileHover={{ scale: 1.08, rotate: 4 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              K
-            </motion.div>
-            <span className="text-[19px] font-extrabold tracking-tight text-[#0a0a0a]">
-              Kikuu
-            </span>
-          </Link>
+          <Logo size="sm" />
 
           {/* Search */}
           <form onSubmit={handleSearch} className="flex flex-1 max-w-xl">

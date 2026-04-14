@@ -84,7 +84,7 @@ export default async function HomePage() {
         <section className="bg-[#f5f2ed] border-y border-[#ede8df]">
           <div className="max-w-7xl mx-auto px-4 py-16">
             <div className="text-center mb-12">
-              <p className="text-[#b45309] font-semibold text-xs mb-2 uppercase tracking-widest">Why Kikuu</p>
+              <p className="text-[#b45309] font-semibold text-xs mb-2 uppercase tracking-widest">Why TeloMall</p>
               <h2 className="text-3xl font-extrabold text-[#0a0a0a]">Shopping made simple</h2>
               <p className="text-[#6b6360] mt-2 max-w-md mx-auto text-sm">
                 Trusted by thousands of Ghanaians for fast, safe, and affordable online shopping.

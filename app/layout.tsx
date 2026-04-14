@@ -11,8 +11,8 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Kikuu — Shop Ghana",
-    template: "%s | Kikuu",
+    default: "TeloMall — Shop Ghana",
+    template: "%s | TeloMall",
   },
   description:
     "Shop the best products delivered across Ghana. Electronics, fashion, home goods and more.",

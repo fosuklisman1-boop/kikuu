@@ -117,7 +117,7 @@ export const useCart = create<CartStore>()(
       },
     }),
     {
-      name: 'kikuu-cart',
+      name: 'telomall-cart',
       skipHydration: true,
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true)

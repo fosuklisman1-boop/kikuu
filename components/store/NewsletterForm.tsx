@@ -15,7 +15,7 @@ export default function NewsletterForm() {
   if (submitted) {
     return (
       <p className="text-white font-semibold text-sm bg-white/15 border border-white/25 rounded-xl px-6 py-3 inline-block">
-        ✓ You&apos;re subscribed! Welcome to the Kikuu family 🎉
+        ✓ You&apos;re subscribed! Welcome to the TeloMall family 🎉
       </p>
     )
   }

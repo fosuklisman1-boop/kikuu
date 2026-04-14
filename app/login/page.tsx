@@ -72,7 +72,7 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoFocus
-                  placeholder="admin@kikuu.com"
+                  placeholder="admin@telomall.com"
                   className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
                 />
               </div>
@@ -135,7 +135,7 @@ function LoginForm() {
         </div>
 
         <p className="text-center text-gray-600 text-xs mt-6">
-          Kikuu Admin &mdash; Authorized access only
+          TeloMall Admin &mdash; Authorized access only
         </p>
       </motion.div>
     </div>

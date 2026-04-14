@@ -31,7 +31,7 @@ export const useWishlist = create<WishlistStore>()(
       },
     }),
     {
-      name: 'kikuu-wishlist',
+      name: 'telomall-wishlist',
       skipHydration: true,
     }
   )

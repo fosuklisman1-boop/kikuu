@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Logo from '@/components/store/Logo'
 import { ShoppingCart, Search } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { useEffect, useState } from 'react'
@@ -47,11 +48,7 @@ export default function Navbar({ categories }: NavbarProps) {
       <div className="md:hidden bg-[#fafaf8]/95 backdrop-blur-sm border-b border-[#ede8df]">
         <div className="px-4 flex items-center h-14 gap-3">
           {/* Logo */}
-          <Link href="/" className="shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-[#b45309] text-white flex items-center justify-center font-black text-sm">
-              K
-            </div>
-          </Link>
+          <Logo size="xs" />
 
           {/* Mobile search */}
           <form onSubmit={handleSearch} className="flex-1 flex">

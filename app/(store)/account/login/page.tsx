@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, User, Phone, ShoppingBag, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import Logo from '@/components/store/Logo'
 
 const inputCls = 'w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/10 transition-all'
 const inputClsPr10 = 'w-full border border-gray-200 rounded-xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/10 transition-all'
@@ -122,10 +123,7 @@ function AuthForm() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top bar */}
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
-        <Link href="/" className="flex items-center gap-2 text-[#b45309] font-extrabold text-xl">
-          <div className="w-7 h-7 bg-[#b45309] rounded-lg flex items-center justify-center text-white font-black text-sm">K</div>
-          kikuu
-        </Link>
+        <Logo size="sm" />
         <span className="text-gray-300">|</span>
         <span className="text-gray-500 text-sm">{tab === 'login' ? 'Sign In' : 'Create Account'}</span>
         <Link href="/" className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-[#b45309] transition-colors">

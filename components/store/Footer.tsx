@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Logo from '@/components/store/Logo'
 import { motion } from 'framer-motion'
 import { MapPin, Phone, Mail, ArrowUpRight } from 'lucide-react'
 
@@ -53,15 +54,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 pt-16 pb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
         {/* Brand — 2 cols */}
         <div className="lg:col-span-2">
-          <motion.div
-            className="flex items-center gap-2 mb-4"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#b45309] flex items-center justify-center font-black text-white text-base">K</div>
-            <span className="text-white font-extrabold text-2xl">
-              kikuu
-            </span>
-          </motion.div>
+          <div className="mb-4">
+            <Logo theme="dark" size="md" href="/" />
+          </div>
           <p className="text-gray-500 text-sm leading-relaxed mb-5 max-w-xs">
             Ghana&apos;s trusted online marketplace. Shop thousands of products with fast delivery to your doorstep.
           </p>
@@ -76,7 +71,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-2.5 text-gray-500">
               <Mail size={14} className="text-[#b45309] shrink-0" />
-              <span>hello@kikuu.com</span>
+              <span>hello@telomall.com</span>
             </div>
           </div>
           {/* Social links */}
@@ -174,7 +169,7 @@ export default function Footer() {
       <div className="border-t border-gray-900">
         <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
           <p>
-            &copy; {new Date().getFullYear()} Kikuu Technologies Ltd.{' '}
+            &copy; {new Date().getFullYear()} TeloMall Technologies Ltd.{' '}
             <span className="text-gray-700">Made with love in Ghana 🇬🇭</span>
           </p>
           <div className="flex gap-5">
