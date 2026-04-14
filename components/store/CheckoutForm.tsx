@@ -1,7 +1,7 @@
 'use client'
 
 import { useCart } from '@/lib/cart'
-import { formatGHS, GHANA_REGIONS, SHIPPING_FEES } from '@/lib/utils'
+import { formatGHS, GHANA_REGIONS, SHIPPING_FEES, isValidGhanaPhone } from '@/lib/utils'
 import { validateCoupon } from '@/lib/actions/coupons'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -16,6 +16,7 @@ export default function CheckoutForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
   const [coupon, setCoupon] = useState('')
   const [couponApplied, setCouponApplied] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -130,8 +131,13 @@ export default function CheckoutForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!items.length) return
-    setLoading(true)
     setError('')
+    setPhoneError('')
+    if (!isValidGhanaPhone(form.phone)) {
+      setPhoneError('Enter a valid Ghana phone number (e.g. 024 123 4567).')
+      return
+    }
+    setLoading(true)
 
     try {
       const res = await fetch('/api/checkout', {
@@ -309,7 +315,16 @@ export default function CheckoutForm() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Phone Number</label>
-              <input type="tel" name="phone" value={form.phone} onChange={handleChange} required placeholder="024 000 0000" className={inputCls} />
+              <input
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={(e) => { handleChange(e); setPhoneError('') }}
+                required
+                placeholder="024 000 0000"
+                className={`${inputCls} ${phoneError ? 'border-red-400 focus:border-red-400' : ''}`}
+              />
+              {phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Region</label>

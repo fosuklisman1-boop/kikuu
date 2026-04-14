@@ -178,7 +178,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           <ol className="relative border-l border-gray-200 space-y-4 ml-3">
             {(order.order_events as any[]).map((evt) => (
               <li key={evt.id} className="ml-4">
-                <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-green-500" />
+                <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-[#b45309]" />
                 <p className="text-sm font-medium text-gray-900">{evt.event}</p>
                 {evt.description && <p className="text-xs text-gray-500">{evt.description}</p>}
                 <p className="text-xs text-gray-400">{new Date(evt.created_at).toLocaleString('en-GH')}</p>

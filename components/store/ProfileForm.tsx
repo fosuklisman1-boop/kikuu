@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { GHANA_REGIONS } from '@/lib/utils'
+import { GHANA_REGIONS, isValidGhanaPhone } from '@/lib/utils'
 import { User, MapPin, Plus, Trash2, Star, CheckCircle2, Lock } from 'lucide-react'
 import type { SavedAddress } from '@/lib/supabase/types'
 
@@ -32,6 +32,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
 
   const [addresses, setAddresses] = useState<SavedAddress[]>(initialAddresses)
   const [addrLoading, setAddrLoading] = useState(false)
+  const [addrError, setAddrError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [newAddr, setNewAddr] = useState<Omit<SavedAddress, 'id' | 'is_default'>>({
     recipient_name: initialName,
@@ -43,10 +44,11 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
     digital_address: '',
   })
 
-  async function saveProfile(e: React.FormEvent) {
-    e.preventDefault()
-    setProfileLoading(true)
+  async function saveProfile() {
     setProfileError('')
+    if (name.trim().length < 2) { setProfileError('Full name must be at least 2 characters.'); return }
+    if (phone.trim() && !isValidGhanaPhone(phone)) { setProfileError('Enter a valid Ghana phone number (e.g. 024 123 4567).'); return }
+    setProfileLoading(true)
     const supabase = createClient()
     const { error } = await supabase.auth.updateUser({
       data: { full_name: name.trim(), phone: phone.trim() },
@@ -57,8 +59,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
     setTimeout(() => setProfileSuccess(false), 3000)
   }
 
-  async function changePassword(e: React.FormEvent) {
-    e.preventDefault()
+  async function changePassword() {
     setPasswordError('')
     if (newPassword.length < 8) { setPasswordError('Password must be at least 8 characters.'); return }
     if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); return }
@@ -80,8 +81,12 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
     setAddrLoading(false)
   }
 
-  async function addAddress(e: React.FormEvent) {
-    e.preventDefault()
+  async function addAddress() {
+    setAddrError('')
+    if (!isValidGhanaPhone(newAddr.phone)) {
+      setAddrError('Enter a valid Ghana phone number (e.g. 024 123 4567).')
+      return
+    }
     const entry: SavedAddress = {
       ...newAddr,
       id: randomId(),
@@ -91,12 +96,12 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
     setAddresses(updated)
     await persistAddresses(updated)
     setShowAddForm(false)
+    setAddrError('')
     setNewAddr({ recipient_name: name, phone, region: '', district: '', city: '', landmark: '', digital_address: '' })
   }
 
   async function removeAddress(id: string) {
     const updated = addresses.filter((a) => a.id !== id)
-    // If removed was default, make first one default
     if (updated.length > 0 && !updated.some((a) => a.is_default)) {
       updated[0].is_default = true
     }
@@ -120,15 +125,16 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
           </div>
           <h2 className="font-bold text-gray-900">Personal Details</h2>
         </div>
-        <form onSubmit={saveProfile} className="p-6 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); void saveProfile() }} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Full Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              minLength={2}
               placeholder="Kwame Mensah"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/10 transition-all"
             />
           </div>
           <div>
@@ -146,7 +152,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="024 000 0000"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/10 transition-all"
             />
           </div>
 
@@ -177,7 +183,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
           </div>
           <h2 className="font-bold text-gray-900">Change Password</h2>
         </div>
-        <form onSubmit={changePassword} className="p-6 space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); void changePassword() }} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">New Password</label>
             <input
@@ -185,8 +191,9 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
+              minLength={8}
               placeholder="At least 8 characters"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/10 transition-all"
             />
           </div>
           <div>
@@ -197,7 +204,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               placeholder="Repeat new password"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#fdf6ec] transition-all"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#b45309] focus:ring-2 focus:ring-[#b45309]/10 transition-all"
             />
           </div>
 
@@ -230,7 +237,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
             <h2 className="font-bold text-gray-900">Saved Addresses</h2>
           </div>
           <button
-            onClick={() => setShowAddForm((v) => !v)}
+            onClick={() => { setShowAddForm((v) => !v); setAddrError('') }}
             className="flex items-center gap-1.5 text-xs font-semibold text-[#b45309] hover:text-[#92400e] bg-[#fdf6ec] hover:bg-[#faecd8] px-3 py-1.5 rounded-xl transition-all"
           >
             <Plus size={13} /> Add new
@@ -240,7 +247,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
         <div className="p-6 space-y-3">
           {/* Add form */}
           {showAddForm && (
-            <form onSubmit={addAddress} className="bg-gray-50 rounded-xl p-4 space-y-3 border border-dashed border-gray-200 mb-4">
+            <form onSubmit={(e) => { e.preventDefault(); void addAddress() }} className="bg-gray-50 rounded-xl p-4 space-y-3 border border-dashed border-gray-200 mb-4">
               <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">New Address</p>
               <div className="grid sm:grid-cols-2 gap-3">
                 {[
@@ -255,10 +262,12 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
                     <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
                     <input
                       value={(newAddr as Record<string, string>)[name] ?? ''}
-                      onChange={(e) => setNewAddr((a) => ({ ...a, [name]: e.target.value }))}
+                      onChange={(e) => { setNewAddr((a) => ({ ...a, [name]: e.target.value })); if (name === 'phone') setAddrError('') }}
                       required={name !== 'digital_address'}
                       placeholder={placeholder}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b45309] bg-white"
+                      className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-[#b45309] bg-white transition-colors ${
+                        name === 'phone' && addrError ? 'border-red-400' : 'border-gray-200'
+                      }`}
                     />
                   </div>
                 ))}
@@ -275,11 +284,12 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
                   </select>
                 </div>
               </div>
+              {addrError && <p className="text-xs text-red-500">{addrError}</p>}
               <div className="flex items-center gap-2 pt-1">
                 <button type="submit" disabled={addrLoading} className="bg-[#b45309] hover:bg-[#92400e] disabled:opacity-60 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">
                   {addrLoading ? 'Saving...' : 'Save Address'}
                 </button>
-                <button type="button" onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-gray-700 px-4 py-2 text-sm">
+                <button type="button" onClick={() => { setShowAddForm(false); setAddrError('') }} className="text-gray-500 hover:text-gray-700 px-4 py-2 text-sm">
                   Cancel
                 </button>
               </div>
@@ -291,7 +301,7 @@ export default function ProfileForm({ email, initialName, initialPhone, initialA
               <div key={addr.id} className={`rounded-xl border p-4 relative ${addr.is_default ? 'border-[#e8c98a] bg-[#fdf6ec]/60' : 'border-gray-100 bg-white'}`}>
                 {addr.is_default && (
                   <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-[#b45309] bg-[#fdf6ec] px-2 py-0.5 rounded-full">
-                    <Star size={9} className="fill-green-600" /> Default
+                    <Star size={9} className="fill-[#b45309]" /> Default
                   </span>
                 )}
                 <p className="font-semibold text-gray-900 text-sm">{addr.recipient_name}</p>

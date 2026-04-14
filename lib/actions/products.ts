@@ -91,6 +91,14 @@ export async function updateOrderStatus(orderId: string, status: string) {
   if (!validStatuses.includes(status)) return { error: 'Invalid status' }
 
   const admin = createAdminClient()
+
+  // Fetch order to check for pre-order items before updating
+  const { data: order } = await admin
+    .from('orders')
+    .select('is_preorder, items')
+    .eq('id', orderId)
+    .single()
+
   const { error } = await admin.from('orders').update({ status }).eq('id', orderId)
   if (error) return { error: error.message }
 
@@ -99,6 +107,20 @@ export async function updateOrderStatus(orderId: string, status: string) {
     event: `Status updated to ${status}`,
     description: `Admin updated order status to "${status}".`,
   })
+
+  // Decrement stock for pre-order items when admin moves order to processing
+  // (this is when items are physically pulled from inventory)
+  if (status === 'processing' && order?.is_preorder) {
+    const items = (order.items as { product_id: string; quantity: number; is_preorder: boolean }[]) ?? []
+    for (const item of items) {
+      if (item.is_preorder) {
+        await admin.rpc('decrement_stock', {
+          p_product_id: item.product_id,
+          p_qty: item.quantity,
+        })
+      }
+    }
+  }
 
   revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath('/admin/orders')

@@ -66,6 +66,8 @@ export default async function OrderPage({ params }: Props) {
   const address = order.shipping_address as GhanaAddress
 
   const isCod = order.payment_type === 'cod'
+  const isPreorder = order.is_preorder as boolean
+  const preorderShipDate = order.pre_order_ship_date as string | null
   const PROGRESS_STEPS = isCod
     ? ['confirmed', 'processing', 'shipped', 'delivered']
     : ['pending', 'paid', 'processing', 'shipped', 'delivered']
@@ -129,6 +131,23 @@ export default async function OrderPage({ params }: Props) {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Pre-order notice */}
+      {isPreorder && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 mb-6">
+          <p className="text-sm font-semibold text-orange-800">This is a pre-order</p>
+          {preorderShipDate ? (
+            <p className="text-xs text-orange-600 mt-1">
+              Expected to ship by{' '}
+              <span className="font-semibold">
+                {new Date(preorderShipDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </p>
+          ) : (
+            <p className="text-xs text-orange-600 mt-1">Ship date will be confirmed soon.</p>
+          )}
         </div>
       )}
 

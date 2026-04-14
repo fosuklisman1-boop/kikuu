@@ -37,7 +37,7 @@ export default async function MyOrdersPage() {
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, order_number, total, status, created_at, items, shipping_fee, discount_amount, subtotal')
+    .select('id, order_number, total, status, created_at, items, shipping_fee, discount_amount, subtotal, is_preorder, pre_order_ship_date')
     .eq('buyer_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -74,14 +74,24 @@ export default async function MyOrdersPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="font-bold text-gray-900 text-sm">{order.order_number}</p>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-bold text-gray-900 text-sm truncate">{order.order_number}</p>
+                        {order.is_preorder && (
+                          <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full shrink-0">PRE</span>
+                        )}
+                      </div>
                       <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
                     </div>
-                    <p className="text-xs text-gray-400 mb-2">
+                    <p className="text-xs text-gray-400 mb-1">
                       {new Date(order.created_at).toLocaleDateString('en-GH', {
                         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
                       })}
                     </p>
+                    {order.is_preorder && order.pre_order_ship_date && !['shipped', 'delivered', 'cancelled', 'refunded'].includes(order.status) && (
+                      <p className="text-xs text-orange-500 mb-1 font-medium">
+                        Ships by {new Date(order.pre_order_ship_date).toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
                     {items?.length > 0 && (
                       <p className="text-xs text-gray-500 truncate">
                         {items.map((i) => `${i.product_name} ×${i.quantity}`).join(', ')}

@@ -70,6 +70,12 @@ export function getShippingFee(region: string): number {
   return SHIPPING_FEES[region] ?? 50
 }
 
+// Validate a Ghana phone number (10 digits starting with 0, or 12 digits starting with 233)
+export function isValidGhanaPhone(phone: string): boolean {
+  const stripped = phone.replace(/[\s\-().+]/g, '')
+  return /^(0\d{9}|233\d{9})$/.test(stripped)
+}
+
 // Format phone number to +233 format
 export function formatGhanaPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '')
