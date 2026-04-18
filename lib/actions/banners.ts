@@ -11,7 +11,7 @@ const BannerSchema = z.object({
   subtitle: z.string().optional(),
   image_url: z.string().url(),
   cta_text: z.string().optional(),
-  cta_link: z.string().url().optional().or(z.literal('')),
+  cta_link: z.string().optional(),
   sort_order: z.coerce.number().int().min(0).default(0),
   active: z.preprocess((v) => v === 'true', z.boolean()),
 })
@@ -38,16 +38,16 @@ export async function createBanner(formData: FormData) {
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('banners').insert({
+  const { data, error } = await admin.from('banners').insert({
     ...parsed.data,
     subtitle: parsed.data.subtitle || null,
     cta_text: parsed.data.cta_text || null,
     cta_link: parsed.data.cta_link || null,
-  })
+  }).select().single()
   if (error) return { error: error.message }
   revalidatePath('/admin/banner')
   revalidatePath('/')
-  return { success: true }
+  return { success: true, data }
 }
 
 export async function updateBanner(id: string, formData: FormData) {

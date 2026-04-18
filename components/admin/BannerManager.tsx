@@ -260,32 +260,38 @@ function BannerSlideForm({
     setError('')
     const fd = new FormData(e.currentTarget)
 
-    // Ensure checkbox value is correctly represented for the Zod schema
-    if (!fd.has('active') || fd.get('active') !== 'on') {
-      fd.set('active', 'false')
-    } else {
-      fd.set('active', 'true')
-    }
+    // Normalise checkbox: hidden input provides 'false' baseline, checkbox overrides with 'true'
+    fd.set('active', fd.get('active') === 'on' ? 'true' : 'false')
 
-    const result = initial ? await updateBanner(initial.id, fd) : await createBanner(fd)
-    setLoading(false)
-    if (result.error) {
-      setError(typeof result.error === 'string' ? result.error : JSON.stringify(result.error))
-      return
+    if (initial) {
+      const result = await updateBanner(initial.id, fd)
+      setLoading(false)
+      if (result.error) {
+        setError(typeof result.error === 'string' ? result.error : JSON.stringify(result.error))
+        return
+      }
+      // For update, reconstruct from fd — id is stable so no UUID mismatch risk
+      const saved: Banner = {
+        ...initial,
+        title: fd.get('title') as string,
+        subtitle: (fd.get('subtitle') as string) || null,
+        image_url: fd.get('image_url') as string,
+        cta_text: (fd.get('cta_text') as string) || null,
+        cta_link: (fd.get('cta_link') as string) || null,
+        sort_order: Number(fd.get('sort_order') ?? 0),
+        active: fd.get('active') === 'true',
+      }
+      onSaved(saved)
+    } else {
+      const result = await createBanner(fd)
+      setLoading(false)
+      if (result.error) {
+        setError(typeof result.error === 'string' ? result.error : JSON.stringify(result.error))
+        return
+      }
+      // Use server-returned row to get the real Postgres id
+      if (result.data) onSaved(result.data as Banner)
     }
-    // Optimistic: reconstruct the saved banner from form data
-    const saved: Banner = {
-      id: initial?.id ?? crypto.randomUUID(),
-      title: fd.get('title') as string,
-      subtitle: (fd.get('subtitle') as string) || null,
-      image_url: fd.get('image_url') as string,
-      cta_text: (fd.get('cta_text') as string) || null,
-      cta_link: (fd.get('cta_link') as string) || null,
-      sort_order: Number(fd.get('sort_order') ?? 0),
-      active: fd.get('active') === 'true',
-      created_at: initial?.created_at ?? new Date().toISOString(),
-    }
-    onSaved(saved)
   }
 
   return (
