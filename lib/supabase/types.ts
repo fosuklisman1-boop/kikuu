@@ -130,7 +130,7 @@ export interface Database {
           sort_order: number
         }
         Insert: Omit<Database['public']['Tables']['flash_sale_items']['Row'], 'id'>
-        Update: Partial<Database['public']['Tables']['flash_sale_items']['Insert']>
+        Update: Partial<Omit<Database['public']['Tables']['flash_sale_items']['Insert'], 'flash_sale_id' | 'product_id'>>
       }
       brands: {
         Row: {
