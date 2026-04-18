@@ -30,6 +30,7 @@ export interface Database {
           status: 'active' | 'draft' | 'out_of_stock' | 'pre_order'
           preorder_ship_date: string | null
           featured: boolean
+          brand_id: string | null
           attributes: Json
           created_at: string
           updated_at: string
@@ -93,6 +94,68 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['coupons']['Row'], 'id' | 'created_at' | 'used_count'>
         Update: Partial<Database['public']['Tables']['coupons']['Insert']>
       }
+      banners: {
+        Row: {
+          id: string
+          title: string
+          subtitle: string | null
+          image_url: string
+          cta_text: string | null
+          cta_link: string | null
+          sort_order: number
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['banners']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['banners']['Insert']>
+      }
+      flash_sales: {
+        Row: {
+          id: string
+          title: string
+          starts_at: string
+          ends_at: string
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['flash_sales']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['flash_sales']['Insert']>
+      }
+      flash_sale_items: {
+        Row: {
+          id: string
+          flash_sale_id: string
+          product_id: string
+          sale_price: number
+          sort_order: number
+        }
+        Insert: Omit<Database['public']['Tables']['flash_sale_items']['Row'], 'id'>
+        Update: Partial<Database['public']['Tables']['flash_sale_items']['Insert']>
+      }
+      brands: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          logo_url: string
+          sort_order: number
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['brands']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['brands']['Insert']>
+      }
+      trending_searches: {
+        Row: {
+          id: string
+          query: string
+          sort_order: number
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['trending_searches']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['trending_searches']['Insert']>
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -106,6 +169,16 @@ export type Product = Database['public']['Tables']['products']['Row']
 export type Order = Database['public']['Tables']['orders']['Row']
 export type OrderEvent = Database['public']['Tables']['order_events']['Row']
 export type Coupon = Database['public']['Tables']['coupons']['Row']
+export type Banner = Database['public']['Tables']['banners']['Row']
+export type FlashSale = Database['public']['Tables']['flash_sales']['Row']
+export type FlashSaleItem = Database['public']['Tables']['flash_sale_items']['Row']
+export type Brand = Database['public']['Tables']['brands']['Row']
+export type TrendingSearch = Database['public']['Tables']['trending_searches']['Row']
+
+// Flash sale with items + joined product data
+export interface FlashSaleWithItems extends FlashSale {
+  items: Array<FlashSaleItem & { product: Product }>
+}
 
 // Order item embedded in orders.items JSON
 export interface OrderItem {
