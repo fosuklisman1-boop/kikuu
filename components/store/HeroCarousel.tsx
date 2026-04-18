@@ -15,7 +15,7 @@ const FALLBACK: Banner = {
   cta_link: '/products',
   sort_order: 0,
   active: true,
-  created_at: '',
+  created_at: new Date(0).toISOString(),
 }
 
 export default function HeroCarousel({ banners }: { banners: Banner[] }) {
@@ -24,7 +24,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [paused, setPaused] = useState(false)
 
   const next = useCallback(() => setIndex((i) => (i + 1) % slides.length), [slides.length])
-  const prev = () => setIndex((i) => (i - 1 + slides.length) % slides.length)
+  const prev = useCallback(() => setIndex((i) => (i - 1 + slides.length) % slides.length), [slides.length])
 
   useEffect(() => {
     if (paused || slides.length <= 1) return
@@ -36,8 +36,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-[#0a0a0a]"
-      style={{ minHeight: '420px' }}
+      className="relative w-full overflow-hidden bg-[#0a0a0a] min-h-[420px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -118,9 +117,9 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
       {/* Dot indicators */}
       {slides.length > 1 && (
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {slides.map((_, i) => (
+          {slides.map((slide, i) => (
             <button
-              key={i}
+              key={slide.id}
               onClick={() => setIndex(i)}
               className={`rounded-full transition-all ${
                 i === index ? 'w-6 h-2 bg-[#b45309]' : 'w-2 h-2 bg-white/40 hover:bg-white/70'
