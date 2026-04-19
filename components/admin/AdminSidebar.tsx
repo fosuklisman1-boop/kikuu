@@ -36,7 +36,7 @@ export default function AdminSidebar() {
       {/* Brand */}
       <div className="px-5 py-5 border-b border-gray-800">
         <span className="text-white font-extrabold text-xl">
-          <span className="text-green-500">Ki</span>kuu
+          <span className="text-green-500">Telo</span>Mall
         </span>
         <p className="text-gray-600 text-xs mt-0.5">Admin Panel</p>
       </div>
