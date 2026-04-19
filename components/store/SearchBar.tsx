@@ -19,12 +19,14 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function SearchBar({
   trendingSearches,
   placeholder = 'Search products…',
+  initialQuery = '',
 }: {
   trendingSearches: TrendingSearch[]
   placeholder?: string
+  initialQuery?: string
 }) {
   const router = useRouter()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const [open, setOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(false)

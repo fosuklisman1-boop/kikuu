@@ -66,7 +66,10 @@ export default async function ProductsPage({ searchParams }: Props) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchBar trendingSearches={trendingSearches ?? []} placeholder={query ? `Search products…` : undefined} />
+        <SearchBar
+          trendingSearches={trendingSearches ?? []}
+          initialQuery={query ?? ''}
+        />
       </div>
 
       <Suspense>
