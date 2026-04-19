@@ -8,7 +8,7 @@ import type { FlashSale, FlashSaleWithItems } from '@/lib/supabase/types'
 export async function fetchActiveFlashSale(): Promise<FlashSaleWithItems | null> {
   const supabase = await createClient()
   const now = new Date().toISOString()
-  const { data: sale } = await supabase
+  const { data: sale, error: saleError } = await supabase
     .from('flash_sales')
     .select('*')
     .eq('active', true)
@@ -16,8 +16,9 @@ export async function fetchActiveFlashSale(): Promise<FlashSaleWithItems | null>
     .gt('ends_at', now)
     .order('starts_at')
     .limit(1)
-    .single()
+    .maybeSingle()
 
+  if (saleError) { console.error('fetchActiveFlashSale:', saleError.message); return null }
   if (!sale) return null
 
   const { data: items } = await supabase
@@ -86,13 +87,27 @@ export async function updateFlashSale(
     .eq('id', id)
   if (error) return { error: error.message }
 
-  // Replace all items: delete existing, insert new
+  // Replace all items: backup, delete, insert, restore-on-failure
+  const { data: existingItems } = await admin
+    .from('flash_sale_items')
+    .select('product_id, sale_price, sort_order')
+    .eq('flash_sale_id', id)
+
   await admin.from('flash_sale_items').delete().eq('flash_sale_id', id)
+
   if (items.length > 0) {
     const { error: itemError } = await admin.from('flash_sale_items').insert(
       items.map((item) => ({ ...item, flash_sale_id: id }))
     )
-    if (itemError) return { error: itemError.message }
+    if (itemError) {
+      // Restore original items to avoid data loss
+      if (existingItems && existingItems.length > 0) {
+        await admin.from('flash_sale_items').insert(
+          existingItems.map((item) => ({ ...item, flash_sale_id: id }))
+        )
+      }
+      return { error: itemError.message }
+    }
   }
 
   revalidatePath('/admin/flash-sales')
