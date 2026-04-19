@@ -52,11 +52,13 @@ export default async function ProductsPage({ searchParams }: Props) {
     { count: availableCount },
     { count: preorderCount },
     { data: categories },
+    { data: trendingSearches },
   ] = await Promise.all([
     buildQuery(activeStatus).range(from, from + PAGE_SIZE - 1),
     buildQuery('active'),
     buildQuery('pre_order'),
     supabase.from('categories').select('*').is('parent_id', null).order('sort_order'),
+    supabase.from('trending_searches').select('*').eq('active', true).order('sort_order').limit(8),
   ])
 
   const totalPages = Math.ceil((tabCount ?? 0) / PAGE_SIZE)
@@ -64,7 +66,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchBar defaultValue={query} />
+        <SearchBar trendingSearches={trendingSearches ?? []} placeholder={query ? `Search products…` : undefined} />
       </div>
 
       <Suspense>
