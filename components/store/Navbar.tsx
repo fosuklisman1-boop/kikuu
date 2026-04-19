@@ -2,34 +2,26 @@
 
 import Link from 'next/link'
 import Logo from '@/components/store/Logo'
-import { ShoppingCart, Search } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import { useCart } from '@/lib/cart'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import NavbarRow1 from './NavbarRow1'
 import NavbarRow2 from './NavbarRow2'
-import type { Category } from '@/lib/supabase/types'
+import SearchBar from '@/components/store/SearchBar'
+import type { Category, TrendingSearch } from '@/lib/supabase/types'
 
 interface NavbarProps {
   categories: Category[]
+  trendingSearches: TrendingSearch[]
 }
 
-export default function Navbar({ categories }: NavbarProps) {
+export default function Navbar({ categories, trendingSearches }: NavbarProps) {
   const { count } = useCart()
-  const [searchQuery, setSearchQuery] = useState('')
-  const router = useRouter()
 
   useEffect(() => {
     useCart.persist.rehydrate()
   }, [])
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`)
-    }
-  }
 
   return (
     <motion.header
@@ -40,7 +32,7 @@ export default function Navbar({ categories }: NavbarProps) {
     >
       {/* Desktop: two-row header */}
       <div className="hidden md:block">
-        <NavbarRow1 />
+        <NavbarRow1 trendingSearches={trendingSearches} />
         <NavbarRow2 categories={categories} />
       </div>
 
@@ -51,18 +43,9 @@ export default function Navbar({ categories }: NavbarProps) {
           <Logo size="xs" />
 
           {/* Mobile search */}
-          <form onSubmit={handleSearch} className="flex-1 flex">
-            <div className="relative flex w-full rounded-xl overflow-hidden border border-[#ede8df] focus-within:border-[#b45309] focus-within:ring-2 focus-within:ring-[#b45309]/20">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="flex-1 pl-8 pr-3 py-2 text-sm outline-none bg-white text-gray-900 placeholder:text-gray-400"
-              />
-            </div>
-          </form>
+          <div className="flex-1">
+            <SearchBar trendingSearches={trendingSearches} />
+          </div>
 
           {/* Cart icon */}
           <Link href="/cart" className="relative shrink-0">

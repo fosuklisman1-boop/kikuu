@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Logo from '@/components/store/Logo'
-import { ShoppingCart, Search, Heart, User, ChevronDown, Package, LayoutDashboard, LogOut } from 'lucide-react'
+import { ShoppingCart, Heart, User, ChevronDown, Package, LayoutDashboard, LogOut } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
 import { useState, useRef, useEffect } from 'react'
@@ -10,11 +10,16 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
+import SearchBar from '@/components/store/SearchBar'
+import type { TrendingSearch } from '@/lib/supabase/types'
 
-export default function NavbarRow1() {
+interface NavbarRow1Props {
+  trendingSearches: TrendingSearch[]
+}
+
+export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
   const { count } = useCart()
   const { count: wishlistCount } = useWishlist()
-  const [searchQuery, setSearchQuery] = useState('')
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const router = useRouter()
@@ -44,13 +49,6 @@ export default function NavbarRow1() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`)
-    }
-  }
-
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -77,24 +75,9 @@ export default function NavbarRow1() {
           <Logo size="sm" />
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex flex-1 max-w-xl">
-            <div className="relative flex w-full rounded-xl overflow-hidden border border-[#ede8df] focus-within:border-[#b45309] focus-within:ring-2 focus-within:ring-[#b45309]/20 shadow-sm">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search phones, fashion, groceries..."
-                className="flex-1 pl-10 pr-3 py-2.5 text-sm outline-none bg-white text-gray-900 placeholder:text-gray-400"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 text-xs font-bold bg-[#b45309] hover:bg-[#92400e] text-white transition-colors"
-              >
-                Search
-              </button>
-            </div>
-          </form>
+          <div className="flex flex-1 max-w-xl">
+            <SearchBar trendingSearches={trendingSearches} />
+          </div>
 
           {/* Account icons */}
           <div className="flex items-center gap-1 ml-auto">
