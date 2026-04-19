@@ -241,7 +241,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       order_id: order.id,
       order_number: order.order_number,
-      payment_url: payment.authorization_url,
+      access_code: payment.access_code,
+      reference,
     })
   } catch (err) {
     console.error('Checkout error:', err)

@@ -10,6 +10,7 @@ import type { User } from '@supabase/supabase-js'
 import type { SavedAddress } from '@/lib/supabase/types'
 import { MapPin, User as UserIcon, Zap, LogIn, Tag, X, CreditCard, Banknote, CalendarClock } from 'lucide-react'
 import Link from 'next/link'
+import Script from 'next/script'
 
 export default function CheckoutForm() {
   const { items, total, clearCart, hasPreorderItems, latestPreorderDate, _hasHydrated } = useCart()
@@ -167,20 +168,56 @@ export default function CheckoutForm() {
         return
       }
 
-      clearCart()
-
       if (effectivePaymentType === 'cod') {
-        // COD: redirect to order confirmation page
+        clearCart()
         router.push(`/orders/${data.order_id}?cod=1`)
-      } else {
-        window.location.href = data.payment_url
+        return
       }
+
+      // Paystack inline modal
+      const PaystackPop = (window as any).PaystackPop
+      if (!PaystackPop) {
+        setError('Payment provider failed to load. Please refresh and try again.')
+        setLoading(false)
+        return
+      }
+
+      const handler = PaystackPop.setup({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        access_code: data.access_code,
+        callback: async (response: { reference: string }) => {
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ order_id: data.order_id, reference: response.reference }),
+            })
+            const verifyData = await verifyRes.json()
+            if (verifyRes.ok) {
+              clearCart()
+              router.push(`/orders/${data.order_id}?success=1`)
+            } else {
+              setError(verifyData.error ?? 'Payment verification failed. Please contact support.')
+              setLoading(false)
+            }
+          } catch {
+            setError('Network error during verification. Please contact support.')
+            setLoading(false)
+          }
+        },
+        onClose: () => {
+          setLoading(false)
+        },
+      })
+
+      handler.openIframe()
     } catch {
       setError('Network error. Please try again.')
-    } finally {
       setLoading(false)
     }
   }
+
+
 
   if (_hasHydrated && items.length === 0) {
     router.replace('/cart')
@@ -212,6 +249,7 @@ export default function CheckoutForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
+      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
       {/* Left: delivery form */}
       <div className="lg:col-span-2 space-y-5">
 
