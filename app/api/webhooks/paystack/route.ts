@@ -22,15 +22,27 @@ export async function POST(req: NextRequest) {
       .eq('paystack_reference', reference)
       .single()
 
-    if (!order || order.status !== 'pending') {
-      return NextResponse.json({ received: true }) // idempotent
+    if (!order) {
+      return NextResponse.json({ received: true })
     }
 
-    await admin.from('orders').update({
-      status: 'paid',
-      payment_method: event.data.channel,
-      payment_reference: reference,
-    }).eq('id', order.id)
+    // Atomic guard: only update if status is still 'pending'.
+    // If the verify callback already ran, this matches 0 rows and we skip
+    // stock decrement — preventing a double-decrement race condition.
+    const { data: updated } = await admin
+      .from('orders')
+      .update({
+        status: 'paid',
+        payment_method: event.data.channel,
+        payment_reference: reference,
+      })
+      .eq('id', order.id)
+      .eq('status', 'pending')
+      .select('id')
+
+    if (!updated || updated.length === 0) {
+      return NextResponse.json({ received: true }) // another handler already processed it
+    }
 
     await admin.from('order_events').insert({
       order_id: order.id,

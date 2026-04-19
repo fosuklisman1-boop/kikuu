@@ -79,5 +79,5 @@ export function validateWebhookSignature(body: string, signature: string): boole
 
 // Generate a unique payment reference
 export function generateReference(orderId: string): string {
-  return `KK-${orderId.slice(0, 8)}-${Date.now()}`
+  return `TM-${orderId.slice(0, 8)}-${Date.now()}`
 }
