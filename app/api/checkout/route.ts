@@ -46,15 +46,32 @@ export async function POST(req: NextRequest) {
 
     // Validate products and compute prices — include pre_order status
     const productIds = rawItems.map((i) => i.product_id)
-    const { data: products, error: productsError } = await admin
-      .from('products')
-      .select('id, name, price, images, stock_qty, status, preorder_ship_date')
-      .in('id', productIds)
-      .in('status', ['active', 'pre_order'])
+    const now = new Date().toISOString()
+
+    const [{ data: products, error: productsError }, { data: flashSaleItems }] = await Promise.all([
+      admin
+        .from('products')
+        .select('id, name, price, images, stock_qty, status, preorder_ship_date')
+        .in('id', productIds)
+        .in('status', ['active', 'pre_order']),
+      // Fetch sale prices for any of these products in an active flash sale
+      admin
+        .from('flash_sale_items')
+        .select('product_id, sale_price, flash_sale:flash_sales!inner(active, starts_at, ends_at)')
+        .in('product_id', productIds)
+        .eq('flash_sale.active', true)
+        .lte('flash_sale.starts_at', now)
+        .gt('flash_sale.ends_at', now),
+    ])
 
     if (productsError || !products) {
       return NextResponse.json({ error: 'Failed to load products' }, { status: 500 })
     }
+
+    // Build product_id → sale_price map (only from currently active sales)
+    const flashPrices = new Map<string, number>(
+      (flashSaleItems ?? []).map((item) => [item.product_id, item.sale_price])
+    )
 
     const orderItems: OrderItem[] = []
     for (const raw of rawItems) {
@@ -70,7 +87,7 @@ export async function POST(req: NextRequest) {
         product_id: product.id,
         product_name: product.name,
         product_image: product.images[0] ?? '',
-        price: product.price,
+        price: flashPrices.get(product.id) ?? product.price,
         quantity: raw.quantity,
         is_preorder: product.status === 'pre_order',
         preorder_ship_date: product.preorder_ship_date ?? null,
