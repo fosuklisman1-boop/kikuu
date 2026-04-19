@@ -56,13 +56,18 @@ export default function FlashSaleForm({
     e.preventDefault()
     setLoading(true)
     setError('')
+    if (items.some((i) => i.sale_price <= 0)) {
+      setError('All sale prices must be greater than zero.')
+      setLoading(false)
+      return
+    }
     const fd = new FormData(e.currentTarget)
     const payload = {
       title: fd.get('title') as string,
       starts_at: new Date(fd.get('starts_at') as string).toISOString(),
       ends_at: new Date(fd.get('ends_at') as string).toISOString(),
       active: fd.get('active') === 'on',
-      items: items.map(({ product_id, sale_price, sort_order }) => ({ product_id, sale_price, sort_order })),
+      items: items.map(({ product_id, sale_price }, index) => ({ product_id, sale_price, sort_order: index })),
     }
     const result = sale
       ? await updateFlashSale(sale.id, payload.title, payload.starts_at, payload.ends_at, payload.active, payload.items)
@@ -157,7 +162,7 @@ export default function FlashSaleForm({
                   <input
                     type="number"
                     step="0.01"
-                    min="0"
+                    min="0.01"
                     value={item.sale_price}
                     onChange={(e) => updatePrice(item.product_id, Number(e.target.value))}
                     className="w-28 border border-gray-200 rounded px-2 py-1 text-sm"
