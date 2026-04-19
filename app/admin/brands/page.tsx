@@ -4,6 +4,7 @@ import { deleteBrand } from '@/lib/actions/brands'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import DeleteButton from '@/components/admin/DeleteButton'
 
 export const metadata: Metadata = { title: 'Brands' }
 
@@ -44,10 +45,10 @@ export default async function BrandsPage() {
                 </span>
                 <div className="flex gap-3">
                   <Link href={`/admin/brands/${b.id}/edit`} className="text-xs text-blue-600 hover:underline">Edit</Link>
-                  <form action={handleDelete.bind(null, b.id)}>
-                    <button type="submit" onClick={(e) => { if (!confirm('Delete brand?')) e.preventDefault() }}
-                      className="text-xs text-red-500 hover:underline">Delete</button>
-                  </form>
+                  <DeleteButton
+                    action={handleDelete.bind(null, b.id)}
+                    confirmMessage="Delete brand?"
+                  />
                 </div>
               </div>
             ))}

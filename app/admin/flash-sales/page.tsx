@@ -4,6 +4,7 @@ import { deleteFlashSale } from '@/lib/actions/flash-sales'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import DeleteButton from '@/components/admin/DeleteButton'
 
 export const metadata: Metadata = { title: 'Flash Sales' }
 
@@ -77,13 +78,10 @@ export default async function FlashSalesPage() {
                         <div className="flex items-center justify-center gap-3">
                           <Link href={`/admin/flash-sales/${s.id}/edit`}
                             className="text-xs text-blue-600 hover:underline">Edit</Link>
-                          <form action={handleDelete.bind(null, s.id)}>
-                            <button type="submit"
-                              className="text-xs text-red-500 hover:underline"
-                              onClick={(e) => { if (!confirm('Delete this flash sale?')) e.preventDefault() }}>
-                              Delete
-                            </button>
-                          </form>
+                          <DeleteButton
+                            action={handleDelete.bind(null, s.id)}
+                            confirmMessage="Delete this flash sale?"
+                          />
                         </div>
                       </td>
                     </tr>
