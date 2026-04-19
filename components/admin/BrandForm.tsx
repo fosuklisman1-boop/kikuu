@@ -37,13 +37,15 @@ export default function BrandForm({
   }
 
   async function handleLink(product: Product) {
-    await assignProductBrand(product.id, brand!.id)
+    const result = await assignProductBrand(product.id, brand!.id)
+    if (result.error) { setError(result.error); return }
     setLinked((prev) => [...prev, product])
     setProductSearch('')
   }
 
   async function handleUnlink(product: Product) {
-    await assignProductBrand(product.id, null)
+    const result = await assignProductBrand(product.id, null)
+    if (result.error) { setError(result.error); return }
     setLinked((prev) => prev.filter((p) => p.id !== product.id))
   }
 
