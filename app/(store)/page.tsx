@@ -1,8 +1,14 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
-import ProductCard from '@/components/store/ProductCard'
+import { fetchBanners } from '@/lib/actions/banners'
+import { fetchActiveFlashSale } from '@/lib/actions/flash-sales'
+import { fetchBrands } from '@/lib/actions/brands'
+import HeroCarousel from '@/components/store/HeroCarousel'
+import FlashSalesSection from '@/components/store/FlashSalesSection'
 import CategoryGrid from '@/components/store/CategoryGrid'
-import HeroBanner from '@/components/store/HeroBanner'
+import DealsOfTheDay from '@/components/store/DealsOfTheDay'
+import BrandStorefronts from '@/components/store/BrandStorefronts'
+import ProductCard from '@/components/store/ProductCard'
 import AnimateIn from '@/components/ui/AnimateIn'
 import { StaggerContainer, StaggerItem } from '@/components/ui/StaggerChildren'
 import Link from 'next/link'
@@ -12,23 +18,37 @@ import NewsletterForm from '@/components/store/NewsletterForm'
 export default async function HomePage() {
   const supabase = await createClient()
 
-  const [{ data: products }, { data: categories }] = await Promise.all([
-    supabase
-      .from('products')
-      .select('*')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(8),
-    supabase
-      .from('categories')
-      .select('*')
-      .is('parent_id', null)
-      .order('sort_order'),
-  ])
+  const [banners, flashSale, brands, { data: deals }, { data: products }, { data: categories }] =
+    await Promise.all([
+      fetchBanners(),
+      fetchActiveFlashSale(),
+      fetchBrands(),
+      supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active')
+        .eq('featured', true)
+        .not('compare_at_price', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(8),
+      supabase
+        .from('products')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(8),
+      supabase
+        .from('categories')
+        .select('*')
+        .is('parent_id', null)
+        .order('sort_order'),
+    ])
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <HeroBanner />
+      <HeroCarousel banners={banners} />
+
+      {flashSale && <FlashSalesSection sale={flashSale} />}
 
       {/* Categories */}
       <section className="max-w-7xl mx-auto px-4 py-16">
@@ -46,6 +66,10 @@ export default async function HomePage() {
         <CategoryGrid categories={categories ?? []} />
       </section>
 
+      <DealsOfTheDay products={deals ?? []} />
+
+      <BrandStorefronts brands={brands} />
+
       {/* New Arrivals */}
       <section className="max-w-7xl mx-auto px-4 pb-20">
         <AnimateIn direction="up">
@@ -59,7 +83,6 @@ export default async function HomePage() {
             </Link>
           </div>
         </AnimateIn>
-
         {products && products.length > 0 ? (
           <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
