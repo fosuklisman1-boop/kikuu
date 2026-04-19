@@ -7,7 +7,7 @@ import ProductTabs from '@/components/store/ProductTabs'
 import { Suspense } from 'react'
 
 interface Props {
-  searchParams: Promise<{ q?: string; category?: string; page?: string; tab?: string }>
+  searchParams: Promise<{ q?: string; category?: string; page?: string; tab?: string; brand?: string }>
 }
 
 const PAGE_SIZE = 20
@@ -18,6 +18,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   const categorySlug = params.category ?? ''
   const page = parseInt(params.page ?? '1', 10)
   const tab = params.tab === 'preorder' ? 'preorder' : 'available'
+  const brandSlug = params.brand ?? ''
   const from = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
@@ -33,6 +34,18 @@ export default async function ProductsPage({ searchParams }: Props) {
     categoryId = cat?.id ?? null
   }
 
+  // Resolve brand slug to brand_id
+  let brandId: string | null = null
+  if (brandSlug) {
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('slug', brandSlug)
+      .eq('active', true)
+      .maybeSingle()
+    brandId = brandRow?.id ?? null
+  }
+
   const activeStatus = tab === 'preorder' ? 'pre_order' : 'active'
 
   function buildQuery(status: string, count?: boolean) {
@@ -43,6 +56,7 @@ export default async function ProductsPage({ searchParams }: Props) {
       .order('created_at', { ascending: false })
     if (query) q = q.textSearch('search_vector', query)
     if (categoryId) q = q.eq('category_id', categoryId)
+    if (brandId) q = q.eq('brand_id', brandId)
     return q
   }
 
@@ -117,6 +131,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                   href={`/products?${new URLSearchParams({
                     ...(query && { q: query }),
                     ...(categorySlug && { category: categorySlug }),
+                    ...(brandSlug && { brand: brandSlug }),
                     ...(tab === 'preorder' && { tab: 'preorder' }),
                     page: String(p),
                   })}`}
