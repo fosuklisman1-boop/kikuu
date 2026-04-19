@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       .from('orders')
       .update({
         status: 'paid',
+        payment_status: 'paid',
         payment_method: event.data.channel,
         payment_reference: reference,
       })

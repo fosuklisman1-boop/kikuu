@@ -37,6 +37,11 @@ export async function GET(req: NextRequest) {
       const expectedPesewas = Math.round(order.total * 100)
       if (result.amount < expectedPesewas) {
         await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
+        await admin.from('order_events').insert({
+          order_id: orderId,
+          event: 'Payment Mismatch',
+          description: `Expected GHS ${(expectedPesewas / 100).toFixed(2)} but received GHS ${(result.amount / 100).toFixed(2)}. Order cancelled.`,
+        })
         return NextResponse.redirect(new URL(`/orders/${orderId}?error=amount_mismatch`, req.url))
       }
 
@@ -47,6 +52,7 @@ export async function GET(req: NextRequest) {
         .from('orders')
         .update({
           status: 'paid',
+          payment_status: 'paid',
           payment_method: result.channel,
           payment_reference: result.reference,
         })
