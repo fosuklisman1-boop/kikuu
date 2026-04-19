@@ -225,13 +225,24 @@ export async function POST(req: NextRequest) {
 
     // Paystack path: initialize payment
     const reference = generateReference(order.id)
-    const payment = await initializePayment({
-      email,
-      amount: total,
-      reference,
-      callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/verify?order_id=${order.id}`,
-      metadata: { order_id: order.id, order_number: order.order_number },
-    })
+    let payment
+    try {
+      payment = await initializePayment({
+        email,
+        amount: total,
+        reference,
+        callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/verify?order_id=${order.id}`,
+        metadata: { order_id: order.id, order_number: order.order_number },
+      })
+    } catch (paystackErr: any) {
+      console.error('Paystack init error:', paystackErr)
+      // Cancel the order so it doesn't sit as a ghost pending order
+      await admin.from('orders').delete().eq('id', order.id)
+      return NextResponse.json(
+        { error: paystackErr?.message ?? 'Payment provider error. Please try again.' },
+        { status: 502 }
+      )
+    }
 
     await admin
       .from('orders')
