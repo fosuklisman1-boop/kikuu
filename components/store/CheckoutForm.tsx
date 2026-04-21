@@ -184,6 +184,7 @@ export default function CheckoutForm() {
       }
 
       new PaystackPop().newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY as string,
         accessCode: data.access_code,
         onSuccess: async (transaction: { reference: string }) => {
           try {
