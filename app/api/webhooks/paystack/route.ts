@@ -15,16 +15,25 @@ export async function POST(req: NextRequest) {
 
   if (event.event === 'charge.success') {
     const reference = event.data.reference as string
+    console.log('[webhook] charge.success reference:', reference)
 
-    const { data: order } = await admin
+    const { data: order, error: orderErr } = await admin
       .from('orders')
       .select('id, status, total, items')
       .eq('paystack_reference', reference)
-      .single()
+      .maybeSingle()
 
-    if (!order) {
+    if (orderErr) {
+      console.error('[webhook] order lookup error:', orderErr.message)
       return NextResponse.json({ received: true })
     }
+
+    if (!order) {
+      console.warn('[webhook] no order found for reference:', reference)
+      return NextResponse.json({ received: true })
+    }
+
+    console.log('[webhook] found order:', order.id, 'status:', order.status)
 
     // Atomic guard: only update if status is still 'pending'.
     // If the verify callback already ran, this matches 0 rows and we skip

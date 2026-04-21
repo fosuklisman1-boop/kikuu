@@ -252,10 +252,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    await admin
+    const { error: refError } = await admin
       .from('orders')
       .update({ paystack_reference: reference })
       .eq('id', order.id)
+
+    if (refError) {
+      console.error('Failed to save paystack_reference:', refError)
+      await admin.from('orders').delete().eq('id', order.id)
+      return NextResponse.json({ error: 'Failed to save payment reference. Please try again.' }, { status: 500 })
+    }
 
     return NextResponse.json({
       order_id: order.id,
