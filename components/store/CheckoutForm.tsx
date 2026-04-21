@@ -175,7 +175,7 @@ export default function CheckoutForm() {
         return
       }
 
-      // Paystack inline modal
+      // Paystack Popup v2 — no form-element requirement
       const PaystackPop = (window as any).PaystackPop
       if (!PaystackPop) {
         setError('Payment provider failed to load. Please refresh and try again.')
@@ -183,15 +183,14 @@ export default function CheckoutForm() {
         return
       }
 
-      const handler = PaystackPop.setup({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-        access_code: data.access_code,
-        callback: async (response: { reference: string }) => {
+      new PaystackPop().newTransaction({
+        accessCode: data.access_code,
+        onSuccess: async (transaction: { reference: string }) => {
           try {
             const verifyRes = await fetch('/api/payment/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ order_id: data.order_id, reference: response.reference }),
+              body: JSON.stringify({ order_id: data.order_id, reference: transaction.reference }),
             })
             const verifyData = await verifyRes.json()
             if (verifyRes.ok) {
@@ -206,12 +205,10 @@ export default function CheckoutForm() {
             setLoading(false)
           }
         },
-        onClose: () => {
+        onCancel: () => {
           setLoading(false)
         },
       })
-
-      handler.openIframe()
     } catch {
       setError('Network error. Please try again.')
       setLoading(false)
@@ -250,7 +247,7 @@ export default function CheckoutForm() {
 
   return (
     <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+      <Script src="https://js.paystack.co/v2/inline.js" strategy="afterInteractive" />
       {/* Left: delivery form */}
       <div className="lg:col-span-2 space-y-5">
 
