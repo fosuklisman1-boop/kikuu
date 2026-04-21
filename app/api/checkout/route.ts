@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { initializePayment, generateReference } from '@/lib/paystack'
-import type { GhanaAddress, OrderItem } from '@/lib/supabase/types'
+import type { OrderItem } from '@/lib/supabase/types'
 import { SHIPPING_FEES } from '@/lib/utils'
 import { z } from 'zod'
 
@@ -48,30 +48,38 @@ export async function POST(req: NextRequest) {
     const productIds = rawItems.map((i) => i.product_id)
     const now = new Date().toISOString()
 
-    const [{ data: products, error: productsError }, { data: flashSaleItems }] = await Promise.all([
+    // Fetch products and active flash sale in parallel
+    const [{ data: products, error: productsError }, { data: activeSale }] = await Promise.all([
       admin
         .from('products')
         .select('id, name, price, images, stock_qty, status, preorder_ship_date')
         .in('id', productIds)
         .in('status', ['active', 'pre_order']),
-      // Fetch sale prices for any of these products in an active flash sale
       admin
-        .from('flash_sale_items')
-        .select('product_id, sale_price, flash_sale:flash_sales!inner(active, starts_at, ends_at)')
-        .in('product_id', productIds)
-        .eq('flash_sale.active', true)
-        .lte('flash_sale.starts_at', now)
-        .gt('flash_sale.ends_at', now),
+        .from('flash_sales')
+        .select('id')
+        .eq('active', true)
+        .lte('starts_at', now)
+        .gt('ends_at', now)
+        .maybeSingle(),
     ])
 
     if (productsError || !products) {
       return NextResponse.json({ error: 'Failed to load products' }, { status: 500 })
     }
 
-    // Build product_id → sale_price map (only from currently active sales)
-    const flashPrices = new Map<string, number>(
-      (flashSaleItems ?? []).map((item) => [item.product_id, item.sale_price])
-    )
+    // Fetch flash sale prices for cart products (only if a sale is active)
+    const flashPrices = new Map<string, number>()
+    if (activeSale) {
+      const { data: saleItems } = await admin
+        .from('flash_sale_items')
+        .select('product_id, sale_price')
+        .eq('flash_sale_id', activeSale.id)
+        .in('product_id', productIds)
+      for (const item of saleItems ?? []) {
+        flashPrices.set(item.product_id, item.sale_price)
+      }
+    }
 
     const orderItems: OrderItem[] = []
     for (const raw of rawItems) {

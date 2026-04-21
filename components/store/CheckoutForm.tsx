@@ -165,6 +165,7 @@ export default function CheckoutForm() {
 
       if (!res.ok) {
         setError(data.error?.message ?? data.error ?? 'Checkout failed. Please try again.')
+        setLoading(false)
         return
       }
 
