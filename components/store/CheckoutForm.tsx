@@ -3,6 +3,7 @@
 import { useCart } from '@/lib/cart'
 import { formatGHS, GHANA_REGIONS, SHIPPING_FEES, isValidGhanaPhone } from '@/lib/utils'
 import { validateCoupon } from '@/lib/actions/coupons'
+import { getCurrentPrices } from '@/lib/actions/prices'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +26,7 @@ export default function CheckoutForm() {
   const [couponLoading, setCouponLoading] = useState(false)
   const [paymentType, setPaymentType] = useState<'paystack' | 'cod'>('paystack')
   const [deliveryFees, setDeliveryFees] = useState<Record<string, number> | null>(null)
+  const [livePrices, setLivePrices] = useState<Record<string, number> | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [selectedSavedId, setSelectedSavedId] = useState<string>('')
@@ -39,6 +41,12 @@ export default function CheckoutForm() {
     landmark: '',
     digital_address: '',
   })
+
+  // Refresh prices from server (applies active flash sales) once cart is hydrated
+  useEffect(() => {
+    if (!_hasHydrated || !items.length) return
+    getCurrentPrices(items.map((i) => i.id)).then(setLivePrices)
+  }, [_hasHydrated, items.length])
 
   // Load delivery fees from DB, fall back to hardcoded if table missing/empty
   useEffect(() => {
@@ -97,9 +105,14 @@ export default function CheckoutForm() {
   // Pre-order carts are forced to COD
   const effectivePaymentType = hasPreorderItems ? 'cod' : paymentType
 
+  // Use live (server-authoritative) prices when loaded — reflects active flash sales
+  const liveSubtotal = livePrices
+    ? items.reduce((sum, i) => sum + (livePrices[i.id] ?? i.price) * i.quantity, 0)
+    : total
+
   const feesLoaded = deliveryFees !== null
   const shippingFee = (feesLoaded && form.region) ? (deliveryFees![form.region] ?? 0) : null
-  const grandTotal = shippingFee !== null ? total + shippingFee - discount : null
+  const grandTotal = shippingFee !== null ? liveSubtotal + shippingFee - discount : null
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -484,7 +497,7 @@ export default function CheckoutForm() {
                   <p className="text-gray-800 line-clamp-1 font-medium">{item.name}</p>
                   <p className="text-gray-400 text-xs">×{item.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold shrink-0">{formatGHS(item.price * item.quantity)}</p>
+                <p className="text-sm font-semibold shrink-0">{formatGHS((livePrices?.[item.id] ?? item.price) * item.quantity)}</p>
               </div>
             ))}
           </div>
@@ -530,7 +543,7 @@ export default function CheckoutForm() {
           <div className="space-y-2 text-sm text-gray-600 border-t border-gray-50 pt-3">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>{formatGHS(total)}</span>
+              <span>{formatGHS(liveSubtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span>Delivery{form.region ? ` (${form.region})` : ''}</span>
