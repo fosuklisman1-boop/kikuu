@@ -42,6 +42,10 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
     query = query.eq('payment_type', 'cod')
   } else if (status) {
     query = query.eq('status', status)
+  } else {
+    // Default: hide unpaid Paystack ghost orders (initiated but never paid).
+    // Show if COD (always real) OR status is not pending (payment completed).
+    query = query.or('payment_type.eq.cod,status.neq.pending')
   }
 
   const { data: orders, count } = await query
