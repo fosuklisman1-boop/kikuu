@@ -82,7 +82,7 @@ export interface Database {
         Row: {
           id: string
           code: string
-          type: 'percentage' | 'fixed'
+          type: 'percentage' | 'fixed' | 'free_shipping'
           value: number
           min_order_amount: number | null
           max_uses: number | null
@@ -108,6 +108,23 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['banners']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['banners']['Insert']>
+      }
+      promo_cards: {
+        Row: {
+          id: string
+          heading: string
+          subtext: string | null
+          badge_text: string | null
+          cta_text: string | null
+          cta_link: string | null
+          color_theme: 'amber' | 'green' | 'blue' | 'purple' | 'red'
+          coupon_id: string | null
+          sort_order: number
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['promo_cards']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['promo_cards']['Insert']>
       }
       flash_sales: {
         Row: {
@@ -174,6 +191,12 @@ export type FlashSale = Database['public']['Tables']['flash_sales']['Row']
 export type FlashSaleItem = Database['public']['Tables']['flash_sale_items']['Row']
 export type Brand = Database['public']['Tables']['brands']['Row']
 export type TrendingSearch = Database['public']['Tables']['trending_searches']['Row']
+export type PromoCard = Database['public']['Tables']['promo_cards']['Row']
+
+// PromoCard with the joined coupon (used in admin list and homepage)
+export interface PromoCardWithCoupon extends PromoCard {
+  coupons: { code: string; type: string; value: number } | null
+}
 
 // Flash sale with items + joined product data
 export interface FlashSaleWithItems extends FlashSale {

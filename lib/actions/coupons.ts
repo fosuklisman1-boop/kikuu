@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 export async function validateCoupon(
   code: string,
   subtotal: number
-): Promise<{ discount: number; error?: string }> {
+): Promise<{ discount: number; freeShipping?: boolean; error?: string }> {
   if (!code.trim()) return { discount: 0, error: 'Enter a coupon code' }
 
   const admin = createAdminClient()
@@ -28,6 +28,10 @@ export async function validateCoupon(
   if (coupon.min_order_amount && subtotal < coupon.min_order_amount)
     return { discount: 0, error: `Minimum order of GHS ${coupon.min_order_amount} required` }
 
+  if (coupon.type === 'free_shipping') {
+    return { discount: 0, freeShipping: true }
+  }
+
   const discount =
     coupon.type === 'percentage'
       ? Math.round((subtotal * coupon.value) / 100 * 100) / 100
@@ -38,7 +42,7 @@ export async function validateCoupon(
 
 export async function createCoupon(data: {
   code: string
-  type: 'percentage' | 'fixed'
+  type: 'percentage' | 'fixed' | 'free_shipping'
   value: number
   min_order_amount?: number | null
   max_uses?: number | null
@@ -57,7 +61,7 @@ export async function createCoupon(data: {
 
 export async function updateCoupon(id: string, data: {
   code: string
-  type: 'percentage' | 'fixed'
+  type: 'percentage' | 'fixed' | 'free_shipping'
   value: number
   min_order_amount?: number | null
   max_uses?: number | null
