@@ -175,6 +175,18 @@ export default function CheckoutForm() {
         return
       }
 
+      // If server-computed total differs from what we showed (e.g. flash sale applied),
+      // warn the user so there's no surprise when the Paystack modal opens.
+      if (typeof data.total === 'number' && grandTotal !== null && Math.abs(data.total - grandTotal) > 0.01) {
+        const proceed = window.confirm(
+          `The order total has been updated to ${formatGHS(data.total)} (was ${formatGHS(grandTotal)}) due to a price change. Continue with payment?`
+        )
+        if (!proceed) {
+          setLoading(false)
+          return
+        }
+      }
+
       // Paystack Popup v2 — no form-element requirement
       const PaystackPop = (window as any).PaystackPop
       if (!PaystackPop) {

@@ -268,6 +268,7 @@ export async function POST(req: NextRequest) {
       order_number: order.order_number,
       access_code: payment.access_code,
       reference,
+      total,
     })
   } catch (err) {
     console.error('Checkout error:', err)
