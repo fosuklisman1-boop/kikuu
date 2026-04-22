@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
+import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import ProductCard from '@/components/store/ProductCard'
 import SearchBar from '@/components/store/SearchBar'
 import CategoryFilter from '@/components/store/CategoryFilter'
@@ -77,6 +78,8 @@ export default async function ProductsPage({ searchParams }: Props) {
 
   const totalPages = Math.ceil((tabCount ?? 0) / PAGE_SIZE)
 
+  const salePrices = await getFlashSalePriceMap((products ?? []).map((p) => p.id))
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -109,7 +112,7 @@ export default async function ProductsPage({ searchParams }: Props) {
           {products && products.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} salePrice={salePrices[product.id]} />
               ))}
             </div>
           ) : (

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { fetchBanners } from '@/lib/actions/banners'
-import { fetchActiveFlashSale } from '@/lib/actions/flash-sales'
+import { fetchActiveFlashSale, getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import { fetchBrands } from '@/lib/actions/brands'
 import HeroCarousel from '@/components/store/HeroCarousel'
 import FlashSalesSection from '@/components/store/FlashSalesSection'
@@ -18,8 +18,7 @@ import NewsletterForm from '@/components/store/NewsletterForm'
 export default async function HomePage() {
   const supabase = await createClient()
 
-  const [banners, flashSale, brands, { data: deals }, { data: products }, { data: categories }] =
-    await Promise.all([
+  const [banners, flashSale, brands, { data: deals }, { data: products }, { data: categories }] = await Promise.all([
       fetchBanners(),
       fetchActiveFlashSale(),
       fetchBrands(),
@@ -43,6 +42,9 @@ export default async function HomePage() {
         .is('parent_id', null)
         .order('sort_order'),
     ])
+
+  const allProductIds = [...(deals ?? []), ...(products ?? [])].map((p) => (p as any).id)
+  const salePrices = await getFlashSalePriceMap(allProductIds)
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -87,7 +89,7 @@ export default async function HomePage() {
           <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
               <StaggerItem key={(product as any).id}>
-                <ProductCard product={product as any} />
+                <ProductCard product={product as any} salePrice={salePrices[(product as any).id]} />
               </StaggerItem>
             ))}
           </StaggerContainer>

@@ -9,12 +9,14 @@ import { useCart } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
 import { useState, useEffect } from 'react'
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product, salePrice }: { product: Product; salePrice?: number }) {
   const { addItem } = useCart()
   const { toggle, has } = useWishlist()
   const [added, setAdded] = useState(false)
   const [wishlisted, setWishlisted] = useState(false)
   const [cartError, setCartError] = useState('')
+  const onSale = salePrice !== undefined && salePrice < product.price
+  const displayPrice = onSale ? salePrice : product.price
 
   useEffect(() => {
     useWishlist.persist.rehydrate()
@@ -23,15 +25,18 @@ export default function ProductCard({ product }: { product: Product }) {
 
   const isPreorder = product.status === 'pre_order'
   const outOfStock = product.stock_qty === 0 && !isPreorder
-  const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
-  const discountPct = hasDiscount
+  // Flash sale takes precedence over compare_at_price discount
+  const hasDiscount = !onSale && product.compare_at_price && product.compare_at_price > product.price
+  const discountPct = onSale
+    ? Math.round(((product.price - salePrice!) / product.price) * 100)
+    : hasDiscount
     ? Math.round(((product.compare_at_price! - product.price) / product.compare_at_price!) * 100)
     : 0
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     if (outOfStock) return
-    const result = addItem(product)
+    const result = addItem(onSale ? { ...product, price: salePrice! } : product)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 4000)
@@ -76,7 +81,12 @@ export default function ProductCard({ product }: { product: Product }) {
                   Pre-order
                 </span>
               )}
-              {!isPreorder && hasDiscount && (
+              {onSale && (
+                <span className="bg-red-500 text-white text-[10px] font-extrabold tracking-wide px-2 py-1 rounded-lg shadow-sm tabular-nums">
+                  SALE -{discountPct}%
+                </span>
+              )}
+              {!isPreorder && !onSale && hasDiscount && (
                 <span className="bg-[#b45309] text-white text-[10px] font-extrabold tracking-wide px-2 py-1 rounded-lg shadow-sm tabular-nums">
                   -{discountPct}%
                 </span>
@@ -109,10 +119,15 @@ export default function ProductCard({ product }: { product: Product }) {
             </p>
 
             <div className="flex items-baseline gap-2 mb-2.5">
-              <span className="font-extrabold text-[#b45309] text-sm tracking-tight">
-                {formatGHS(product.price)}
+              <span className={`font-extrabold text-sm tracking-tight ${onSale ? 'text-red-500' : 'text-[#b45309]'}`}>
+                {formatGHS(displayPrice)}
               </span>
-              {hasDiscount && (
+              {onSale && (
+                <span className="text-xs text-[#a89e96] line-through font-normal">
+                  {formatGHS(product.price)}
+                </span>
+              )}
+              {!onSale && hasDiscount && (
                 <span className="text-xs text-[#a89e96] line-through font-normal">
                   {formatGHS(product.compare_at_price!)}
                 </span>

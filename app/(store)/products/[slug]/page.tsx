@@ -1,10 +1,11 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
+import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
 import AddToCartButton from '@/components/store/AddToCartButton'
 import ProductImages from '@/components/store/ProductImages'
-import { CalendarClock } from 'lucide-react'
+import { CalendarClock, Zap } from 'lucide-react'
 import type { Metadata } from 'next'
 
 interface Props {
@@ -39,10 +40,17 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound()
 
+  const salePrices = await getFlashSalePriceMap([product.id])
+  const salePrice = salePrices[product.id]
+  const onSale = salePrice !== undefined && salePrice < product.price
+  const displayPrice = onSale ? salePrice : product.price
+
   const isPreorder = product.status === 'pre_order'
   const inStock = product.stock_qty > 0 || isPreorder
-  const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
-  const discountPct = hasDiscount
+  const hasDiscount = !onSale && product.compare_at_price && product.compare_at_price > product.price
+  const discountPct = onSale
+    ? Math.round(((product.price - salePrice) / product.price) * 100)
+    : hasDiscount
     ? Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100)
     : 0
 
@@ -58,18 +66,23 @@ export default async function ProductPage({ params }: Props) {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{product.name}</h1>
 
           <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-3xl font-bold text-gray-900">
-              {formatGHS(product.price)}
+            <span className={`text-3xl font-bold ${onSale ? 'text-red-500' : 'text-gray-900'}`}>
+              {formatGHS(displayPrice)}
             </span>
-            {hasDiscount && (
+            {(onSale || hasDiscount) && (
               <>
                 <span className="text-lg text-gray-400 line-through">
-                  {formatGHS(product.compare_at_price)}
+                  {formatGHS(onSale ? product.price : product.compare_at_price)}
                 </span>
-                <span className="text-sm font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded">
+                <span className={`text-sm font-medium px-2 py-0.5 rounded ${onSale ? 'text-red-600 bg-red-50' : 'text-red-500 bg-red-50'}`}>
                   -{discountPct}%
                 </span>
               </>
+            )}
+            {onSale && (
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                <Zap size={10} /> Flash Sale
+              </span>
             )}
           </div>
 
@@ -107,7 +120,7 @@ export default async function ProductPage({ params }: Props) {
             <p className="text-gray-600 text-sm mb-8">{product.description}</p>
           )}
 
-          <AddToCartButton product={product} disabled={!inStock} />
+          <AddToCartButton product={product} disabled={!inStock} salePrice={onSale ? salePrice : undefined} />
 
           <div className="mt-8 border-t pt-6 space-y-2 text-sm text-gray-500">
             <p>Delivery across all Ghana regions</p>

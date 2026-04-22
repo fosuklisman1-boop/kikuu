@@ -9,9 +9,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function AddToCartButton({
   product,
   disabled,
+  salePrice,
 }: {
   product: Product
   disabled?: boolean
+  salePrice?: number
 }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
@@ -19,7 +21,10 @@ export default function AddToCartButton({
   const isPreorder = product.status === 'pre_order'
 
   function handleAdd() {
-    const result = addItem(product)
+    const itemToAdd = salePrice !== undefined && salePrice < product.price
+      ? { ...product, price: salePrice }
+      : product
+    const result = addItem(itemToAdd)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 5000)

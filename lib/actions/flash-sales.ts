@@ -115,6 +115,37 @@ export async function updateFlashSale(
   return { success: true }
 }
 
+// Returns a map of productId → sale_price for products currently on flash sale.
+// Only includes products that are actually in the active sale.
+export async function getFlashSalePriceMap(
+  productIds: string[]
+): Promise<Record<string, number>> {
+  if (!productIds.length) return {}
+  const supabase = await createClient()
+  const now = new Date().toISOString()
+  const { data: sale } = await supabase
+    .from('flash_sales')
+    .select('id')
+    .eq('active', true)
+    .lte('starts_at', now)
+    .gt('ends_at', now)
+    .maybeSingle()
+
+  if (!sale) return {}
+
+  const { data: items } = await supabase
+    .from('flash_sale_items')
+    .select('product_id, sale_price')
+    .eq('flash_sale_id', sale.id)
+    .in('product_id', productIds)
+
+  const map: Record<string, number> = {}
+  for (const item of items ?? []) {
+    map[item.product_id] = item.sale_price
+  }
+  return map
+}
+
 export async function deleteFlashSale(id: string) {
   const admin = createAdminClient()
   const { error } = await admin.from('flash_sales').delete().eq('id', id)
