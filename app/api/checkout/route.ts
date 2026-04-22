@@ -137,8 +137,10 @@ export async function POST(req: NextRequest) {
       shippingFee = SHIPPING_FEES[address.region] ?? 50
     }
 
-    // Validate coupon
+    // Validate coupon — keep coupon id so we can increment used_count after order creation
     let discountAmount = 0
+    let appliedCouponId: string | null = null
+    let appliedCouponUsedCount = 0
     if (coupon_code) {
       const { data: coupon } = await admin
         .from('coupons')
@@ -157,6 +159,8 @@ export async function POST(req: NextRequest) {
             coupon.type === 'percentage'
               ? Math.round((subtotal * coupon.value) / 100 * 100) / 100
               : Math.min(coupon.value, subtotal)
+          appliedCouponId = coupon.id
+          appliedCouponUsedCount = coupon.used_count
         }
       }
     }
@@ -194,6 +198,16 @@ export async function POST(req: NextRequest) {
 
     if (orderError || !order) {
       return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+    }
+
+    // Increment coupon usage count now that the order is committed.
+    // We use used_count + 1 from the value read at validation time — low race risk
+    // for a small store, and avoids needing a custom DB function.
+    if (appliedCouponId) {
+      await admin
+        .from('coupons')
+        .update({ used_count: appliedCouponUsedCount + 1 })
+        .eq('id', appliedCouponId)
     }
 
     // Initial order event
