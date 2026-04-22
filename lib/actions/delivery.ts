@@ -8,7 +8,7 @@ export async function updateDeliveryFee(region: string, fee: number, enabled: bo
   const admin = createAdminClient()
   const { error } = await admin
     .from('delivery_fees')
-    .upsert({ region, fee, enabled, updated_at: new Date().toISOString() })
+    .upsert({ region, fee, enabled, updated_at: new Date().toISOString() }, { onConflict: 'region' })
   if (error) return { error: error.message }
   revalidatePath('/admin/delivery')
   return { success: true }

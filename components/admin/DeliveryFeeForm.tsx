@@ -14,20 +14,29 @@ export default function DeliveryFeeForm({ region, fee: initialFee, enabled: init
   const [enabled, setEnabled] = useState(initialEnabled)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   async function save() {
     const parsed = parseFloat(fee)
     if (isNaN(parsed) || parsed < 0) return
     setSaving(true)
-    await updateDeliveryFee(region, parsed, enabled)
+    setSaveError('')
+    const result = await updateDeliveryFee(region, parsed, enabled)
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    if (result?.error) {
+      setSaveError(result.error)
+    } else {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
   }
 
   return (
     <div className="grid grid-cols-[1fr_120px_80px_80px] items-center px-5 py-3 hover:bg-gray-50 transition-colors">
-      <span className="text-sm font-medium text-gray-800">{region}</span>
+      <div>
+        <span className="text-sm font-medium text-gray-800">{region}</span>
+        {saveError && <p className="text-xs text-red-500 mt-0.5">{saveError}</p>}
+      </div>
 
       <input
         type="number"
