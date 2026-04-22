@@ -14,8 +14,9 @@ export default async function AdminDashboard() {
     { data: revenueData },
     { count: totalProducts },
   ] = await Promise.all([
-    admin.from('orders').select('*', { count: 'exact', head: true }),
-    admin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    // Exclude unpaid Paystack ghost orders from all counts
+    admin.from('orders').select('*', { count: 'exact', head: true }).or('payment_type.eq.cod,status.neq.pending'),
+    admin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending').eq('payment_type', 'cod'),
     admin.from('orders').select('total').in('status', ['paid', 'processing', 'shipped', 'delivered']),
     admin.from('products').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
@@ -32,6 +33,7 @@ export default async function AdminDashboard() {
   const { data: recentOrders } = await admin
     .from('orders')
     .select('id, order_number, buyer_name, total, status, created_at')
+    .or('payment_type.eq.cod,status.neq.pending')
     .order('created_at', { ascending: false })
     .limit(10)
 
