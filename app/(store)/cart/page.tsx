@@ -5,9 +5,20 @@ import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
 import CartItem from '@/components/store/CartItem'
 import { ShoppingBag, ArrowRight, Clock } from 'lucide-react'
+import { useEffect } from 'react'
 
 export default function CartPage() {
-  const { items, total, hasPreorderItems, _hasHydrated } = useCart()
+  const { items, total, hasPreorderItems, _hasHydrated, removeItem } = useCart()
+
+  // Flush qty=0 items when the cart page is closed/navigated away from
+  useEffect(() => {
+    return () => {
+      const state = useCart.getState()
+      for (const item of state.items) {
+        if (item.quantity === 0) state.removeItem(item.id)
+      }
+    }
+  }, [])
 
   if (!_hasHydrated) {
     return (
@@ -61,7 +72,7 @@ export default function CartPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-950">Shopping Cart</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{items.length} item{items.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-400 mt-0.5">{items.filter(i => i.quantity > 0).length} item{items.filter(i => i.quantity > 0).length !== 1 ? 's' : ''}</p>
         </div>
         <Link href="/products" className="text-sm text-[#b45309] hover:text-[#92400e] font-medium transition-colors">
           + Add more

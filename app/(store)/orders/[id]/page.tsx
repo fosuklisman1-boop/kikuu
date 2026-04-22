@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
+import Link from 'next/link'
 import type { OrderItem, GhanaAddress } from '@/lib/supabase/types'
 import type { Metadata } from 'next'
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: 'Order Details' }
 
 interface Props {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ success?: string; cod?: string }>
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,8 +36,9 @@ const STATUS_COLORS: Record<string, string> = {
   refunded: 'bg-gray-100 text-gray-800',
 }
 
-export default async function OrderPage({ params }: Props) {
+export default async function OrderPage({ params, searchParams }: Props) {
   const { id } = await params
+  const { success, cod } = await searchParams
 
   // Try authenticated user first
   const supabase = await createClient()
@@ -80,6 +83,33 @@ export default async function OrderPage({ params }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+
+      {/* Payment success banner */}
+      {success === '1' && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-4 mb-6 flex items-start gap-3">
+          <span className="text-2xl">🎉</span>
+          <div>
+            <p className="font-bold text-green-800 text-sm">Payment confirmed!</p>
+            <p className="text-xs text-green-700 mt-0.5">
+              Your order <span className="font-semibold">{order.order_number}</span> has been placed and payment received. We'll start preparing it right away.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* COD success banner */}
+      {cod === '1' && (
+        <div className="bg-purple-50 border border-purple-200 rounded-2xl px-5 py-4 mb-6 flex items-start gap-3">
+          <span className="text-2xl">📦</span>
+          <div>
+            <p className="font-bold text-purple-800 text-sm">Order placed successfully!</p>
+            <p className="text-xs text-purple-700 mt-0.5">
+              Your order <span className="font-semibold">{order.order_number}</span> is confirmed. Payment will be collected when your order is delivered.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Order {order.order_number}</h1>
@@ -224,6 +254,23 @@ export default async function OrderPage({ params }: Props) {
           </ol>
         </div>
       )}
+
+      <div className="mt-6 flex gap-3">
+        <Link
+          href="/products"
+          className="flex-1 text-center py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+        >
+          Continue Shopping
+        </Link>
+        {user && (
+          <Link
+            href="/account/orders"
+            className="flex-1 text-center py-3 rounded-xl bg-[#b45309] hover:bg-[#92400e] text-white text-sm font-semibold transition-colors"
+          >
+            View All Orders
+          </Link>
+        )}
+      </div>
     </div>
   )
 }

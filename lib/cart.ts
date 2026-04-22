@@ -16,14 +16,16 @@ export interface CartItem {
 }
 
 function deriveCart(items: CartItem[]) {
-  const preorderDates = items
+  // qty=0 items are "pending removal" — excluded from totals/counts
+  const active = items.filter((i) => i.quantity > 0)
+  const preorderDates = active
     .filter((i) => i.is_preorder && i.preorder_ship_date)
     .map((i) => i.preorder_ship_date!)
     .sort()
   return {
-    total: items.reduce((sum, i) => sum + i.price * i.quantity, 0),
-    count: items.reduce((sum, i) => sum + i.quantity, 0),
-    hasPreorderItems: items.some((i) => i.is_preorder),
+    total: active.reduce((sum, i) => sum + i.price * i.quantity, 0),
+    count: active.reduce((sum, i) => sum + i.quantity, 0),
+    hasPreorderItems: active.some((i) => i.is_preorder),
     latestPreorderDate: preorderDates.at(-1) ?? null,
   }
 }
@@ -102,12 +104,12 @@ export const useCart = create<CartStore>()(
       },
 
       updateQty(id, qty) {
-        if (qty < 1) {
-          get().removeItem(id)
-          return
-        }
+        if (qty < 0) return
+        // qty=0 keeps the item in the array (grayed out) until the cart page unmounts
         const items = get().items.map((i) =>
-          i.id === id ? { ...i, quantity: Math.min(qty, i.stock_qty) } : i
+          i.id === id
+            ? { ...i, quantity: qty === 0 ? 0 : Math.min(qty, i.stock_qty) }
+            : i
         )
         set({ items, ...deriveCart(items) })
       },

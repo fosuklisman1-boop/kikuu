@@ -2,10 +2,34 @@
 
 import { useCart, type CartItem } from '@/lib/cart'
 import { formatGHS } from '@/lib/utils'
-import { Minus, Plus, Trash2, Clock } from 'lucide-react'
+import { Minus, Plus, Trash2, Clock, RotateCcw } from 'lucide-react'
 
 export default function CartItemRow({ item }: { item: CartItem }) {
   const { updateQty, removeItem } = useCart()
+  const removed = item.quantity === 0
+
+  if (removed) {
+    return (
+      <div className="bg-white rounded-2xl border border-[#ede9e4] p-4 flex items-center gap-4 opacity-60">
+        <div className="w-20 h-20 rounded-xl overflow-hidden bg-[#f7f5f2] shrink-0 border border-[#f0ede8]">
+          {item.image
+            ? <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale" />
+            : <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+          }
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-gray-500 line-clamp-1">{item.name}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Removed from cart</p>
+        </div>
+        <button
+          onClick={() => updateQty(item.id, 1)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#b45309] hover:text-[#92400e] bg-[#fdf6ec] hover:bg-[#faecd8] px-3 py-1.5 rounded-xl transition-colors shrink-0"
+        >
+          <RotateCcw size={12} /> Undo
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-[#ede9e4] p-4 flex gap-4 hover:border-[#d4cfc8] transition-colors">
