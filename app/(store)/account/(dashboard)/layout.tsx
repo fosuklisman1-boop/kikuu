@@ -8,6 +8,14 @@ export default async function AccountLayout({ children }: { children: React.Reac
 
   if (!user) redirect('/account/login')
 
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role === 'admin') redirect('/admin')
+
   const meta = user.user_metadata as Record<string, string> | null
   const displayName = meta?.full_name || user.email?.split('@')[0] || 'My Account'
   const initials = displayName
