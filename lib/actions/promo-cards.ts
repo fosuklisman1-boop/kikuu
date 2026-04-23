@@ -115,3 +115,13 @@ export async function togglePromoCard(id: string, active: boolean) {
   revalidate()
   return { success: true }
 }
+
+export async function fetchCouponByCode(code: string) {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('coupons')
+    .select('id, code, type, value')
+    .eq('code', code.toUpperCase().trim())
+    .single()
+  return data
+}

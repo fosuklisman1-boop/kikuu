@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
-import { createPromoCard, updatePromoCard } from '@/lib/actions/promo-cards'
+import { X, Plus } from 'lucide-react'
+import { createPromoCard, updatePromoCard, fetchCouponByCode } from '@/lib/actions/promo-cards'
+import { createCoupon } from '@/lib/actions/coupons'
 import type { PromoCardWithCoupon } from '@/lib/supabase/types'
 
 // Active coupons passed down from the server page
@@ -42,6 +43,47 @@ export default function PromoCardForm({
 }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Locally created coupons (merged with prop list so they appear immediately)
+  const [extraCoupons, setExtraCoupons] = useState<CouponOption[]>([])
+  const allCoupons = [...coupons, ...extraCoupons]
+
+  // Inline new-coupon mini-form
+  const [showNewCoupon, setShowNewCoupon] = useState(false)
+  const [newCoupon, setNewCoupon] = useState({ code: '', type: 'free_shipping' as 'percentage' | 'fixed' | 'free_shipping', value: '', min_order_amount: '' })
+  const [savingCoupon, setSavingCoupon] = useState(false)
+  const [couponError, setCouponError] = useState('')
+
+  async function handleSaveCoupon() {
+    setCouponError('')
+    if (!newCoupon.code.trim()) { setCouponError('Code is required'); return }
+    const isFreeShipping = newCoupon.type === 'free_shipping'
+    const value = isFreeShipping ? 0 : parseFloat(newCoupon.value)
+    if (!isFreeShipping && (isNaN(value) || value <= 0)) { setCouponError('Value must be greater than 0'); return }
+
+    setSavingCoupon(true)
+    const result = await createCoupon({
+      code: newCoupon.code.toUpperCase().trim(),
+      type: newCoupon.type,
+      value,
+      min_order_amount: newCoupon.min_order_amount ? parseFloat(newCoupon.min_order_amount) : null,
+      active: true,
+    })
+    setSavingCoupon(false)
+
+    if (result.error) { setCouponError(result.error); return }
+
+    const created = await fetchCouponByCode(newCoupon.code)
+
+    if (created) {
+      const option: CouponOption = { id: created.id, code: created.code, type: created.type, value: created.value }
+      setExtraCoupons((prev) => [...prev, option])
+      setForm((f) => ({ ...f, coupon_id: created.id }))
+    }
+
+    setShowNewCoupon(false)
+    setNewCoupon({ code: '', type: 'free_shipping', value: '', min_order_amount: '' })
+  }
 
   const [form, setForm] = useState({
     heading: initial?.heading ?? '',
@@ -85,7 +127,7 @@ export default function PromoCardForm({
     if (result.error) { setError(result.error); return }
 
     if (initial) {
-      const linkedCoupon = coupons.find((c) => c.id === form.coupon_id) ?? null
+      const linkedCoupon = allCoupons.find((c) => c.id === form.coupon_id) ?? null
       onSaved({
         ...initial,
         ...payload,
@@ -152,10 +194,93 @@ export default function PromoCardForm({
             className={inputCls}
           >
             <option value="">— None —</option>
-            {coupons.map((c) => (
+            {allCoupons.map((c) => (
               <option key={c.id} value={c.id}>{couponLabel(c)}</option>
             ))}
           </select>
+          {!showNewCoupon && (
+            <button
+              type="button"
+              onClick={() => setShowNewCoupon(true)}
+              className="mt-1.5 inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-semibold"
+            >
+              <Plus size={12} /> New coupon
+            </button>
+          )}
+          {showNewCoupon && (
+            <div className="mt-2 bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">New Coupon</p>
+              {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Code *</label>
+                  <input
+                    value={newCoupon.code}
+                    onChange={(e) => setNewCoupon((n) => ({ ...n, code: e.target.value.toUpperCase() }))}
+                    placeholder="ACCRA200"
+                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Type</label>
+                  <select
+                    value={newCoupon.type}
+                    onChange={(e) => setNewCoupon((n) => ({ ...n, type: e.target.value as typeof n.type }))}
+                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500"
+                  >
+                    <option value="free_shipping">Free Shipping</option>
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed (GHS)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {newCoupon.type !== 'free_shipping' && (
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-0.5">Value *</label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={newCoupon.value}
+                      onChange={(e) => setNewCoupon((n) => ({ ...n, value: e.target.value }))}
+                      placeholder={newCoupon.type === 'percentage' ? '10' : '20.00'}
+                      className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-0.5">Min Order (GHS)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newCoupon.min_order_amount}
+                    onChange={(e) => setNewCoupon((n) => ({ ...n, min_order_amount: e.target.value }))}
+                    placeholder="200"
+                    className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSaveCoupon}
+                  disabled={savingCoupon}
+                  className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                >
+                  {savingCoupon ? 'Saving…' : 'Save Coupon'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowNewCoupon(false); setCouponError('') }}
+                  className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
