@@ -195,7 +195,7 @@ export type PromoCard = Database['public']['Tables']['promo_cards']['Row']
 
 // PromoCard with the joined coupon (used in admin list and homepage)
 export interface PromoCardWithCoupon extends PromoCard {
-  coupons: { code: string; type: string; value: number } | null
+  coupons: { code: string; type: 'percentage' | 'fixed' | 'free_shipping'; value: number } | null
 }
 
 // Flash sale with items + joined product data
