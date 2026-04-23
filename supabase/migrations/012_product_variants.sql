@@ -2,7 +2,7 @@
 create table product_colors (
   id          uuid primary key default gen_random_uuid(),
   name        text not null unique,
-  hex         text not null check (hex ~ '^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$'),
+  hex         text not null check (hex ~ '^#[0-9a-fA-F]{6}$'),
   sort_order  int  not null default 0,
   active      boolean not null default true,
   created_at  timestamptz not null default now()

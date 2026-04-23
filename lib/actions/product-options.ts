@@ -34,6 +34,8 @@ export async function createProductColor(data: { name: string; hex: string }) {
   const { error } = await admin.from('product_colors').insert({
     name: data.name.trim(),
     hex: data.hex.toLowerCase(),
+    sort_order: 0,
+    active: true,
   })
   if (error) return { error: error.code === '23505' ? 'A color with that name already exists' : error.message }
   revalidate()
@@ -45,6 +47,8 @@ export async function createProductSize(data: { name: string }) {
   const admin = createAdminClient()
   const { error } = await admin.from('product_sizes').insert({
     name: data.name.trim(),
+    sort_order: 0,
+    active: true,
   })
   if (error) return { error: error.code === '23505' ? 'A size with that name already exists' : error.message }
   revalidate()
