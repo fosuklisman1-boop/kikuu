@@ -40,14 +40,15 @@ export default function ProductOptionsManager({
     if (result.error) { setColorError(result.error); return }
     setColors((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), name: newColorName.trim(), hex: newColorHex.toLowerCase(), sort_order: prev.length, active: true, created_at: '' },
+      { id: Date.now().toString(), name: newColorName.trim(), hex: newColorHex.toLowerCase(), sort_order: prev.length, active: true, created_at: '' },
     ])
     setNewColorName('')
     setNewColorHex('#000000')
   }
 
   async function handleDeleteColor(id: string) {
-    await deleteProductColor(id)
+    const result = await deleteProductColor(id)
+    if (result.error) { setColorError(result.error); return }
     setColors((prev) => prev.filter((c) => c.id !== id))
   }
 
@@ -60,13 +61,14 @@ export default function ProductOptionsManager({
     if (result.error) { setSizeError(result.error); return }
     setSizes((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), name: newSizeName.trim(), sort_order: prev.length, active: true, created_at: '' },
+      { id: Date.now().toString(), name: newSizeName.trim(), sort_order: prev.length, active: true, created_at: '' },
     ])
     setNewSizeName('')
   }
 
   async function handleDeleteSize(id: string) {
-    await deleteProductSize(id)
+    const result = await deleteProductSize(id)
+    if (result.error) { setSizeError(result.error); return }
     setSizes((prev) => prev.filter((s) => s.id !== id))
   }
 
