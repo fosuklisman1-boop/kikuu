@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchBanners } from '@/lib/actions/banners'
 import { fetchActiveFlashSale, getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import { fetchBrands } from '@/lib/actions/brands'
+import { fetchActivePromoCards } from '@/lib/actions/promo-cards'
 import HeroCarousel from '@/components/store/HeroCarousel'
 import FlashSalesSection from '@/components/store/FlashSalesSection'
 import CategoryGrid from '@/components/store/CategoryGrid'
@@ -18,7 +19,7 @@ import NewsletterForm from '@/components/store/NewsletterForm'
 export default async function HomePage() {
   const supabase = await createClient()
 
-  const [banners, flashSale, brands, { data: deals }, { data: products }, { data: categories }] = await Promise.all([
+  const [banners, flashSale, brands, { data: deals }, { data: products }, { data: categories }, promoCards] = await Promise.all([
       fetchBanners(),
       fetchActiveFlashSale(),
       fetchBrands(),
@@ -41,10 +42,19 @@ export default async function HomePage() {
         .select('*')
         .is('parent_id', null)
         .order('sort_order'),
+      fetchActivePromoCards(),
     ])
 
   const allProductIds = [...(deals ?? []), ...(products ?? [])].map((p) => (p as any).id)
   const salePrices = await getFlashSalePriceMap(allProductIds)
+
+  const THEME_STYLES: Record<string, { gradient: string; accent: string; accentBg: string; border: string }> = {
+    amber:  { gradient: 'from-[#fdf3e3] via-[#faecd8] to-[#f5d5a0]', accent: '#b45309', accentBg: 'rgba(180,83,9,0.1)', border: '#ede8df' },
+    green:  { gradient: 'from-[#f0fdf4] via-[#dcfce7] to-[#bbf7d0]',  accent: '#15803d', accentBg: 'rgba(21,128,61,0.1)',  border: '#bbf7d0' },
+    blue:   { gradient: 'from-[#eff6ff] via-[#dbeafe] to-[#bfdbfe]',  accent: '#1d4ed8', accentBg: 'rgba(29,78,216,0.1)',  border: '#bfdbfe' },
+    purple: { gradient: 'from-[#faf5ff] via-[#ede9fe] to-[#ddd6fe]',  accent: '#7c3aed', accentBg: 'rgba(124,58,237,0.1)', border: '#ddd6fe' },
+    red:    { gradient: 'from-[#fff1f2] via-[#ffe4e6] to-[#fecdd3]',  accent: '#be123c', accentBg: 'rgba(190,18,60,0.1)',   border: '#fecdd3' },
+  }
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -135,29 +145,64 @@ export default async function HomePage() {
         </section>
       </AnimateIn>
 
-      {/* Promo banner */}
-      <AnimateIn direction="up" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#fdf3e3] via-[#faecd8] to-[#f5d5a0] p-8 md:p-12 border border-[#ede8df]">
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 bg-[#b45309]/10 text-[#b45309] text-xs font-bold px-3 py-1.5 rounded-full mb-4">
-              <Zap size={12} className="fill-current" />
-              Limited Time Offer
-            </div>
-            <h3 className="text-3xl md:text-4xl font-extrabold text-[#0a0a0a] mb-4">
-              Free Delivery in Accra
-            </h3>
-            <p className="text-[#6b6360] mb-6 max-w-sm text-sm md:text-base">
-              On all orders over GHS 200. Use code{' '}
-              <span className="font-bold bg-white px-2 py-0.5 rounded-lg border border-[#ede8df]">ACCRA200</span>
-            </p>
-            <Link href="/products" className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#1a1a1a] transition-colors shadow-lg">
-              Shop Now <ArrowRight size={16} />
-            </Link>
+      {/* Promo cards — dynamic from DB */}
+      {promoCards.length > 0 && (
+        <AnimateIn direction="up" className="max-w-7xl mx-auto px-4 py-16">
+          <div className={`grid gap-6 ${promoCards.length > 1 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+            {promoCards.map((card) => {
+              const theme = THEME_STYLES[card.color_theme] ?? THEME_STYLES.amber
+              return (
+                <div
+                  key={card.id}
+                  className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${theme.gradient} p-8 md:p-10 border`}
+                  style={{ borderColor: theme.border }}
+                >
+                  <div className="relative z-10">
+                    {card.badge_text && (
+                      <div
+                        className="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full mb-4"
+                        style={{ background: theme.accentBg, color: theme.accent }}
+                      >
+                        <Zap size={12} className="fill-current" />
+                        {card.badge_text}
+                      </div>
+                    )}
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-[#0a0a0a] mb-3">
+                      {card.heading}
+                    </h3>
+                    {card.subtext && (
+                      <p className="text-[#6b6360] mb-4 max-w-sm text-sm md:text-base">
+                        {card.subtext}
+                      </p>
+                    )}
+                    {card.coupons && (
+                      <p className="text-[#6b6360] mb-5 text-sm">
+                        Use code{' '}
+                        <span
+                          className="font-bold bg-white px-2 py-0.5 rounded-lg border"
+                          style={{ borderColor: theme.border }}
+                        >
+                          {card.coupons.code}
+                        </span>
+                      </p>
+                    )}
+                    {card.cta_text && card.cta_link && (
+                      <Link
+                        href={card.cta_link}
+                        className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white font-bold px-5 py-2.5 rounded-xl hover:bg-[#1a1a1a] transition-colors shadow-lg text-sm"
+                      >
+                        {card.cta_text} <ArrowRight size={15} />
+                      </Link>
+                    )}
+                  </div>
+                  <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full" style={{ background: theme.accentBg }} />
+                  <div className="absolute -right-20 bottom-0 w-64 h-64 rounded-full" style={{ background: theme.accentBg, opacity: 0.5 }} />
+                </div>
+              )
+            })}
           </div>
-          <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-[#b45309]/10" />
-          <div className="absolute -right-20 bottom-0 w-72 h-72 rounded-full bg-[#b45309]/5" />
-        </div>
-      </AnimateIn>
+        </AnimateIn>
+      )}
 
       {/* Newsletter CTA */}
       <AnimateIn direction="up" className="max-w-7xl mx-auto px-4 pb-16">
