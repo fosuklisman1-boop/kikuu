@@ -9,6 +9,30 @@ function revalidate() {
   revalidatePath('/')
 }
 
+function sanitize(data: {
+  heading: string
+  subtext?: string | null
+  badge_text?: string | null
+  cta_text?: string | null
+  cta_link?: string | null
+  color_theme: 'amber' | 'green' | 'blue' | 'purple' | 'red'
+  coupon_id?: string | null
+  sort_order?: number
+  active?: boolean
+}) {
+  return {
+    heading: data.heading.trim(),
+    subtext: data.subtext?.trim() || null,
+    badge_text: data.badge_text?.trim() || null,
+    cta_text: data.cta_text?.trim() || null,
+    cta_link: data.cta_link?.trim() || null,
+    color_theme: data.color_theme,
+    coupon_id: data.coupon_id || null,
+    sort_order: data.sort_order ?? 0,
+    active: data.active ?? true,
+  }
+}
+
 export async function fetchPromoCardsAdmin(): Promise<PromoCardWithCoupon[]> {
   const admin = createAdminClient()
   const { data } = await admin
@@ -43,17 +67,7 @@ export async function createPromoCard(data: {
   const admin = createAdminClient()
   const { data: row, error } = await admin
     .from('promo_cards')
-    .insert({
-      heading: data.heading.trim(),
-      subtext: data.subtext?.trim() || null,
-      badge_text: data.badge_text?.trim() || null,
-      cta_text: data.cta_text?.trim() || null,
-      cta_link: data.cta_link?.trim() || null,
-      color_theme: data.color_theme,
-      coupon_id: data.coupon_id || null,
-      sort_order: data.sort_order ?? 0,
-      active: data.active ?? true,
-    })
+    .insert(sanitize(data))
     .select('*, coupons(code, type, value)')
     .single()
   if (error) return { error: error.message }
@@ -79,17 +93,7 @@ export async function updatePromoCard(
   const admin = createAdminClient()
   const { error } = await admin
     .from('promo_cards')
-    .update({
-      heading: data.heading.trim(),
-      subtext: data.subtext?.trim() || null,
-      badge_text: data.badge_text?.trim() || null,
-      cta_text: data.cta_text?.trim() || null,
-      cta_link: data.cta_link?.trim() || null,
-      color_theme: data.color_theme,
-      coupon_id: data.coupon_id || null,
-      sort_order: data.sort_order ?? 0,
-      active: data.active ?? true,
-    })
+    .update(sanitize(data))
     .eq('id', id)
   if (error) return { error: error.message }
   revalidate()
