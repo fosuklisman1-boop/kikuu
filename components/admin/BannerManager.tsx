@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { createAnnouncement, updateAnnouncement, deleteAnnouncement } from '@/lib/actions/announcements'
 import { createBanner, updateBanner, deleteBanner } from '@/lib/actions/banners'
+import { deletePromoCard, togglePromoCard } from '@/lib/actions/promo-cards'
 import { Plus, Trash2, Save, X } from 'lucide-react'
-import type { Banner } from '@/lib/supabase/types'
+import type { Banner, PromoCardWithCoupon } from '@/lib/supabase/types'
+import PromoCardForm, { type CouponOption } from '@/components/admin/PromoCardForm'
 
 interface Message {
   id: string
@@ -16,11 +18,15 @@ interface Message {
 export default function BannerManager({
   initialMessages,
   initialBanners,
+  initialPromoCards,
+  coupons,
 }: {
   initialMessages: Message[]
   initialBanners: Banner[]
+  initialPromoCards: PromoCardWithCoupon[]
+  coupons: CouponOption[]
 }) {
-  const [tab, setTab] = useState<'announcements' | 'carousel'>('announcements')
+  const [tab, setTab] = useState<'announcements' | 'carousel' | 'promo'>('announcements')
 
   // ── Announcements state ──────────────────────────────────────
   const [messages, setMessages] = useState(initialMessages)
@@ -68,12 +74,22 @@ export default function BannerManager({
     setEditingBanner(null)
   }
 
+  // ── Promo cards state ─────────────────────────────────────────
+  const [promoCards, setPromoCards] = useState<PromoCardWithCoupon[]>(initialPromoCards)
+  const [editingPromo, setEditingPromo] = useState<PromoCardWithCoupon | null>(null)
+  const [showPromoForm, setShowPromoForm] = useState(false)
+
+  function closePromoForm() {
+    setShowPromoForm(false)
+    setEditingPromo(null)
+  }
+
   // ── Render ───────────────────────────────────────────────────
   return (
     <div>
       {/* Tab switcher */}
       <div className="flex border-b border-gray-200 mb-6">
-        {(['announcements', 'carousel'] as const).map((t) => (
+        {(['announcements', 'carousel', 'promo'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -83,7 +99,7 @@ export default function BannerManager({
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'announcements' ? 'Announcement Bar' : 'Hero Carousel'}
+            {t === 'announcements' ? 'Announcement Bar' : t === 'carousel' ? 'Hero Carousel' : 'Promo Cards'}
           </button>
         ))}
       </div>
@@ -226,6 +242,96 @@ export default function BannerManager({
                     if (!confirm('Delete this slide?')) return
                     const result = await deleteBanner(b.id)
                     if (!result.error) setBanners((prev) => prev.filter((x) => x.id !== b.id))
+                  }}
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Promo Cards tab ── */}
+      {tab === 'promo' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-500">
+              {promoCards.length} card{promoCards.length !== 1 ? 's' : ''}
+            </p>
+            <button
+              onClick={() => { setEditingPromo(null); setShowPromoForm(true) }}
+              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            >
+              <Plus size={15} /> Add Card
+            </button>
+          </div>
+
+          {showPromoForm && (
+            <PromoCardForm
+              initial={editingPromo}
+              coupons={coupons}
+              onCancel={closePromoForm}
+              onSaved={(saved) => {
+                setPromoCards((prev) =>
+                  editingPromo
+                    ? prev.map((c) => (c.id === saved.id ? saved : c))
+                    : [...prev, saved]
+                )
+                closePromoForm()
+              }}
+            />
+          )}
+
+          {promoCards.length === 0 && !showPromoForm && (
+            <div className="text-center py-12 text-gray-400 text-sm">
+              No promo cards yet. Add one above.
+            </div>
+          )}
+
+          {promoCards.map((card) => (
+            <div key={card.id} className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <div
+                className="w-10 h-10 rounded-lg shrink-0"
+                style={{
+                  background: ({
+                    amber: '#b45309', green: '#15803d', blue: '#1d4ed8',
+                    purple: '#7c3aed', red: '#be123c',
+                  } as Record<string, string>)[card.color_theme] ?? '#b45309',
+                }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 text-sm truncate">{card.heading}</p>
+                <p className="text-gray-400 text-xs truncate">
+                  {card.coupons ? `Coupon: ${card.coupons.code}` : 'No coupon linked'}
+                  {' · '}Order: {card.sort_order}
+                </p>
+                <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${card.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                  {card.active ? 'Active' : 'Hidden'}
+                </span>
+              </div>
+              <div className="flex gap-3 shrink-0 items-center">
+                <button
+                  onClick={async () => {
+                    const result = await togglePromoCard(card.id, !card.active)
+                    if (!result.error) setPromoCards((prev) => prev.map((c) => c.id === card.id ? { ...c, active: !card.active } : c))
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
+                >
+                  {card.active ? 'Hide' : 'Show'}
+                </button>
+                <button
+                  onClick={() => { setEditingPromo(card); setShowPromoForm(true) }}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm('Delete this promo card?')) return
+                    const result = await deletePromoCard(card.id)
+                    if (!result.error) setPromoCards((prev) => prev.filter((c) => c.id !== card.id))
                   }}
                   className="text-xs text-red-500 hover:underline"
                 >
