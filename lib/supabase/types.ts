@@ -126,6 +126,29 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['promo_cards']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['promo_cards']['Insert']>
       }
+      product_colors: {
+        Row: {
+          id: string
+          name: string
+          hex: string
+          sort_order: number
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['product_colors']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['product_colors']['Insert']>
+      }
+      product_sizes: {
+        Row: {
+          id: string
+          name: string
+          sort_order: number
+          active: boolean
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['product_sizes']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['product_sizes']['Insert']>
+      }
       flash_sales: {
         Row: {
           id: string
@@ -192,6 +215,14 @@ export type FlashSaleItem = Database['public']['Tables']['flash_sale_items']['Ro
 export type Brand = Database['public']['Tables']['brands']['Row']
 export type TrendingSearch = Database['public']['Tables']['trending_searches']['Row']
 export type PromoCard = Database['public']['Tables']['promo_cards']['Row']
+export type ProductColor = Database['public']['Tables']['product_colors']['Row']
+export type ProductSize  = Database['public']['Tables']['product_sizes']['Row']
+
+export interface ProductVariantColor { name: string; hex: string }
+export interface ProductAttributes {
+  colors?: ProductVariantColor[]
+  sizes?: string[]
+}
 
 // PromoCard with the joined coupon (used in admin list and homepage)
 export interface PromoCardWithCoupon extends PromoCard {
@@ -212,6 +243,8 @@ export interface OrderItem {
   quantity: number
   is_preorder: boolean
   preorder_ship_date: string | null
+  selected_color?: { name: string; hex: string }
+  selected_size?: string
 }
 
 export interface SavedAddress {
