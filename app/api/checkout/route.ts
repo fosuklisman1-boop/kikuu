@@ -155,10 +155,15 @@ export async function POST(req: NextRequest) {
         const meetsMin = !coupon.min_order_amount || subtotal >= coupon.min_order_amount
 
         if (notExpired && underLimit && meetsMin) {
-          discountAmount =
-            coupon.type === 'percentage'
-              ? Math.round((subtotal * coupon.value) / 100 * 100) / 100
-              : Math.min(coupon.value, subtotal)
+          if (coupon.type === 'free_shipping') {
+            // discount equals the shipping fee — waives delivery entirely
+            discountAmount = shippingFee
+          } else {
+            discountAmount =
+              coupon.type === 'percentage'
+                ? Math.round((subtotal * coupon.value) / 100 * 100) / 100
+                : Math.min(coupon.value, subtotal)
+          }
           appliedCouponId = coupon.id
           appliedCouponUsedCount = coupon.used_count
         }

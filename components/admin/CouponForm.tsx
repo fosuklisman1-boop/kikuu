@@ -7,7 +7,7 @@ import { createCoupon, updateCoupon } from '@/lib/actions/coupons'
 interface Coupon {
   id: string
   code: string
-  type: 'percentage' | 'fixed'
+  type: 'percentage' | 'fixed' | 'free_shipping'
   value: number
   min_order_amount: number | null
   max_uses: number | null
@@ -37,14 +37,15 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    const value = parseFloat(form.value)
-    if (isNaN(value) || value <= 0) { setError('Value must be greater than 0'); return }
+    const isFreeShipping = form.type === 'free_shipping'
+    const value = isFreeShipping ? 0 : parseFloat(form.value)
+    if (!isFreeShipping && (isNaN(value) || value <= 0)) { setError('Value must be greater than 0'); return }
     if (form.type === 'percentage' && value > 100) { setError('Percentage cannot exceed 100'); return }
 
     setSaving(true)
     const data = {
       code: form.code,
-      type: form.type as 'percentage' | 'fixed',
+      type: form.type as 'percentage' | 'fixed' | 'free_shipping',
       value,
       min_order_amount: form.min_order_amount ? parseFloat(form.min_order_amount) : null,
       max_uses: form.max_uses ? parseInt(form.max_uses) : null,
@@ -88,22 +89,25 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
           <select value={form.type} onChange={(e) => set('type', e.target.value)} className={inputCls}>
             <option value="percentage">Percentage (%)</option>
             <option value="fixed">Fixed Amount (GHS)</option>
+            <option value="free_shipping">Free Shipping</option>
           </select>
         </div>
-        <div>
-          <label className={labelCls}>Value</label>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            max={form.type === 'percentage' ? 100 : undefined}
-            value={form.value}
-            onChange={(e) => set('value', e.target.value)}
-            required
-            placeholder={form.type === 'percentage' ? 'e.g. 10' : 'e.g. 20.00'}
-            className={inputCls}
-          />
-        </div>
+        {form.type !== 'free_shipping' && (
+          <div>
+            <label className={labelCls}>Value</label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              max={form.type === 'percentage' ? 100 : undefined}
+              value={form.value}
+              onChange={(e) => set('value', e.target.value)}
+              required
+              placeholder={form.type === 'percentage' ? 'e.g. 10' : 'e.g. 20.00'}
+              className={inputCls}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

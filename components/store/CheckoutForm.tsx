@@ -22,6 +22,7 @@ export default function CheckoutForm() {
   const [coupon, setCoupon] = useState('')
   const [couponApplied, setCouponApplied] = useState('')
   const [discount, setDiscount] = useState(0)
+  const [isFreeShipping, setIsFreeShipping] = useState(false)
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
   const [paymentType, setPaymentType] = useState<'paystack' | 'cod'>('paystack')
@@ -112,7 +113,9 @@ export default function CheckoutForm() {
 
   const feesLoaded = deliveryFees !== null
   const shippingFee = (feesLoaded && form.region) ? (deliveryFees![form.region] ?? 0) : null
-  const grandTotal = shippingFee !== null ? liveSubtotal + shippingFee - discount : null
+  // Free shipping coupons waive the delivery fee; regular coupons use the fixed discount amount
+  const effectiveDiscount = isFreeShipping ? (shippingFee ?? 0) : discount
+  const grandTotal = shippingFee !== null ? liveSubtotal + shippingFee - effectiveDiscount : null
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -128,9 +131,11 @@ export default function CheckoutForm() {
     if (result.error) {
       setCouponError(result.error)
       setDiscount(0)
+      setIsFreeShipping(false)
       setCouponApplied('')
     } else {
       setDiscount(result.discount)
+      setIsFreeShipping(result.freeShipping ?? false)
       setCouponApplied(coupon.toUpperCase().trim())
     }
   }
@@ -139,6 +144,7 @@ export default function CheckoutForm() {
     setCoupon('')
     setCouponApplied('')
     setDiscount(0)
+    setIsFreeShipping(false)
     setCouponError('')
   }
 
@@ -509,7 +515,7 @@ export default function CheckoutForm() {
                 <div className="flex items-center gap-2 text-sm text-[#b45309]">
                   <Tag size={13} />
                   <span className="font-bold">{couponApplied}</span>
-                  <span>— {formatGHS(discount)} off</span>
+                  <span>— {isFreeShipping ? 'Free delivery!' : `${formatGHS(discount)} off`}</span>
                 </div>
                 <button type="button" onClick={removeCoupon} className="text-[#b45309]/60 hover:text-[#b45309]">
                   <X size={14} />
@@ -555,10 +561,14 @@ export default function CheckoutForm() {
                   : formatGHS(shippingFee)}
               </span>
             </div>
-            {discount > 0 && (
+            {(discount > 0 || isFreeShipping) && (
               <div className="flex justify-between text-[#b45309]">
-                <span>Discount ({couponApplied})</span>
-                <span>−{formatGHS(discount)}</span>
+                <span>{isFreeShipping ? 'Free Delivery' : `Discount (${couponApplied})`}</span>
+                <span>
+                  {isFreeShipping
+                    ? shippingFee !== null ? `−${formatGHS(shippingFee)}` : '−GHS 0.00'
+                    : `−${formatGHS(discount)}`}
+                </span>
               </div>
             )}
             <div className="flex justify-between font-extrabold text-gray-900 border-t border-gray-100 pt-2 text-base">
