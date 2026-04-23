@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp, Palette } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -18,6 +18,7 @@ const NAV = [
   { href: '/admin/banner', label: 'Banner', icon: Megaphone },
   { href: '/admin/flash-sales', label: 'Flash Sales', icon: Zap },
   { href: '/admin/brands', label: 'Brands', icon: Building2 },
+  { href: '/admin/product-options', label: 'Product Options', icon: Palette },
   { href: '/admin/trending-searches', label: 'Trending', icon: TrendingUp },
 ]
 
