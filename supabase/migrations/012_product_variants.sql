@@ -2,10 +2,10 @@
 create table product_colors (
   id          uuid primary key default gen_random_uuid(),
   name        text not null unique,
-  hex         text not null,
+  hex         text not null check (hex ~ '^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$'),
   sort_order  int  not null default 0,
   active      boolean not null default true,
-  created_at  timestamptz default now()
+  created_at  timestamptz not null default now()
 );
 
 -- product_sizes: global pool of available sizes
@@ -14,7 +14,7 @@ create table product_sizes (
   name        text not null unique,
   sort_order  int  not null default 0,
   active      boolean not null default true,
-  created_at  timestamptz default now()
+  created_at  timestamptz not null default now()
 );
 
 -- RLS: anyone can read active entries; only admins can write
@@ -24,12 +24,12 @@ alter table product_sizes  enable row level security;
 create policy "Public read product_colors"
   on product_colors for select using (active = true);
 create policy "Admin manage product_colors"
-  on product_colors for all using (is_admin());
+  on product_colors for all using (is_admin()) with check (is_admin());
 
 create policy "Public read product_sizes"
   on product_sizes for select using (active = true);
 create policy "Admin manage product_sizes"
-  on product_sizes for all using (is_admin());
+  on product_sizes for all using (is_admin()) with check (is_admin());
 
 -- Seed common clothing sizes (sort_order 1-7) and shoe sizes (10-19)
 insert into product_sizes (name, sort_order) values
