@@ -16,6 +16,7 @@ const ProductSchema = z.object({
   status: z.enum(['active', 'draft', 'out_of_stock', 'pre_order']),
   featured: z.coerce.boolean().default(false),
   preorder_ship_date: z.string().optional().or(z.literal('')),
+  attributes: z.string().optional(),
 }).refine(
   (data) => data.status !== 'pre_order' || !!data.preorder_ship_date,
   { message: 'Expected ship date is required for pre-order products', path: ['preorder_ship_date'] }
@@ -28,7 +29,11 @@ export async function createProduct(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_ship_date, ...rest } = parsed.data
+  const { compare_at_price, preorder_ship_date, attributes: attributesJson, ...rest } = parsed.data
+  let attributes: Record<string, unknown> = {}
+  if (attributesJson) {
+    try { attributes = JSON.parse(attributesJson) } catch { /* ignore malformed */ }
+  }
   const admin = createAdminClient()
 
   // Handle images (array of URLs from Supabase Storage)
@@ -40,7 +45,7 @@ export async function createProduct(formData: FormData) {
     preorder_ship_date: rest.status === 'pre_order' ? (preorder_ship_date || null) : null,
     images,
     slug: slugify(rest.name),
-    attributes: {},
+    attributes,
   }).select().single()
 
   if (error) {
@@ -60,7 +65,11 @@ export async function updateProduct(id: string, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_ship_date, ...rest } = parsed.data
+  const { compare_at_price, preorder_ship_date, attributes: attributesJson, ...rest } = parsed.data
+  let attributes: Record<string, unknown> = {}
+  if (attributesJson) {
+    try { attributes = JSON.parse(attributesJson) } catch { /* ignore malformed */ }
+  }
   const admin = createAdminClient()
   const images = formData.getAll('images').filter(Boolean) as string[]
 
@@ -70,6 +79,7 @@ export async function updateProduct(id: string, formData: FormData) {
     preorder_ship_date: rest.status === 'pre_order' ? (preorder_ship_date || null) : null,
     images,
     slug: slugify(rest.name),
+    attributes,
   }).eq('id', id)
 
   if (error) return { error: { _: [error.message] } }

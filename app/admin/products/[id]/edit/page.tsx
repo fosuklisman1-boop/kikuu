@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchProductColors, fetchProductSizes } from '@/lib/actions/product-options'
 import ProductForm from '@/components/admin/ProductForm'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -14,9 +15,11 @@ export default async function EditProductPage({ params }: Props) {
   const { id } = await params
   const admin = createAdminClient()
 
-  const [{ data: product }, { data: categories }] = await Promise.all([
+  const [{ data: product }, { data: categories }, allColors, allSizes] = await Promise.all([
     admin.from('products').select('*').eq('id', id).single(),
     admin.from('categories').select('id, name, parent_id').order('name'),
+    fetchProductColors(),
+    fetchProductSizes(),
   ])
 
   if (!product) notFound()
@@ -24,7 +27,7 @@ export default async function EditProductPage({ params }: Props) {
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Product</h1>
-      <ProductForm categories={categories ?? []} product={product} />
+      <ProductForm categories={categories ?? []} product={product} allColors={allColors} allSizes={allSizes} />
     </div>
   )
 }

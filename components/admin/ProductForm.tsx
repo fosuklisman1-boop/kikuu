@@ -1,21 +1,46 @@
 'use client'
 
 import { createProduct, updateProduct, uploadProductImage } from '@/lib/actions/products'
+import { createProductColor, createProductSize } from '@/lib/actions/product-options'
 import type { Product, Category } from '@/lib/supabase/types'
+import type { ProductColor, ProductSize, ProductAttributes, ProductVariantColor } from '@/lib/supabase/types'
 import { useState, useRef } from 'react'
 import { X, Upload } from 'lucide-react'
 
 interface Props {
   product?: Product
   categories: Pick<Category, 'id' | 'name' | 'parent_id'>[]
+  allColors: ProductColor[]
+  allSizes: ProductSize[]
 }
 
-export default function ProductForm({ product, categories }: Props) {
+export default function ProductForm({ product, categories, allColors, allSizes }: Props) {
   const [images, setImages] = useState<string[]>(product?.images ?? [])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [selectedStatus, setSelectedStatus] = useState(product?.status ?? 'draft')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const attrs = (product?.attributes ?? {}) as ProductAttributes
+  const [selectedColors, setSelectedColors] = useState<ProductVariantColor[]>(attrs.colors ?? [])
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(attrs.sizes ?? [])
+  const [extraColors, setExtraColors] = useState<ProductColor[]>([])
+  const [extraSizes, setExtraSizes] = useState<ProductSize[]>([])
+  const allAvailableColors = [...allColors, ...extraColors]
+  const allAvailableSizes = [...allSizes, ...extraSizes]
+
+  // Inline new color form
+  const [showNewColor, setShowNewColor] = useState(false)
+  const [newColorName, setNewColorName] = useState('')
+  const [newColorHex, setNewColorHex] = useState('#000000')
+  const [addingColor, setAddingColor] = useState(false)
+  const [colorAddError, setColorAddError] = useState('')
+
+  // Inline new size form
+  const [showNewSize, setShowNewSize] = useState(false)
+  const [newSizeName, setNewSizeName] = useState('')
+  const [addingSize, setAddingSize] = useState(false)
+  const [sizeAddError, setSizeAddError] = useState('')
 
   const parentCats = categories.filter((c) => !c.parent_id)
   const childCats = categories.filter((c) => c.parent_id)
@@ -35,8 +60,45 @@ export default function ProductForm({ product, categories }: Props) {
     if (fileRef.current) fileRef.current.value = ''
   }
 
+  async function handleAddColor() {
+    setColorAddError('')
+    if (!newColorName.trim()) { setColorAddError('Name is required'); return }
+    setAddingColor(true)
+    const result = await createProductColor({ name: newColorName, hex: newColorHex })
+    setAddingColor(false)
+    if (result.error) { setColorAddError(result.error); return }
+    const newOpt: ProductColor = {
+      id: Date.now().toString(), name: newColorName.trim(),
+      hex: newColorHex.toLowerCase(), sort_order: allAvailableColors.length,
+      active: true, created_at: '',
+    }
+    setExtraColors((prev) => [...prev, newOpt])
+    setSelectedColors((prev) => [...prev, { name: newOpt.name, hex: newOpt.hex }])
+    setShowNewColor(false)
+    setNewColorName('')
+    setNewColorHex('#000000')
+  }
+
+  async function handleAddSize() {
+    setSizeAddError('')
+    if (!newSizeName.trim()) { setSizeAddError('Name is required'); return }
+    setAddingSize(true)
+    const result = await createProductSize({ name: newSizeName })
+    setAddingSize(false)
+    if (result.error) { setSizeAddError(result.error); return }
+    const newOpt: ProductSize = {
+      id: Date.now().toString(), name: newSizeName.trim(),
+      sort_order: allAvailableSizes.length, active: true, created_at: '',
+    }
+    setExtraSizes((prev) => [...prev, newOpt])
+    setSelectedSizes((prev) => [...prev, newOpt.name])
+    setShowNewSize(false)
+    setNewSizeName('')
+  }
+
   async function handleSubmit(formData: FormData) {
     images.forEach((url) => formData.append('images', url))
+    formData.set('attributes', JSON.stringify({ colors: selectedColors, sizes: selectedSizes }))
     const result = product
       ? await updateProduct(product.id, formData)
       : await createProduct(formData)
@@ -136,6 +198,109 @@ export default function ProductForm({ product, categories }: Props) {
           placeholder="Describe the product..."
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500 resize-none"
         />
+      </div>
+
+      {/* Colors */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Colors</label>
+        <select
+          multiple
+          size={Math.min(allAvailableColors.length + 1, 5)}
+          value={selectedColors.map((c) => c.name)}
+          onChange={(e) => {
+            const chosen = Array.from(e.target.selectedOptions).map((o) => o.value)
+            setSelectedColors(
+              allAvailableColors
+                .filter((c) => chosen.includes(c.name))
+                .map((c) => ({ name: c.name, hex: c.hex }))
+            )
+          }}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+        >
+          {allAvailableColors.map((c) => (
+            <option key={c.id} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {selectedColors.length > 0 && (
+          <p className="text-xs text-gray-400 mt-1">
+            Selected: {selectedColors.map((c) => c.name).join(', ')}
+          </p>
+        )}
+        {!showNewColor ? (
+          <button type="button" onClick={() => setShowNewColor(true)}
+            className="mt-1.5 text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
+            + Add color
+          </button>
+        ) : (
+          <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+            {colorAddError && <p className="text-red-500 text-xs">{colorAddError}</p>}
+            <div className="flex gap-2">
+              <input value={newColorName} onChange={(e) => setNewColorName(e.target.value)}
+                placeholder="Name (e.g. Red)" className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500" />
+              <input type="color" value={newColorHex} onChange={(e) => setNewColorHex(e.target.value)}
+                className="w-9 h-8 rounded border border-gray-200 cursor-pointer" />
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleAddColor} disabled={addingColor}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50">
+                {addingColor ? 'Adding…' : 'Add'}
+              </button>
+              <button type="button" onClick={() => { setShowNewColor(false); setColorAddError('') }}
+                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Sizes */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Sizes</label>
+        <select
+          multiple
+          size={Math.min(allAvailableSizes.length + 1, 7)}
+          value={selectedSizes}
+          onChange={(e) => {
+            setSelectedSizes(Array.from(e.target.selectedOptions).map((o) => o.value))
+          }}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+        >
+          {allAvailableSizes.map((s) => (
+            <option key={s.id} value={s.name}>{s.name}</option>
+          ))}
+        </select>
+        {selectedSizes.length > 0 && (
+          <p className="text-xs text-gray-400 mt-1">
+            Selected: {selectedSizes.join(', ')}
+          </p>
+        )}
+        {!showNewSize ? (
+          <button type="button" onClick={() => setShowNewSize(true)}
+            className="mt-1.5 text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
+            + Add size
+          </button>
+        ) : (
+          <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+            {sizeAddError && <p className="text-red-500 text-xs">{sizeAddError}</p>}
+            <div className="flex gap-2">
+              <input value={newSizeName} onChange={(e) => setNewSizeName(e.target.value)}
+                placeholder="e.g. XL or 42" className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500" />
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleAddSize} disabled={addingSize}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50">
+                {addingSize ? 'Adding…' : 'Add'}
+              </button>
+              <button type="button" onClick={() => { setShowNewSize(false); setSizeAddError('') }}
+                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Images */}
