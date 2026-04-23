@@ -2,16 +2,18 @@ export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Metadata } from 'next'
 import BannerManager from '@/components/admin/BannerManager'
+import { fetchPromoCardsAdmin } from '@/lib/actions/promo-cards'
+import type { PromoCardWithCoupon } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Banner Management' }
 
 export default async function BannerPage() {
   const admin = createAdminClient()
-  const [{ data: messages }, { data: banners }, { data: promoCards }, { data: coupons }] = await Promise.all([
+  const [{ data: messages }, { data: banners }, promoCards, { data: coupons }] = await Promise.all([
     admin.from('announcements').select('*').order('sort_order'),
     admin.from('banners').select('*').order('sort_order'),
-    admin.from('promo_cards').select('*, coupons(id,code)').order('sort_order'),
-    admin.from('coupons').select('id,code,type,value').order('code'),
+    fetchPromoCardsAdmin(),
+    admin.from('coupons').select('id, code, type, value').eq('active', true).order('code'),
   ])
 
   return (
@@ -25,7 +27,7 @@ export default async function BannerPage() {
       <BannerManager
         initialMessages={messages ?? []}
         initialBanners={banners ?? []}
-        initialPromoCards={(promoCards ?? []) as any}
+        initialPromoCards={promoCards}
         coupons={coupons ?? []}
       />
     </div>
