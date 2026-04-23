@@ -85,7 +85,6 @@ export default function PromoCardForm({
     if (result.error) { setError(result.error); return }
 
     if (initial) {
-      // Reconstruct updated card for optimistic UI
       const linkedCoupon = coupons.find((c) => c.id === form.coupon_id) ?? null
       onSaved({
         ...initial,
@@ -94,17 +93,16 @@ export default function PromoCardForm({
           ? { code: linkedCoupon.code, type: linkedCoupon.type as 'percentage' | 'fixed' | 'free_shipping', value: linkedCoupon.value }
           : null,
       })
-    } else {
-      // createPromoCard returns the full row with joined coupon
-      onSaved((result as any).data as PromoCardWithCoupon)
+    } else if ('data' in result && result.data) {
+      onSaved(result.data as PromoCardWithCoupon)
     }
   }
 
-  const inputCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500'
-  const labelCls = 'block text-xs font-medium text-gray-700 mb-1'
+  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100'
+  const labelCls = 'block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5'
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-50 rounded-xl border border-gray-200 p-5 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">{initial ? 'Edit Promo Card' : 'New Promo Card'}</h3>
         <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600">
