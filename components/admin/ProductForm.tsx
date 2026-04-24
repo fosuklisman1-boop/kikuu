@@ -5,7 +5,7 @@ import { createProductColor, createProductSize } from '@/lib/actions/product-opt
 import type { Product, Category } from '@/lib/supabase/types'
 import type { ProductColor, ProductSize, ProductAttributes, ProductVariantColor } from '@/lib/supabase/types'
 import { useState, useRef } from 'react'
-import { X, Upload } from 'lucide-react'
+import { X, Upload, Film } from 'lucide-react'
 
 interface Props {
   product?: Product
@@ -127,7 +127,11 @@ export default function ProductForm({ product, categories, allColors, allSizes }
       setVideoProgress(0)
       const res = await xhrUpload('/api/upload/video', file, setVideoProgress)
       if (res.error) { setError(res.error); setVideoProgress(null); break }
-      if (res.url) setVideos((prev) => [...prev, res.url!])
+      if (res.url) {
+        setVideos((prev) => [...prev, res.url!])
+      } else {
+        setError('Upload succeeded but no URL returned. Check server logs.')
+      }
       setVideoProgress(null)
     }
     if (videoRef.current) videoRef.current.value = ''
@@ -417,10 +421,12 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         <div className="flex flex-wrap gap-3 mb-3">
           {videos.map((url, i) => (
             <div key={i} className="relative w-20 h-20">
-              <video src={url} preload="metadata" className="w-full h-full object-cover rounded-lg border" muted />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-white text-xl drop-shadow">▶</span>
-              </div>
+              <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                <div className="w-full h-full bg-gray-800 rounded-lg border border-gray-300 flex flex-col items-center justify-center gap-1">
+                  <Film size={20} className="text-gray-300" />
+                  <span className="text-gray-400 text-[9px]">Video</span>
+                </div>
+              </a>
               <button
                 type="button"
                 onClick={() => setVideos((prev) => prev.filter((_, j) => j !== i))}

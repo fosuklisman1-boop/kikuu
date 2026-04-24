@@ -79,7 +79,13 @@ export default function ProductImages({
             >
               {m.type === 'video' ? (
                 <>
-                  <video src={m.url} preload="metadata" className="w-full h-full object-cover" muted />
+                  <video
+                  src={m.url}
+                  preload="metadata"
+                  onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).currentTime = 0.5 }}
+                  className="w-full h-full object-cover"
+                  muted
+                />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                     <span className="text-white text-lg leading-none">▶</span>
                   </div>
