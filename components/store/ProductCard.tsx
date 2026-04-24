@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { formatGHS } from '@/lib/utils'
-import type { Product } from '@/lib/supabase/types'
+import type { Product, ProductAttributes } from '@/lib/supabase/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Clock } from 'lucide-react'
 import { useCart } from '@/lib/cart'
@@ -25,6 +25,8 @@ export default function ProductCard({ product, salePrice }: { product: Product; 
 
   const isPreorder = product.status === 'pre_order'
   const outOfStock = product.stock_qty === 0 && !isPreorder
+  const attrs = (product.attributes ?? {}) as ProductAttributes
+  const hasVariants = (attrs.colors?.length ?? 0) > 0 || (attrs.sizes?.length ?? 0) > 0
   // Flash sale takes precedence over compare_at_price discount
   const hasDiscount = !onSale && product.compare_at_price && product.compare_at_price > product.price
   const discountPct = onSale
@@ -147,22 +149,32 @@ export default function ProductCard({ product, salePrice }: { product: Product; 
               </p>
             )}
 
-            {/* Add to Cart button */}
-            <button
-              onClick={handleAdd}
-              disabled={outOfStock}
-              className={`w-full py-2.5 rounded-xl text-[11px] font-bold tracking-wide transition-colors ${
-                added
-                  ? 'bg-green-500 text-white'
-                  : outOfStock
-                  ? 'bg-[#f5f0e8] text-[#a89e96] cursor-not-allowed'
-                  : isPreorder
-                  ? 'bg-[#b45309] hover:bg-[#92400e] text-white'
-                  : 'bg-[#b45309] hover:bg-[#92400e] text-white'
-              }`}
-            >
-              {added ? '✓ Added!' : isPreorder ? 'Pre-order Now' : outOfStock ? 'Out of Stock' : 'Add to Cart'}
-            </button>
+            {/* Add to Cart / Choose Options button */}
+            {hasVariants ? (
+              <Link
+                href={`/products/${product.slug}`}
+                onClick={(e) => e.stopPropagation()}
+                className="block w-full py-2.5 rounded-xl text-[11px] font-bold tracking-wide text-center bg-[#b45309] hover:bg-[#92400e] text-white transition-colors"
+              >
+                Choose Options
+              </Link>
+            ) : (
+              <button
+                onClick={handleAdd}
+                disabled={outOfStock}
+                className={`w-full py-2.5 rounded-xl text-[11px] font-bold tracking-wide transition-colors ${
+                  added
+                    ? 'bg-green-500 text-white'
+                    : outOfStock
+                    ? 'bg-[#f5f0e8] text-[#a89e96] cursor-not-allowed'
+                    : isPreorder
+                    ? 'bg-[#b45309] hover:bg-[#92400e] text-white'
+                    : 'bg-[#b45309] hover:bg-[#92400e] text-white'
+                }`}
+              >
+                {added ? '✓ Added!' : isPreorder ? 'Pre-order Now' : outOfStock ? 'Out of Stock' : 'Add to Cart'}
+              </button>
+            )}
           </div>
         </Link>
       </motion.div>

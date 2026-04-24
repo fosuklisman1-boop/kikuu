@@ -5,7 +5,8 @@ import { persist } from 'zustand/middleware'
 import type { Product } from '@/lib/supabase/types'
 
 export interface CartItem {
-  id: string
+  id: string           // composite key: productId__colorName__sizeName (or just productId if no variants)
+  product_id: string   // always the real product UUID — used for DB lookups
   name: string
   price: number
   image: string
@@ -13,6 +14,8 @@ export interface CartItem {
   stock_qty: number
   is_preorder: boolean
   preorder_ship_date: string | null
+  selected_color?: { name: string; hex: string }
+  selected_size?: string
 }
 
 function deriveCart(items: CartItem[]) {
@@ -38,7 +41,12 @@ interface CartStore {
   latestPreorderDate: string | null
   _hasHydrated: boolean
   setHasHydrated: (v: boolean) => void
-  addItem: (product: Product, qty?: number) => { error?: string }
+  addItem: (
+    product: Product,
+    qty?: number,
+    selectedColor?: { name: string; hex: string },
+    selectedSize?: string,
+  ) => { error?: string }
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clearCart: () => void
@@ -55,7 +63,7 @@ export const useCart = create<CartStore>()(
       _hasHydrated: false,
       setHasHydrated(v) { set({ _hasHydrated: v }) },
 
-      addItem(product, qty = 1) {
+      addItem(product, qty = 1, selectedColor, selectedSize) {
         const state = get()
         const isPreorder = product.status === 'pre_order'
 
@@ -70,20 +78,26 @@ export const useCart = create<CartStore>()(
           }
         }
 
-        const existing = state.items.find((i) => i.id === product.id)
+        // Composite ID keeps different variants as separate cart lines
+        const variantId = (selectedColor || selectedSize)
+          ? `${product.id}__${selectedColor?.name ?? ''}__${selectedSize ?? ''}`
+          : product.id
+
+        const existing = state.items.find((i) => i.id === variantId)
         let items: CartItem[]
         if (existing) {
           const newQty = isPreorder
             ? existing.quantity + qty
             : Math.min(existing.quantity + qty, product.stock_qty)
           items = state.items.map((i) =>
-            i.id === product.id ? { ...i, quantity: newQty } : i
+            i.id === variantId ? { ...i, quantity: newQty } : i
           )
         } else {
           items = [
             ...state.items,
             {
-              id: product.id,
+              id: variantId,
+              product_id: product.id,
               name: product.name,
               price: product.price,
               image: product.images[0] ?? '',
@@ -91,6 +105,8 @@ export const useCart = create<CartStore>()(
               stock_qty: product.stock_qty,
               is_preorder: isPreorder,
               preorder_ship_date: product.preorder_ship_date ?? null,
+              selected_color: selectedColor,
+              selected_size: selectedSize,
             },
           ]
         }

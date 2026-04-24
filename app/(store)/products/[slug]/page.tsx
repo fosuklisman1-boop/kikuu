@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
-import AddToCartButton from '@/components/store/AddToCartButton'
 import ProductImages from '@/components/store/ProductImages'
+import ProductVariantSection from '@/components/store/ProductVariantSection'
 import { CalendarClock, Zap } from 'lucide-react'
 import type { Metadata } from 'next'
+import type { ProductAttributes } from '@/lib/supabase/types'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -47,6 +48,10 @@ export default async function ProductPage({ params }: Props) {
 
   const isPreorder = product.status === 'pre_order'
   const inStock = product.stock_qty > 0 || isPreorder
+
+  const attrs = (product.attributes ?? {}) as ProductAttributes
+  const variantColors = attrs.colors ?? []
+  const variantSizes = attrs.sizes ?? []
   const hasDiscount = !onSale && product.compare_at_price && product.compare_at_price > product.price
   const discountPct = onSale
     ? Math.round(((product.price - salePrice) / product.price) * 100)
@@ -120,7 +125,13 @@ export default async function ProductPage({ params }: Props) {
             <p className="text-gray-600 text-sm mb-8">{product.description}</p>
           )}
 
-          <AddToCartButton product={product} disabled={!inStock} salePrice={onSale ? salePrice : undefined} />
+          <ProductVariantSection
+            product={product}
+            disabled={!inStock}
+            salePrice={onSale ? salePrice : undefined}
+            variantColors={variantColors}
+            variantSizes={variantSizes}
+          />
 
           <div className="mt-8 border-t pt-6 space-y-2 text-sm text-gray-500">
             <p>Delivery across all Ghana regions</p>
