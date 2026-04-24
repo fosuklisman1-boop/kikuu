@@ -202,39 +202,39 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       {/* Colors */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Colors</label>
-        <select
-          multiple
-          size={Math.min(allAvailableColors.length + 1, 5)}
-          value={selectedColors.map((c) => c.name)}
-          onChange={(e) => {
-            const chosen = Array.from(e.target.selectedOptions).map((o) => o.value)
-            setSelectedColors(
-              allAvailableColors
-                .filter((c) => chosen.includes(c.name))
-                .map((c) => ({ name: c.name, hex: c.hex }))
-            )
-          }}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
-        >
-          {allAvailableColors.map((c) => (
-            <option key={c.id} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        {selectedColors.length > 0 && (
-          <p className="text-xs text-gray-400 mt-1">
-            Selected: {selectedColors.map((c) => c.name).join(', ')}
-          </p>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Colors</label>
+        {allAvailableColors.length > 0 && (
+          <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 mb-2">
+            {allAvailableColors.map((c) => {
+              const checked = selectedColors.some((s) => s.name === c.name)
+              return (
+                <label key={c.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      setSelectedColors((prev) =>
+                        checked
+                          ? prev.filter((s) => s.name !== c.name)
+                          : [...prev, { name: c.name, hex: c.hex }]
+                      )
+                    }
+                    className="w-4 h-4 accent-green-600 shrink-0"
+                  />
+                  <span className="w-4 h-4 rounded-full border border-gray-200 shrink-0" style={{ background: c.hex }} />
+                  <span className="text-sm text-gray-800">{c.name}</span>
+                </label>
+              )
+            })}
+          </div>
         )}
         {!showNewColor ? (
           <button type="button" onClick={() => setShowNewColor(true)}
-            className="mt-1.5 text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
+            className="text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
             + Add color
           </button>
         ) : (
-          <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
             {colorAddError && <p className="text-red-500 text-xs">{colorAddError}</p>}
             <div className="flex gap-2">
               <input value={newColorName} onChange={(e) => setNewColorName(e.target.value)}
@@ -258,32 +258,38 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       {/* Sizes */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Sizes</label>
-        <select
-          multiple
-          size={Math.min(allAvailableSizes.length + 1, 7)}
-          value={selectedSizes}
-          onChange={(e) => {
-            setSelectedSizes(Array.from(e.target.selectedOptions).map((o) => o.value))
-          }}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
-        >
-          {allAvailableSizes.map((s) => (
-            <option key={s.id} value={s.name}>{s.name}</option>
-          ))}
-        </select>
-        {selectedSizes.length > 0 && (
-          <p className="text-xs text-gray-400 mt-1">
-            Selected: {selectedSizes.join(', ')}
-          </p>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Sizes</label>
+        {allAvailableSizes.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {allAvailableSizes.map((s) => {
+              const checked = selectedSizes.includes(s.name)
+              return (
+                <label key={s.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
+                  checked ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      setSelectedSizes((prev) =>
+                        checked ? prev.filter((n) => n !== s.name) : [...prev, s.name]
+                      )
+                    }
+                    className="w-3.5 h-3.5 accent-green-600 shrink-0"
+                  />
+                  {s.name}
+                </label>
+              )
+            })}
+          </div>
         )}
         {!showNewSize ? (
           <button type="button" onClick={() => setShowNewSize(true)}
-            className="mt-1.5 text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
+            className="text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
             + Add size
           </button>
         ) : (
-          <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
             {sizeAddError && <p className="text-red-500 text-xs">{sizeAddError}</p>}
             <div className="flex gap-2">
               <input value={newSizeName} onChange={(e) => setNewSizeName(e.target.value)}
