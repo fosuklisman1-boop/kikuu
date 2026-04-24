@@ -124,16 +124,34 @@ export default function ProductForm({ product, categories, allColors, allSizes }
     if (!files.length) return
     setError('')
     for (const file of files) {
-      console.log('[video] uploading', file.name, file.type, file.size)
+      if (file.size > 50 * 1024 * 1024) { setError('Max video size is 50 MB'); break }
       setVideoProgress(0)
-      const res = await xhrUpload('/api/upload/video', file, setVideoProgress)
-      console.log('[video] response', res)
-      if (res.error) { setError(res.error); setVideoProgress(null); break }
-      if (res.url) {
-        setVideos((prev) => { console.log('[video] new videos', [...prev, res.url!]); return [...prev, res.url!] })
-      } else {
-        setError('Upload succeeded but no URL returned. Check server logs.')
-      }
+
+      // Step 1: get a presigned upload URL (tiny request — avoids Vercel's 4.5 MB body limit)
+      const presignRes = await fetch('/api/upload/video/presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+      }).catch(() => null)
+      if (!presignRes?.ok) { setError('Could not initiate upload'); setVideoProgress(null); break }
+      const { signedUrl, publicUrl, error: presignErr } = await presignRes.json()
+      if (presignErr) { setError(presignErr); setVideoProgress(null); break }
+
+      // Step 2: PUT the file directly to Supabase (bypasses Vercel — no size limit)
+      const ok = await new Promise<boolean>((resolve) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('PUT', signedUrl)
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) setVideoProgress(Math.round((ev.loaded / ev.total) * 100))
+        }
+        xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300)
+        xhr.onerror = () => resolve(false)
+        xhr.send(file)
+      })
+      if (!ok) { setError('Upload failed. Please try again.'); setVideoProgress(null); break }
+
+      setVideos((prev) => [...prev, publicUrl])
       setVideoProgress(null)
     }
     if (videoRef.current) videoRef.current.value = ''
@@ -142,8 +160,6 @@ export default function ProductForm({ product, categories, allColors, allSizes }
   async function handleSubmit(formData: FormData) {
     images.forEach((url) => formData.append('images', url))
     videos.forEach((url) => formData.append('videos', url))
-    console.log('[submit] images', images, 'videos', videos)
-    console.log('[submit] formData videos', formData.getAll('videos'))
     formData.set('attributes', JSON.stringify({ colors: selectedColors, sizes: selectedSizes }))
     const result = product
       ? await updateProduct(product.id, formData)
