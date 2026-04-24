@@ -25,8 +25,11 @@ const CheckoutSchema = z.object({
     z.object({
       product_id: z.string().uuid(),
       quantity: z.number().int().min(1),
-      selected_color: z.object({ name: z.string(), hex: z.string() }).optional(),
-      selected_size: z.string().optional(),
+      selected_color: z.object({
+        name: z.string().max(100),
+        hex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      }).optional(),
+      selected_size: z.string().max(20).optional(),
     })
   ).min(1),
 })

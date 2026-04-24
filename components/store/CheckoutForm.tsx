@@ -108,7 +108,7 @@ export default function CheckoutForm() {
 
   // Use live (server-authoritative) prices when loaded — reflects active flash sales
   const liveSubtotal = livePrices
-    ? items.reduce((sum, i) => sum + (livePrices[i.id] ?? i.price) * i.quantity, 0)
+    ? items.reduce((sum, i) => sum + (livePrices[i.product_id] ?? i.price) * i.quantity, 0)
     : total
 
   const feesLoaded = deliveryFees !== null
@@ -508,7 +508,7 @@ export default function CheckoutForm() {
                   <p className="text-gray-800 line-clamp-1 font-medium">{item.name}</p>
                   <p className="text-gray-400 text-xs">×{item.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold shrink-0">{formatGHS((livePrices?.[item.id] ?? item.price) * item.quantity)}</p>
+                <p className="text-sm font-semibold shrink-0">{formatGHS((livePrices?.[item.product_id] ?? item.price) * item.quantity)}</p>
               </div>
             ))}
           </div>
