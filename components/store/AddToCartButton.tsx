@@ -10,10 +10,14 @@ export default function AddToCartButton({
   product,
   disabled,
   salePrice,
+  selectedColor,
+  selectedSize,
 }: {
   product: Product
   disabled?: boolean
   salePrice?: number
+  selectedColor?: { name: string; hex: string }
+  selectedSize?: string
 }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
@@ -24,7 +28,7 @@ export default function AddToCartButton({
     const itemToAdd = salePrice !== undefined && salePrice < product.price
       ? { ...product, price: salePrice }
       : product
-    const result = addItem(itemToAdd)
+    const result = addItem(itemToAdd, 1, selectedColor, selectedSize)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 5000)
