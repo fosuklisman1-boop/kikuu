@@ -138,8 +138,6 @@ export default function ProductForm({ product, categories, allColors, allSizes }
   }
 
   async function handleSubmit(formData: FormData) {
-    images.forEach((url) => formData.append('images', url))
-    videos.forEach((url) => formData.append('videos', url))
     formData.set('attributes', JSON.stringify({ colors: selectedColors, sizes: selectedSizes }))
     const result = product
       ? await updateProduct(product.id, formData)
@@ -152,6 +150,8 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
   return (
     <form action={handleSubmit} className="space-y-5 bg-white rounded-xl border p-6">
+      {images.map((url, i) => <input key={i} type="hidden" name="images" value={url} />)}
+      {videos.map((url, i) => <input key={i} type="hidden" name="videos" value={url} />)}
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
