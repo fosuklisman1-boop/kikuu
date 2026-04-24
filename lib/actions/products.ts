@@ -32,7 +32,9 @@ export async function createProduct(formData: FormData) {
   const { compare_at_price, preorder_ship_date, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
-    try { attributes = JSON.parse(attributesJson) } catch { /* ignore malformed */ }
+    try { attributes = JSON.parse(attributesJson) } catch {
+      return { error: { _: ['Invalid attributes data. Please try again.'] } }
+    }
   }
   const admin = createAdminClient()
 
@@ -68,7 +70,9 @@ export async function updateProduct(id: string, formData: FormData) {
   const { compare_at_price, preorder_ship_date, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
-    try { attributes = JSON.parse(attributesJson) } catch { /* ignore malformed */ }
+    try { attributes = JSON.parse(attributesJson) } catch {
+      return { error: { _: ['Invalid attributes data. Please try again.'] } }
+    }
   }
   const admin = createAdminClient()
   const images = formData.getAll('images').filter(Boolean) as string[]
