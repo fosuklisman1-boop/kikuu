@@ -205,6 +205,15 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         <label className="block text-sm font-medium text-gray-700 mb-2">Colors</label>
         {allAvailableColors.length > 0 && (
           <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 mb-2">
+            <label className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedColors.length === 0}
+                onChange={() => setSelectedColors([])}
+                className="w-4 h-4 accent-green-600 shrink-0"
+              />
+              <span className="text-sm text-gray-500 italic">None</span>
+            </label>
             {allAvailableColors.map((c) => {
               const checked = selectedColors.some((s) => s.name === c.name)
               return (
@@ -261,6 +270,17 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         <label className="block text-sm font-medium text-gray-700 mb-2">Sizes</label>
         {allAvailableSizes.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
+            <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
+              selectedSizes.length === 0 ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-200 text-gray-500 hover:border-gray-400'
+            }`}>
+              <input
+                type="checkbox"
+                checked={selectedSizes.length === 0}
+                onChange={() => setSelectedSizes([])}
+                className="w-3.5 h-3.5 accent-green-600 shrink-0"
+              />
+              <span className="italic">None</span>
+            </label>
             {allAvailableSizes.map((s) => {
               const checked = selectedSizes.includes(s.name)
               return (
