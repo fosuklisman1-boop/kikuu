@@ -417,7 +417,7 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         <div className="flex flex-wrap gap-3 mb-3">
           {videos.map((url, i) => (
             <div key={i} className="relative w-20 h-20">
-              <video src={url} className="w-full h-full object-cover rounded-lg border" muted />
+              <video src={url} preload="metadata" className="w-full h-full object-cover rounded-lg border" muted />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span className="text-white text-xl drop-shadow">▶</span>
               </div>
