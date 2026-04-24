@@ -158,8 +158,6 @@ export default function ProductForm({ product, categories, allColors, allSizes }
   }
 
   async function handleSubmit(formData: FormData) {
-    images.forEach((url) => formData.append('images', url))
-    videos.forEach((url) => formData.append('videos', url))
     formData.set('attributes', JSON.stringify({ colors: selectedColors, sizes: selectedSizes }))
     const result = product
       ? await updateProduct(product.id, formData)
