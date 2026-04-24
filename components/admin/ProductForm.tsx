@@ -124,11 +124,13 @@ export default function ProductForm({ product, categories, allColors, allSizes }
     if (!files.length) return
     setError('')
     for (const file of files) {
+      console.log('[video] uploading', file.name, file.type, file.size)
       setVideoProgress(0)
       const res = await xhrUpload('/api/upload/video', file, setVideoProgress)
+      console.log('[video] response', res)
       if (res.error) { setError(res.error); setVideoProgress(null); break }
       if (res.url) {
-        setVideos((prev) => [...prev, res.url!])
+        setVideos((prev) => { console.log('[video] new videos', [...prev, res.url!]); return [...prev, res.url!] })
       } else {
         setError('Upload succeeded but no URL returned. Check server logs.')
       }
@@ -138,6 +140,10 @@ export default function ProductForm({ product, categories, allColors, allSizes }
   }
 
   async function handleSubmit(formData: FormData) {
+    images.forEach((url) => formData.append('images', url))
+    videos.forEach((url) => formData.append('videos', url))
+    console.log('[submit] images', images, 'videos', videos)
+    console.log('[submit] formData videos', formData.getAll('videos'))
     formData.set('attributes', JSON.stringify({ colors: selectedColors, sizes: selectedSizes }))
     const result = product
       ? await updateProduct(product.id, formData)
