@@ -1,6 +1,6 @@
 'use client'
 
-import { createProduct, updateProduct, uploadProductImage, uploadProductVideo } from '@/lib/actions/products'
+import { createProduct, updateProduct } from '@/lib/actions/products'
 import { createProductColor, createProductSize } from '@/lib/actions/product-options'
 import type { Product, Category } from '@/lib/supabase/types'
 import type { ProductColor, ProductSize, ProductAttributes, ProductVariantColor } from '@/lib/supabase/types'
@@ -17,8 +17,8 @@ interface Props {
 export default function ProductForm({ product, categories, allColors, allSizes }: Props) {
   const [images, setImages] = useState<string[]>(product?.images ?? [])
   const [videos, setVideos] = useState<string[]>((product as any)?.videos ?? [])
-  const [uploading, setUploading] = useState(false)
-  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [imageProgress, setImageProgress] = useState<number | null>(null)
+  const [videoProgress, setVideoProgress] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [selectedStatus, setSelectedStatus] = useState(product?.status ?? 'draft')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -48,18 +48,38 @@ export default function ProductForm({ product, categories, allColors, allSizes }
   const parentCats = categories.filter((c) => !c.parent_id)
   const childCats = categories.filter((c) => c.parent_id)
 
+  function xhrUpload(
+    url: string,
+    file: File,
+    onProgress: (pct: number) => void,
+  ): Promise<{ url?: string; error?: string }> {
+    return new Promise((resolve) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url)
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
+      }
+      xhr.onload = () => {
+        try { resolve(JSON.parse(xhr.responseText)) } catch { resolve({ error: 'Upload failed' }) }
+      }
+      xhr.onerror = () => resolve({ error: 'Network error' })
+      xhr.send(fd)
+    })
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
-    setUploading(true)
+    setError('')
     for (const file of files) {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await uploadProductImage(fd)
-      if (res.error) { setError(res.error); break }
+      setImageProgress(0)
+      const res = await xhrUpload('/api/upload/image', file, setImageProgress)
+      if (res.error) { setError(res.error); setImageProgress(null); break }
       if (res.url) setImages((prev) => [...prev, res.url!])
+      setImageProgress(null)
     }
-    setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -102,15 +122,14 @@ export default function ProductForm({ product, categories, allColors, allSizes }
   async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
-    setUploadingVideo(true)
+    setError('')
     for (const file of files) {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await uploadProductVideo(fd)
-      if (res.error) { setError(res.error); break }
+      setVideoProgress(0)
+      const res = await xhrUpload('/api/upload/video', file, setVideoProgress)
+      if (res.error) { setError(res.error); setVideoProgress(null); break }
       if (res.url) setVideos((prev) => [...prev, res.url!])
+      setVideoProgress(null)
     }
-    setUploadingVideo(false)
     if (videoRef.current) videoRef.current.value = ''
   }
 
@@ -367,13 +386,21 @@ export default function ProductForm({ product, categories, allColors, allSizes }
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            disabled={uploading}
+            disabled={imageProgress !== null}
             className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-green-500 transition"
           >
             <Upload size={16} />
-            <span className="text-xs mt-1">{uploading ? '...' : 'Upload'}</span>
+            <span className="text-xs mt-1">{imageProgress !== null ? `${imageProgress}%` : 'Upload'}</span>
           </button>
         </div>
+        {imageProgress !== null && (
+          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+            <div
+              className="bg-green-500 h-1.5 rounded-full transition-all duration-150"
+              style={{ width: `${imageProgress}%` }}
+            />
+          </div>
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -406,14 +433,22 @@ export default function ProductForm({ product, categories, allColors, allSizes }
           <button
             type="button"
             onClick={() => videoRef.current?.click()}
-            disabled={uploadingVideo}
+            disabled={videoProgress !== null}
             className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-green-500 transition"
           >
             <Upload size={16} />
-            <span className="text-xs mt-1">{uploadingVideo ? '...' : 'Video'}</span>
+            <span className="text-xs mt-1">{videoProgress !== null ? `${videoProgress}%` : 'Video'}</span>
           </button>
         </div>
-        <p className="text-xs text-gray-400">MP4, WebM or MOV · max 50MB each</p>
+        {videoProgress !== null && (
+          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+            <div
+              className="bg-green-500 h-1.5 rounded-full transition-all duration-150"
+              style={{ width: `${videoProgress}%` }}
+            />
+          </div>
+        )}
+        <p className="text-xs text-gray-400 mt-2">MP4, WebM or MOV · max 50MB each</p>
         <input
           ref={videoRef}
           type="file"
