@@ -130,6 +130,21 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                     <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">PRE</span>
                   )}
                 </div>
+                {(item.selected_color || item.selected_size) && (
+                  <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-0.5">
+                    {item.selected_color && (
+                      <>
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border border-gray-200 inline-block shrink-0"
+                          style={{ background: item.selected_color.hex }}
+                        />
+                        <span>{item.selected_color.name}</span>
+                      </>
+                    )}
+                    {item.selected_color && item.selected_size && <span>·</span>}
+                    {item.selected_size && <span>{item.selected_size}</span>}
+                  </p>
+                )}
                 <p className="text-sm text-gray-500">Qty: {item.quantity} × {formatGHS(item.price)}</p>
                 {item.is_preorder && item.preorder_ship_date && (
                   <p className="text-xs text-orange-500">Ships by {new Date(item.preorder_ship_date).toLocaleDateString('en-GH')}</p>

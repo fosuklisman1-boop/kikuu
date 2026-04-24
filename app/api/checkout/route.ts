@@ -25,6 +25,8 @@ const CheckoutSchema = z.object({
     z.object({
       product_id: z.string().uuid(),
       quantity: z.number().int().min(1),
+      selected_color: z.object({ name: z.string(), hex: z.string() }).optional(),
+      selected_size: z.string().optional(),
     })
   ).min(1),
 })
@@ -99,6 +101,8 @@ export async function POST(req: NextRequest) {
         quantity: raw.quantity,
         is_preorder: product.status === 'pre_order',
         preorder_ship_date: product.preorder_ship_date ?? null,
+        selected_color: raw.selected_color,
+        selected_size: raw.selected_size,
       })
     }
 

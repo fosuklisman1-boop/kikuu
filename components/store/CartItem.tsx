@@ -56,6 +56,22 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           )}
         </div>
 
+        {(item.selected_color || item.selected_size) && (
+          <p className="text-xs text-gray-400 mb-1 flex items-center gap-1.5">
+            {item.selected_color && (
+              <>
+                <span
+                  className="w-3 h-3 rounded-full border border-gray-200 inline-block shrink-0"
+                  style={{ background: item.selected_color.hex }}
+                />
+                <span>{item.selected_color.name}</span>
+              </>
+            )}
+            {item.selected_color && item.selected_size && <span>·</span>}
+            {item.selected_size && <span>{item.selected_size}</span>}
+          </p>
+        )}
+
         <p className="text-[#b45309] font-semibold text-sm mb-3">{formatGHS(item.price)}</p>
 
         <div className="flex items-center gap-2">
