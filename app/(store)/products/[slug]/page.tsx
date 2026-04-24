@@ -62,7 +62,7 @@ export default async function ProductPage({ params }: Props) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-10">
-        <ProductImages images={product.images} name={product.name} />
+        <ProductImages images={product.images} videos={product.videos ?? []} name={product.name} />
 
         <div>
           <p className="text-sm text-green-600 mb-1">

@@ -1,6 +1,6 @@
 'use client'
 
-import { createProduct, updateProduct, uploadProductImage } from '@/lib/actions/products'
+import { createProduct, updateProduct, uploadProductImage, uploadProductVideo } from '@/lib/actions/products'
 import { createProductColor, createProductSize } from '@/lib/actions/product-options'
 import type { Product, Category } from '@/lib/supabase/types'
 import type { ProductColor, ProductSize, ProductAttributes, ProductVariantColor } from '@/lib/supabase/types'
@@ -16,10 +16,13 @@ interface Props {
 
 export default function ProductForm({ product, categories, allColors, allSizes }: Props) {
   const [images, setImages] = useState<string[]>(product?.images ?? [])
+  const [videos, setVideos] = useState<string[]>((product as any)?.videos ?? [])
   const [uploading, setUploading] = useState(false)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
   const [error, setError] = useState('')
   const [selectedStatus, setSelectedStatus] = useState(product?.status ?? 'draft')
   const fileRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLInputElement>(null)
 
   const attrs = (product?.attributes ?? {}) as ProductAttributes
   const [selectedColors, setSelectedColors] = useState<ProductVariantColor[]>(attrs.colors ?? [])
@@ -96,8 +99,24 @@ export default function ProductForm({ product, categories, allColors, allSizes }
     setNewSizeName('')
   }
 
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    setUploadingVideo(true)
+    for (const file of files) {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await uploadProductVideo(fd)
+      if (res.error) { setError(res.error); break }
+      if (res.url) setVideos((prev) => [...prev, res.url!])
+    }
+    setUploadingVideo(false)
+    if (videoRef.current) videoRef.current.value = ''
+  }
+
   async function handleSubmit(formData: FormData) {
     images.forEach((url) => formData.append('images', url))
+    videos.forEach((url) => formData.append('videos', url))
     formData.set('attributes', JSON.stringify({ colors: selectedColors, sizes: selectedSizes }))
     const result = product
       ? await updateProduct(product.id, formData)
@@ -362,6 +381,46 @@ export default function ProductForm({ product, categories, allColors, allSizes }
           multiple
           className="hidden"
           onChange={handleImageUpload}
+        />
+      </div>
+
+      {/* Videos */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Product Videos</label>
+        <div className="flex flex-wrap gap-3 mb-3">
+          {videos.map((url, i) => (
+            <div key={i} className="relative w-20 h-20">
+              <video src={url} className="w-full h-full object-cover rounded-lg border" muted />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-white text-xl drop-shadow">▶</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVideos((prev) => prev.filter((_, j) => j !== i))}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+              >
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => videoRef.current?.click()}
+            disabled={uploadingVideo}
+            className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-green-500 transition"
+          >
+            <Upload size={16} />
+            <span className="text-xs mt-1">{uploadingVideo ? '...' : 'Video'}</span>
+          </button>
+        </div>
+        <p className="text-xs text-gray-400">MP4, WebM or MOV · max 50MB each</p>
+        <input
+          ref={videoRef}
+          type="file"
+          accept="video/mp4,video/webm,video/quicktime"
+          multiple
+          className="hidden"
+          onChange={handleVideoUpload}
         />
       </div>
 

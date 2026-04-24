@@ -27,6 +27,7 @@ export interface Database {
           compare_at_price: number | null
           stock_qty: number
           images: string[]
+          videos: string[]
           status: 'active' | 'draft' | 'out_of_stock' | 'pre_order'
           preorder_ship_date: string | null
           featured: boolean

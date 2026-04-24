@@ -38,14 +38,15 @@ export async function createProduct(formData: FormData) {
   }
   const admin = createAdminClient()
 
-  // Handle images (array of URLs from Supabase Storage)
   const images = formData.getAll('images').filter(Boolean) as string[]
+  const videos = formData.getAll('videos').filter(Boolean) as string[]
 
   const { data, error } = await admin.from('products').insert({
     ...rest,
     compare_at_price: compare_at_price || null,
     preorder_ship_date: rest.status === 'pre_order' ? (preorder_ship_date || null) : null,
     images,
+    videos,
     slug: slugify(rest.name),
     attributes,
   }).select().single()
@@ -76,12 +77,14 @@ export async function updateProduct(id: string, formData: FormData) {
   }
   const admin = createAdminClient()
   const images = formData.getAll('images').filter(Boolean) as string[]
+  const videos = formData.getAll('videos').filter(Boolean) as string[]
 
   const { error } = await admin.from('products').update({
     ...rest,
     compare_at_price: compare_at_price || null,
     preorder_ship_date: rest.status === 'pre_order' ? (preorder_ship_date || null) : null,
     images,
+    videos,
     slug: slugify(rest.name),
     attributes,
   }).eq('id', id)
@@ -160,6 +163,32 @@ export async function confirmCodPayment(orderId: string) {
   revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath('/admin/orders')
   return { success: true }
+}
+
+export async function uploadProductVideo(formData: FormData) {
+  const file = formData.get('file') as File
+  if (!file) return { error: 'No file provided' }
+
+  const allowed = ['video/mp4', 'video/webm', 'video/quicktime']
+  if (!allowed.includes(file.type)) return { error: 'Only MP4, WebM, MOV allowed' }
+  if (file.size > 50 * 1024 * 1024) return { error: 'Max video size is 50MB' }
+
+  const admin = createAdminClient()
+  const ext = file.name.split('.').pop()
+  const path = `videos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  const { error } = await admin.storage.from('product-images').upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  })
+
+  if (error) return { error: error.message }
+
+  const { data: { publicUrl } } = admin.storage
+    .from('product-images')
+    .getPublicUrl(path)
+
+  return { url: publicUrl }
 }
 
 export async function uploadProductImage(formData: FormData) {
