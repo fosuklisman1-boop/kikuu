@@ -46,7 +46,7 @@ export default function CheckoutForm() {
   // Refresh prices from server (applies active flash sales) once cart is hydrated
   useEffect(() => {
     if (!_hasHydrated || !items.length) return
-    getCurrentPrices(items.map((i) => i.product_id)).then(setLivePrices)
+    getCurrentPrices(items.map((i) => i.product_id ?? i.id)).then(setLivePrices)
   }, [_hasHydrated, items.length])
 
   // Load delivery fees from DB, fall back to hardcoded if table missing/empty
@@ -108,7 +108,7 @@ export default function CheckoutForm() {
 
   // Use live (server-authoritative) prices when loaded — reflects active flash sales
   const liveSubtotal = livePrices
-    ? items.reduce((sum, i) => sum + (livePrices[i.product_id] ?? i.price) * i.quantity, 0)
+    ? items.reduce((sum, i) => sum + (livePrices[i.product_id ?? i.id] ?? i.price) * i.quantity, 0)
     : total
 
   const feesLoaded = deliveryFees !== null
@@ -177,7 +177,7 @@ export default function CheckoutForm() {
           coupon_code: couponApplied || undefined,
           payment_type: effectivePaymentType,
           items: items.map((i) => ({
-            product_id: i.product_id,
+            product_id: i.product_id ?? i.id,
             quantity: i.quantity,
             selected_color: i.selected_color,
             selected_size: i.selected_size,
@@ -508,7 +508,7 @@ export default function CheckoutForm() {
                   <p className="text-gray-800 line-clamp-1 font-medium">{item.name}</p>
                   <p className="text-gray-400 text-xs">×{item.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold shrink-0">{formatGHS((livePrices?.[item.product_id] ?? item.price) * item.quantity)}</p>
+                <p className="text-sm font-semibold shrink-0">{formatGHS((livePrices?.[item.product_id ?? item.id] ?? item.price) * item.quantity)}</p>
               </div>
             ))}
           </div>
