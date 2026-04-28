@@ -20,7 +20,7 @@ const CheckoutSchema = z.object({
   email: z.string().email(),
   address: AddressSchema,
   coupon_code: z.string().optional(),
-  payment_type: z.enum(['paystack', 'cod']).default('paystack'),
+  payment_type: z.literal('paystack').default('paystack'),
   items: z.array(
     z.object({
       product_id: z.string().uuid(),
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { email, address, items: rawItems, coupon_code, payment_type } = parsed.data
+    const { email, address, items: rawItems, coupon_code } = parsed.data
     const supabase = await createClient()
     const admin = createAdminClient()
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const [{ data: products, error: productsError }, { data: activeSale }] = await Promise.all([
       admin
         .from('products')
-        .select('id, name, price, images, stock_qty, status, preorder_ship_date')
+        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note')
         .in('id', productIds)
         .in('status', ['active', 'pre_order']),
       admin
@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const orderDate = new Date()
     const orderItems: OrderItem[] = []
     for (const raw of rawItems) {
       const product = products.find((p) => p.id === raw.product_id)
@@ -96,6 +97,15 @@ export async function POST(req: NextRequest) {
       if (product.status !== 'pre_order' && product.stock_qty < raw.quantity) {
         return NextResponse.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
       }
+
+      // Compute delivery date for pre-order items at purchase time
+      let itemPreorderShipDate: string | null = null
+      if (product.status === 'pre_order' && product.preorder_days) {
+        const d = new Date(orderDate)
+        d.setDate(d.getDate() + product.preorder_days)
+        itemPreorderShipDate = d.toISOString().split('T')[0]
+      }
+
       orderItems.push({
         product_id: product.id,
         product_name: product.name,
@@ -103,7 +113,8 @@ export async function POST(req: NextRequest) {
         price: flashPrices.get(product.id) ?? product.price,
         quantity: raw.quantity,
         is_preorder: product.status === 'pre_order',
-        preorder_ship_date: product.preorder_ship_date ?? null,
+        preorder_ship_date: itemPreorderShipDate,
+        preorder_note: product.preorder_note ?? null,
         selected_color: raw.selected_color,
         selected_size: raw.selected_size,
       })
@@ -116,14 +127,6 @@ export async function POST(req: NextRequest) {
       .map((i) => i.preorder_ship_date!)
       .sort()
     const latestPreorderDate = preorderDates.at(-1) ?? null
-
-    // Pre-order items must use COD
-    if (hasPreorder && payment_type === 'paystack') {
-      return NextResponse.json(
-        { error: 'Pre-order items require payment on delivery. Please select "Pay on Delivery".' },
-        { status: 400 }
-      )
-    }
 
     const subtotal = orderItems.reduce((s, i) => s + i.price * i.quantity, 0)
 
@@ -163,7 +166,6 @@ export async function POST(req: NextRequest) {
 
         if (notExpired && underLimit && meetsMin) {
           if (coupon.type === 'free_shipping') {
-            // discount equals the shipping fee — waives delivery entirely
             discountAmount = shippingFee
           } else {
             discountAmount =
@@ -179,12 +181,7 @@ export async function POST(req: NextRequest) {
 
     const total = subtotal + shippingFee - discountAmount
 
-    // Determine initial status and payment_status
-    const isCod = payment_type === 'cod'
-    const initialStatus = isCod ? 'confirmed' : 'pending'
-    const initialPaymentStatus = isCod ? 'awaiting_cod' : 'pending'
-
-    // Create order in DB
+    // Create order in DB — all orders go through Paystack, always start as pending
     const { data: order, error: orderError } = await admin
       .from('orders')
       .insert({
@@ -198,9 +195,9 @@ export async function POST(req: NextRequest) {
         shipping_fee: shippingFee,
         discount_amount: discountAmount,
         total,
-        status: initialStatus,
-        payment_type,
-        payment_status: initialPaymentStatus,
+        status: 'pending',
+        payment_type: 'paystack',
+        payment_status: 'pending',
         is_preorder: hasPreorder,
         pre_order_ship_date: latestPreorderDate,
         order_number: '', // set by trigger
@@ -222,15 +219,9 @@ export async function POST(req: NextRequest) {
         .eq('id', appliedCouponId)
     }
 
-    // Initial order event
-    let eventDescription: string
-    if (hasPreorder && isCod) {
-      eventDescription = `Pre-order placed. Payment collected on delivery.${latestPreorderDate ? ` Expected ship date: ${latestPreorderDate}.` : ''}`
-    } else if (isCod) {
-      eventDescription = 'Order placed. Payment will be collected on delivery.'
-    } else {
-      eventDescription = 'Your order has been placed and is awaiting payment.'
-    }
+    const eventDescription = hasPreorder
+      ? `Pre-order placed, awaiting payment.${latestPreorderDate ? ` Expected delivery: ${latestPreorderDate}.` : ''}`
+      : 'Your order has been placed and is awaiting payment.'
 
     await admin.from('order_events').insert({
       order_id: order.id,
@@ -238,26 +229,7 @@ export async function POST(req: NextRequest) {
       description: eventDescription,
     })
 
-    // COD path: for non-pre-order COD, decrement stock immediately (stock is reserved)
-    if (isCod && !hasPreorder) {
-      for (const item of orderItems) {
-        await admin.rpc('decrement_stock', {
-          p_product_id: item.product_id,
-          p_qty: item.quantity,
-        })
-      }
-    }
-
-    // COD: return immediately with no payment URL
-    if (isCod) {
-      return NextResponse.json({
-        order_id: order.id,
-        order_number: order.order_number,
-        payment_url: null,
-      })
-    }
-
-    // Paystack path: initialize payment
+    // Initialize Paystack payment
     const reference = generateReference(order.id)
     let payment
     try {
