@@ -147,7 +147,10 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                 )}
                 <p className="text-sm text-gray-500">Qty: {item.quantity} × {formatGHS(item.price)}</p>
                 {item.is_preorder && item.preorder_ship_date && (
-                  <p className="text-xs text-orange-500">Ships by {new Date(item.preorder_ship_date).toLocaleDateString('en-GH')}</p>
+                  <p className="text-xs text-orange-500">
+                    Delivers by {new Date(item.preorder_ship_date).toLocaleDateString('en-GH')}
+                    {item.preorder_note && ` · ${item.preorder_note}`}
+                  </p>
                 )}
               </div>
               <p className="font-semibold">{formatGHS(item.price * item.quantity)}</p>
