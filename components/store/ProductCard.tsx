@@ -143,9 +143,9 @@ export default function ProductCard({ product, salePrice }: { product: Product; 
               </p>
             )}
 
-            {isPreorder && product.preorder_ship_date && (
+            {isPreorder && product.preorder_days && (
               <p className="text-[10px] text-[#b45309] font-medium mb-2 tracking-wide">
-                Ships {new Date(product.preorder_ship_date).toLocaleDateString('en-GH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                Delivers in {product.preorder_days} days
               </p>
             )}
 
