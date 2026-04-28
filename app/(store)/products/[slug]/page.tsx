@@ -108,15 +108,17 @@ export default async function ProductPage({ params }: Props) {
           </div>
 
           {/* Pre-order info block */}
-          {isPreorder && product.preorder_ship_date && (
+          {isPreorder && product.preorder_days && (
             <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-6">
               <CalendarClock size={16} className="text-orange-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-orange-800">Pre-order Item</p>
                 <p className="text-xs text-orange-600 mt-0.5">
-                  Expected to ship by {new Date(product.preorder_ship_date).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Expected delivery within {product.preorder_days} days of purchase.
                 </p>
-                <p className="text-xs text-orange-500 mt-0.5">Payment is collected on delivery.</p>
+                {product.preorder_note && (
+                  <p className="text-xs text-orange-500 mt-0.5">{product.preorder_note}</p>
+                )}
               </div>
             </div>
           )}
@@ -135,10 +137,7 @@ export default async function ProductPage({ params }: Props) {
 
           <div className="mt-8 border-t pt-6 space-y-2 text-sm text-gray-500">
             <p>Delivery across all Ghana regions</p>
-            {isPreorder
-              ? <p>Pre-orders are paid on delivery when your item ships.</p>
-              : <p>Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer</p>
-            }
+            <p>Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer</p>
             <p>Secure checkout powered by Paystack</p>
           </div>
         </div>

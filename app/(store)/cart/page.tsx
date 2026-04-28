@@ -85,7 +85,7 @@ export default function CartPage() {
           <Clock size={15} className="text-orange-500 shrink-0 mt-0.5" />
           <p className="text-sm text-orange-800">
             <span className="font-semibold">Pre-order in cart.</span>{' '}
-            <span className="text-orange-700">Your order will be paid on delivery when it ships.</span>
+            <span className="text-orange-700">Payment is required upfront. Your item will be delivered once your order ships.</span>
           </p>
         </div>
       )}

@@ -14,9 +14,9 @@ export default async function AdminDashboard() {
     { data: revenueData },
     { count: totalProducts },
   ] = await Promise.all([
-    // Exclude unpaid Paystack ghost orders from all counts
-    admin.from('orders').select('*', { count: 'exact', head: true }).or('payment_type.eq.cod,status.neq.pending'),
-    admin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending').eq('payment_type', 'cod'),
+    // Exclude unpaid ghost orders (initiated but payment never completed)
+    admin.from('orders').select('*', { count: 'exact', head: true }).neq('status', 'pending'),
+    admin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
     admin.from('orders').select('total').in('status', ['paid', 'processing', 'shipped', 'delivered']),
     admin.from('products').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
@@ -26,14 +26,14 @@ export default async function AdminDashboard() {
   const stats = [
     { label: 'Total Revenue', value: formatGHS(totalRevenue), color: 'bg-green-500' },
     { label: 'Total Orders', value: String(totalOrders ?? 0), color: 'bg-blue-500' },
-    { label: 'Pending Orders', value: String(pendingOrders ?? 0), color: 'bg-yellow-500' },
+    { label: 'Paid (Unprocessed)', value: String(pendingOrders ?? 0), color: 'bg-yellow-500' },
     { label: 'Active Products', value: String(totalProducts ?? 0), color: 'bg-purple-500' },
   ]
 
   const { data: recentOrders } = await admin
     .from('orders')
     .select('id, order_number, buyer_name, total, status, created_at')
-    .or('payment_type.eq.cod,status.neq.pending')
+    .neq('status', 'pending')
     .order('created_at', { ascending: false })
     .limit(10)
 
