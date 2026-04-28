@@ -139,10 +139,8 @@ export async function POST(req: NextRequest) {
 
     let shippingFee: number
     if (feeRow) {
-      if (!feeRow.enabled) {
-        return NextResponse.json({ error: `Delivery is not available for ${address.region}` }, { status: 400 })
-      }
-      shippingFee = Number(feeRow.fee)
+      // Disabled means the platform doesn't charge — customer settles delivery directly with their rider
+      shippingFee = feeRow.enabled ? Number(feeRow.fee) : 0
     } else {
       shippingFee = SHIPPING_FEES[address.region] ?? 50
     }

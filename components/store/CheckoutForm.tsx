@@ -55,7 +55,8 @@ export default function CheckoutForm() {
       const map: Record<string, number> = {}
       if (!error && data && data.length > 0) {
         for (const row of data) {
-          if (row.enabled) map[row.region] = Number(row.fee)
+          // Disabled regions use 0 fee — customer settles delivery directly with their rider
+          map[row.region] = row.enabled ? Number(row.fee) : 0
         }
       } else {
         // Fallback to hardcoded fees
@@ -393,7 +394,7 @@ export default function CheckoutForm() {
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Region</label>
               <select name="region" value={form.region} onChange={handleChange} required className={inputCls}>
                 <option value="">Select Region</option>
-                {GHANA_REGIONS.filter((r) => !deliveryFees || deliveryFees[r] !== undefined).map((r) => (
+                {GHANA_REGIONS.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
