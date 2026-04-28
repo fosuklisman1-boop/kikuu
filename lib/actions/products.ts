@@ -15,11 +15,12 @@ const ProductSchema = z.object({
   stock_qty: z.coerce.number().int().min(0),
   status: z.enum(['active', 'draft', 'out_of_stock', 'pre_order']),
   featured: z.coerce.boolean().default(false),
-  preorder_ship_date: z.string().optional().or(z.literal('')),
+  preorder_days: z.coerce.number().int().min(1).optional().or(z.literal('')),
+  preorder_note: z.string().max(150).optional(),
   attributes: z.string().optional(),
 }).refine(
-  (data) => data.status !== 'pre_order' || !!data.preorder_ship_date,
-  { message: 'Expected ship date is required for pre-order products', path: ['preorder_ship_date'] }
+  (data) => data.status !== 'pre_order' || !!data.preorder_days,
+  { message: 'Days until delivery is required for pre-order products', path: ['preorder_days'] }
 )
 
 export async function createProduct(formData: FormData) {
@@ -29,7 +30,7 @@ export async function createProduct(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_ship_date, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -44,7 +45,8 @@ export async function createProduct(formData: FormData) {
   const { data, error } = await admin.from('products').insert({
     ...rest,
     compare_at_price: compare_at_price || null,
-    preorder_ship_date: rest.status === 'pre_order' ? (preorder_ship_date || null) : null,
+    preorder_days: rest.status === 'pre_order' ? (Number(preorder_days) || null) : null,
+    preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
     images,
     videos,
     slug: slugify(rest.name),
@@ -68,7 +70,7 @@ export async function updateProduct(id: string, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_ship_date, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -82,7 +84,8 @@ export async function updateProduct(id: string, formData: FormData) {
   const { error } = await admin.from('products').update({
     ...rest,
     compare_at_price: compare_at_price || null,
-    preorder_ship_date: rest.status === 'pre_order' ? (preorder_ship_date || null) : null,
+    preorder_days: rest.status === 'pre_order' ? (Number(preorder_days) || null) : null,
+    preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
     images,
     videos,
     slug: slugify(rest.name),
