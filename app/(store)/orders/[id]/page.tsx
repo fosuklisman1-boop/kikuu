@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Order Details' }
 
 interface Props {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ success?: string; cod?: string }>
+  searchParams: Promise<{ success?: string }>
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function OrderPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { success, cod } = await searchParams
+  const { success } = await searchParams
 
   // Try authenticated user first
   const supabase = await createClient()
@@ -97,20 +97,8 @@ export default async function OrderPage({ params, searchParams }: Props) {
         </div>
       )}
 
-      {/* COD success banner */}
-      {cod === '1' && (
-        <div className="bg-purple-50 border border-purple-200 rounded-2xl px-5 py-4 mb-6 flex items-start gap-3">
-          <span className="text-2xl">📦</span>
-          <div>
-            <p className="font-bold text-purple-800 text-sm">Order placed successfully!</p>
-            <p className="text-xs text-purple-700 mt-0.5">
-              Your order <span className="font-semibold">{order.order_number}</span> is confirmed. Payment will be collected when your order is delivered.
-            </p>
-          </div>
-        </div>
-      )}
 
-      <div className="flex items-center justify-between mb-6">
+<div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Order {order.order_number}</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -169,14 +157,21 @@ export default async function OrderPage({ params, searchParams }: Props) {
         <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 mb-6">
           <p className="text-sm font-semibold text-orange-800">This is a pre-order</p>
           {preorderShipDate ? (
-            <p className="text-xs text-orange-600 mt-1">
-              Expected to ship by{' '}
-              <span className="font-semibold">
-                {new Date(preorderShipDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
-            </p>
+            <>
+              <p className="text-xs text-orange-600 mt-1">
+                Expected delivery by{' '}
+                <span className="font-semibold">
+                  {new Date(preorderShipDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </p>
+              {items.find((i) => i.is_preorder && i.preorder_note)?.preorder_note && (
+                <p className="text-xs text-orange-500 mt-0.5">
+                  {items.find((i) => i.is_preorder && i.preorder_note)?.preorder_note}
+                </p>
+              )}
+            </>
           ) : (
-            <p className="text-xs text-orange-600 mt-1">Ship date will be confirmed soon.</p>
+            <p className="text-xs text-orange-600 mt-1">Delivery date will be confirmed soon.</p>
           )}
         </div>
       )}
