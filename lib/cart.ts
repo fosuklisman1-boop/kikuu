@@ -13,7 +13,8 @@ export interface CartItem {
   quantity: number
   stock_qty: number
   is_preorder: boolean
-  preorder_ship_date: string | null
+  preorder_days: number | null
+  preorder_note: string | null
   selected_color?: { name: string; hex: string }
   selected_size?: string
 }
@@ -21,15 +22,10 @@ export interface CartItem {
 function deriveCart(items: CartItem[]) {
   // qty=0 items are "pending removal" — excluded from totals/counts
   const active = items.filter((i) => i.quantity > 0)
-  const preorderDates = active
-    .filter((i) => i.is_preorder && i.preorder_ship_date)
-    .map((i) => i.preorder_ship_date!)
-    .sort()
   return {
     total: active.reduce((sum, i) => sum + i.price * i.quantity, 0),
     count: active.reduce((sum, i) => sum + i.quantity, 0),
     hasPreorderItems: active.some((i) => i.is_preorder),
-    latestPreorderDate: preorderDates.at(-1) ?? null,
   }
 }
 
@@ -38,7 +34,6 @@ interface CartStore {
   total: number
   count: number
   hasPreorderItems: boolean
-  latestPreorderDate: string | null
   _hasHydrated: boolean
   setHasHydrated: (v: boolean) => void
   addItem: (
@@ -59,7 +54,6 @@ export const useCart = create<CartStore>()(
       total: 0,
       count: 0,
       hasPreorderItems: false,
-      latestPreorderDate: null,
       _hasHydrated: false,
       setHasHydrated(v) { set({ _hasHydrated: v }) },
 
@@ -104,7 +98,8 @@ export const useCart = create<CartStore>()(
               quantity: isPreorder ? qty : Math.min(qty, product.stock_qty),
               stock_qty: product.stock_qty,
               is_preorder: isPreorder,
-              preorder_ship_date: product.preorder_ship_date ?? null,
+              preorder_days: product.preorder_days ?? null,
+              preorder_note: product.preorder_note ?? null,
               selected_color: selectedColor,
               selected_size: selectedSize,
             },
@@ -131,7 +126,7 @@ export const useCart = create<CartStore>()(
       },
 
       clearCart() {
-        set({ items: [], total: 0, count: 0, hasPreorderItems: false, latestPreorderDate: null })
+        set({ items: [], total: 0, count: 0, hasPreorderItems: false })
       },
     }),
     {
