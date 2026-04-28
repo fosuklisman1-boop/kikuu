@@ -9,12 +9,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function AddToCartButton({
   product,
   disabled,
+  selectionHint,
   salePrice,
   selectedColor,
   selectedSize,
 }: {
   product: Product
   disabled?: boolean
+  selectionHint?: string
   salePrice?: number
   selectedColor?: { name: string; hex: string }
   selectedSize?: string
@@ -52,9 +54,11 @@ export default function AddToCartButton({
 
       <motion.button
         onClick={handleAdd}
-        disabled={disabled || added}
+        disabled={disabled || !!selectionHint || added}
         className={`w-full flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl font-semibold text-base transition-all tracking-wide ${
-          disabled
+          selectionHint
+            ? 'bg-amber-50 text-amber-700 border-2 border-amber-200 cursor-pointer'
+            : disabled
             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
             : added
             ? 'bg-green-500 text-white'
@@ -62,8 +66,8 @@ export default function AddToCartButton({
             ? 'bg-orange-500 hover:bg-orange-400 active:bg-orange-600 text-white shadow-lg shadow-orange-500/20'
             : 'bg-green-600 hover:bg-green-500 active:bg-green-700 text-white shadow-lg shadow-green-600/20'
         }`}
-        whileHover={!disabled && !added ? { scale: 1.015 } : {}}
-        whileTap={!disabled ? { scale: 0.975 } : {}}
+        whileHover={!disabled && !selectionHint && !added ? { scale: 1.015 } : {}}
+        whileTap={!disabled && !selectionHint ? { scale: 0.975 } : {}}
       >
         <AnimatePresence mode="wait">
           {added ? (
@@ -85,7 +89,12 @@ export default function AddToCartButton({
               exit={{ opacity: 0, scale: 0.6 }}
               className="flex items-center gap-2"
             >
-              {disabled ? (
+              {selectionHint ? (
+                <>
+                  <ShoppingCart size={18} />
+                  {selectionHint}
+                </>
+              ) : disabled ? (
                 'Out of Stock'
               ) : isPreorder ? (
                 <>

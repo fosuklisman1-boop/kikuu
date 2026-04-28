@@ -42,12 +42,10 @@ export default function ProductVariantSection({
         onColorChange={setSelectedColor}
         onSizeChange={setSelectedSize}
       />
-      {hint && !disabled && (
-        <p className="text-xs text-amber-600 mb-3">{hint}</p>
-      )}
       <AddToCartButton
         product={product}
-        disabled={disabled || variantBlocked}
+        disabled={disabled}
+        selectionHint={!disabled && variantBlocked ? hint : undefined}
         salePrice={salePrice}
         selectedColor={selectedColor ?? undefined}
         selectedSize={selectedSize ?? undefined}
