@@ -98,7 +98,8 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
               <th className="px-4 py-3 text-left">Order</th>
@@ -157,6 +158,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
             ))}
           </tbody>
         </table>
+        </div>
         {!orders?.length && (
           <p className="text-center text-gray-400 py-12">No orders found.</p>
         )}

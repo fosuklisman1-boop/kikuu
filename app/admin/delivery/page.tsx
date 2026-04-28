@@ -35,16 +35,20 @@ export default async function DeliveryFeesPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-[1fr_120px_80px_80px] text-xs font-semibold uppercase tracking-wider text-gray-400 px-5 py-3 bg-gray-50 border-b border-gray-100">
-          <span>Region</span>
-          <span>Fee (GHS)</span>
-          <span className="text-center">Enabled</span>
-          <span></span>
-        </div>
-        <div className="divide-y divide-gray-50">
-          {rows.map((row) => (
-            <DeliveryFeeForm key={row.region} {...row} />
-          ))}
+        <div className="overflow-x-auto">
+          <div className="min-w-[400px]">
+            <div className="grid grid-cols-[1fr_120px_80px_80px] text-xs font-semibold uppercase tracking-wider text-gray-400 px-5 py-3 bg-gray-50 border-b border-gray-100">
+              <span>Region</span>
+              <span>Fee (GHS)</span>
+              <span className="text-center">Enabled</span>
+              <span></span>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {rows.map((row) => (
+                <DeliveryFeeForm key={row.region} {...row} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -27,7 +27,8 @@ export default async function AdminProductsPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
               <th className="px-4 py-3 text-left">Product</th>
@@ -90,6 +91,7 @@ export default async function AdminProductsPage() {
             ))}
           </tbody>
         </table>
+        </div>
         {!products?.length && (
           <p className="text-center text-gray-400 py-12">No products yet.</p>
         )}
