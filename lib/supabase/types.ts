@@ -29,7 +29,8 @@ export interface Database {
           images: string[]
           videos: string[]
           status: 'active' | 'draft' | 'out_of_stock' | 'pre_order'
-          preorder_ship_date: string | null
+          preorder_days: number | null
+          preorder_note: string | null
           featured: boolean
           brand_id: string | null
           attributes: Json
@@ -244,6 +245,7 @@ export interface OrderItem {
   quantity: number
   is_preorder: boolean
   preorder_ship_date: string | null
+  preorder_note: string | null
   selected_color?: { name: string; hex: string }
   selected_size?: string
 }
