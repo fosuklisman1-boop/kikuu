@@ -516,21 +516,40 @@ export default function ProductForm({ product, categories, allColors, allSizes }
       </div>
 
       {selectedStatus === 'pre_order' && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Expected Ship Date *
-          </label>
-          <input
-            name="preorder_ship_date"
-            type="date"
-            defaultValue={product?.preorder_ship_date ?? ''}
-            required={selectedStatus === 'pre_order'}
-            min={new Date().toISOString().split('T')[0]}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
-          />
-          <p className="text-xs text-gray-400 mt-1">
-            Shown to customers as the expected delivery window.
-          </p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Days until delivery *
+            </label>
+            <input
+              name="preorder_days"
+              type="number"
+              min="1"
+              max="365"
+              defaultValue={product?.preorder_days ?? ''}
+              required={selectedStatus === 'pre_order'}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Customer receives order this many days after purchase.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Delivery note <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              name="preorder_note"
+              type="text"
+              maxLength={150}
+              defaultValue={product?.preorder_note ?? ''}
+              placeholder="e.g. arrives before Christmas"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Shown to customers alongside the expected delivery date.
+            </p>
+          </div>
         </div>
       )}
 
