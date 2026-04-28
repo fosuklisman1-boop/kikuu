@@ -9,12 +9,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { SavedAddress } from '@/lib/supabase/types'
-import { MapPin, User as UserIcon, Zap, LogIn, Tag, X, CreditCard, Banknote, CalendarClock } from 'lucide-react'
+import { MapPin, User as UserIcon, Zap, LogIn, Tag, X, CreditCard, CalendarClock } from 'lucide-react'
 import Link from 'next/link'
 import Script from 'next/script'
 
 export default function CheckoutForm() {
-  const { items, total, clearCart, hasPreorderItems, latestPreorderDate, _hasHydrated } = useCart()
+  const { items, total, clearCart, hasPreorderItems, _hasHydrated } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +25,6 @@ export default function CheckoutForm() {
   const [isFreeShipping, setIsFreeShipping] = useState(false)
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
-  const [paymentType, setPaymentType] = useState<'paystack' | 'cod'>('paystack')
   const [deliveryFees, setDeliveryFees] = useState<Record<string, number> | null>(null)
   const [livePrices, setLivePrices] = useState<Record<string, number> | null>(null)
   const [user, setUser] = useState<User | null>(null)
@@ -103,9 +102,6 @@ export default function CheckoutForm() {
     setSelectedSavedId(addr.id)
   }
 
-  // Pre-order carts are forced to COD
-  const effectivePaymentType = hasPreorderItems ? 'cod' : paymentType
-
   // Use live (server-authoritative) prices when loaded — reflects active flash sales
   const liveSubtotal = livePrices
     ? items.reduce((sum, i) => sum + (livePrices[i.product_id ?? i.id] ?? i.price) * i.quantity, 0)
@@ -175,7 +171,7 @@ export default function CheckoutForm() {
             digital_address: form.digital_address || undefined,
           },
           coupon_code: couponApplied || undefined,
-          payment_type: effectivePaymentType,
+          payment_type: 'paystack',
           items: items.map((i) => ({
             product_id: i.product_id ?? i.id,
             quantity: i.quantity,
@@ -190,12 +186,6 @@ export default function CheckoutForm() {
       if (!res.ok) {
         setError(data.error?.message ?? data.error ?? 'Checkout failed. Please try again.')
         setLoading(false)
-        return
-      }
-
-      if (effectivePaymentType === 'cod') {
-        clearCart()
-        router.push(`/orders/${data.order_id}?cod=1`)
         return
       }
 
@@ -433,68 +423,44 @@ export default function CheckoutForm() {
       {/* Right: order summary */}
       <div className="space-y-4">
 
-        {/* Pre-order COD notice */}
+        {/* Pre-order delivery notice */}
         {hasPreorderItems && (
           <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
             <div className="flex items-start gap-2.5">
               <CalendarClock size={16} className="text-orange-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-orange-800">Pre-order item in cart</p>
-                <p className="text-xs text-orange-600 mt-0.5">
-                  Payment is collected on delivery.
-                  {latestPreorderDate && ` Expected ship date: ${new Date(latestPreorderDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}.`}
-                </p>
+                {(() => {
+                  const preorderItems = items.filter(i => i.is_preorder && i.preorder_days)
+                  if (!preorderItems.length) return null
+                  const maxDays = Math.max(...preorderItems.map(i => i.preorder_days!))
+                  const d = new Date()
+                  d.setDate(d.getDate() + maxDays)
+                  const dateStr = d.toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })
+                  const note = preorderItems.find(i => i.preorder_note)?.preorder_note
+                  return (
+                    <>
+                      <p className="text-xs text-orange-600 mt-0.5">Expected delivery by <span className="font-semibold">{dateStr}</span>.</p>
+                      {note && <p className="text-xs text-orange-500 mt-0.5">{note}</p>}
+                    </>
+                  )
+                })()}
               </div>
             </div>
           </div>
         )}
 
-        {/* Payment method selector — hidden for pre-order carts */}
-        {!hasPreorderItems && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <h2 className="font-bold text-gray-900 mb-3">Payment Method</h2>
-            <div className="space-y-2">
-              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                paymentType === 'paystack' ? 'border-[#b45309] bg-[#fdf6ec]' : 'border-gray-200 hover:border-gray-300'
-              }`}>
-                <input
-                  type="radio"
-                  name="payment_type"
-                  value="paystack"
-                  checked={paymentType === 'paystack'}
-                  onChange={() => setPaymentType('paystack')}
-                  className="mt-0.5 accent-[#b45309]"
-                />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <CreditCard size={14} className="text-[#b45309]" />
-                    <span className="text-sm font-semibold text-gray-900">Pay Online</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">MTN MoMo, Vodafone Cash, Card, Bank Transfer</p>
-                </div>
-              </label>
-              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                paymentType === 'cod' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
-              }`}>
-                <input
-                  type="radio"
-                  name="payment_type"
-                  value="cod"
-                  checked={paymentType === 'cod'}
-                  onChange={() => setPaymentType('cod')}
-                  className="mt-0.5 accent-purple-600"
-                />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <Banknote size={14} className="text-purple-600" />
-                    <span className="text-sm font-semibold text-gray-900">Pay on Delivery</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">Pay cash when your order arrives</p>
-                </div>
-              </label>
+        {/* Payment method — Paystack only */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <h2 className="font-bold text-gray-900 mb-3">Payment Method</h2>
+          <div className="flex items-start gap-3 p-3 rounded-xl border border-[#b45309] bg-[#fdf6ec]">
+            <CreditCard size={16} className="text-[#b45309] mt-0.5 shrink-0" />
+            <div>
+              <span className="text-sm font-semibold text-gray-900">Pay Online</span>
+              <p className="text-xs text-gray-500 mt-0.5">MTN MoMo, Vodafone Cash, Card, Bank Transfer</p>
             </div>
           </div>
-        )}
+        </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <h2 className="font-bold text-gray-900 mb-4">Order Summary</h2>
@@ -595,25 +561,17 @@ export default function CheckoutForm() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full font-extrabold py-4 rounded-2xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-lg shadow-lg text-white ${
-            effectivePaymentType === 'cod'
-              ? 'bg-purple-600 hover:bg-purple-500 active:bg-purple-700 shadow-purple-500/25'
-              : 'bg-[#b45309] hover:bg-[#92400e] active:bg-[#78350f] shadow-[#b45309]/25'
-          }`}
+          className="w-full font-extrabold py-4 rounded-2xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-lg shadow-lg text-white bg-[#b45309] hover:bg-[#92400e] active:bg-[#78350f] shadow-[#b45309]/25"
         >
           {loading
             ? 'Processing...'
             : grandTotal === null
             ? 'Select delivery region'
-            : effectivePaymentType === 'cod'
-            ? `Place Order — Pay ${formatGHS(grandTotal)} on Delivery`
             : `Pay ${formatGHS(grandTotal)}`}
         </button>
 
         <p className="text-xs text-center text-gray-400">
-          {effectivePaymentType === 'cod'
-            ? 'Pay cash when your order is delivered to your door.'
-            : 'Secure checkout by Paystack. Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer.'}
+          Secure checkout by Paystack. Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer.
         </p>
       </div>
     </form>
