@@ -46,7 +46,7 @@ export default function ProductImages({
       <div
         ref={stripRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-xl aspect-square mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-xl aspect-[4/3] md:aspect-square mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {media.map((m, i) =>
           m.type === 'video' ? (
