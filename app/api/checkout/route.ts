@@ -10,9 +10,9 @@ const AddressSchema = z.object({
   recipient_name: z.string().min(2),
   phone: z.string().min(9),
   region: z.string().min(2),
-  district: z.string().min(2),
   city: z.string().min(2),
-  landmark: z.string().min(2),
+  district: z.string().optional(),
+  landmark: z.string().optional(),
   digital_address: z.string().optional(),
 })
 

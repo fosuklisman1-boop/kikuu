@@ -36,10 +36,7 @@ export default function CheckoutForm() {
     recipient_name: '',
     phone: '',
     region: '',
-    district: '',
     city: '',
-    landmark: '',
-    digital_address: '',
   })
 
   // Refresh prices from server (applies active flash sales) once cart is hydrated
@@ -95,10 +92,7 @@ export default function CheckoutForm() {
       recipient_name: addr.recipient_name,
       phone: addr.phone,
       region: addr.region,
-      district: addr.district,
       city: addr.city,
-      landmark: addr.landmark ?? '',
-      digital_address: addr.digital_address ?? '',
     }))
     setSelectedSavedId(addr.id)
   }
@@ -166,10 +160,7 @@ export default function CheckoutForm() {
             recipient_name: form.recipient_name,
             phone: form.phone,
             region: form.region,
-            district: form.district,
             city: form.city,
-            landmark: form.landmark,
-            digital_address: form.digital_address || undefined,
           },
           coupon_code: couponApplied || undefined,
           payment_type: 'paystack',
@@ -326,7 +317,7 @@ export default function CheckoutForm() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-semibold text-gray-900">{addr.recipient_name}</p>
-                      <p className="text-xs text-gray-500">{addr.city}, {addr.district}, {addr.region}</p>
+                      <p className="text-xs text-gray-500">{addr.city}, {addr.region}</p>
                       <p className="text-xs text-gray-400">{addr.phone}</p>
                     </div>
                     {addr.is_default && (
@@ -337,7 +328,7 @@ export default function CheckoutForm() {
               ))}
               <button
                 type="button"
-                onClick={() => { setSelectedSavedId(''); setForm((f) => ({ ...f, region: '', district: '', city: '', landmark: '', digital_address: '' })) }}
+                onClick={() => { setSelectedSavedId(''); setForm((f) => ({ ...f, region: '', city: '' })) }}
                 className="text-xs text-gray-500 hover:text-[#b45309] text-left px-1 transition-colors"
               >
                 + Enter a different address
@@ -400,22 +391,8 @@ export default function CheckoutForm() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">District</label>
-              <input type="text" name="district" value={form.district} onChange={handleChange} required placeholder="e.g. Accra Metropolitan" className={inputCls} />
-            </div>
-            <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">City / Town</label>
               <input type="text" name="city" value={form.city} onChange={handleChange} required placeholder="e.g. Osu" className={inputCls} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Landmark / Street</label>
-              <input type="text" name="landmark" value={form.landmark} onChange={handleChange} required placeholder="e.g. Near Shell Filling Station" className={inputCls} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">
-                GhanaPostGPS <span className="font-normal text-gray-400 normal-case">(optional)</span>
-              </label>
-              <input type="text" name="digital_address" value={form.digital_address} onChange={handleChange} placeholder="e.g. GA-144-0000" className={inputCls} />
             </div>
           </div>
         </div>
