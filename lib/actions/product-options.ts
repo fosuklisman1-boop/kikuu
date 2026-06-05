@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import type { ProductColor, ProductSize } from '@/lib/supabase/types'
 
@@ -28,6 +29,7 @@ export async function fetchProductSizes(): Promise<ProductSize[]> {
 }
 
 export async function createProductColor(data: { name: string; hex: string }) {
+  await requireAdmin()
   if (!data.name.trim()) return { error: 'Name is required' }
   if (!/^#[0-9a-fA-F]{6}$/.test(data.hex)) return { error: 'Invalid hex color' }
   const admin = createAdminClient()
@@ -43,6 +45,7 @@ export async function createProductColor(data: { name: string; hex: string }) {
 }
 
 export async function createProductSize(data: { name: string }) {
+  await requireAdmin()
   if (!data.name.trim()) return { error: 'Name is required' }
   const admin = createAdminClient()
   const { error } = await admin.from('product_sizes').insert({
@@ -56,6 +59,7 @@ export async function createProductSize(data: { name: string }) {
 }
 
 export async function deleteProductColor(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('product_colors').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -64,6 +68,7 @@ export async function deleteProductColor(id: string) {
 }
 
 export async function deleteProductSize(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('product_sizes').delete().eq('id', id)
   if (error) return { error: error.message }

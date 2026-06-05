@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { slugify } from '@/lib/utils'
 import { z } from 'zod'
@@ -12,6 +13,7 @@ const CategorySchema = z.object({
 })
 
 export async function createCategory(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = CategorySchema.safeParse(raw)
   if (!parsed.success) {
@@ -38,6 +40,7 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function deleteCategory(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   await admin.from('categories').delete().eq('id', id)
   revalidatePath('/admin/categories')

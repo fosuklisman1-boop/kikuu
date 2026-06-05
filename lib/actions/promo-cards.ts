@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import type { PromoCardWithCoupon } from '@/lib/supabase/types'
 
@@ -34,6 +35,7 @@ function sanitize(data: {
 }
 
 export async function fetchPromoCardsAdmin(): Promise<PromoCardWithCoupon[]> {
+  await requireAdmin()
   const admin = createAdminClient()
   const { data } = await admin
     .from('promo_cards')
@@ -64,6 +66,7 @@ export async function createPromoCard(data: {
   active?: boolean
 }) {
   if (!data.heading.trim()) return { error: 'Heading is required' }
+  await requireAdmin()
   const admin = createAdminClient()
   const { data: row, error } = await admin
     .from('promo_cards')
@@ -90,6 +93,7 @@ export async function updatePromoCard(
   }
 ) {
   if (!data.heading.trim()) return { error: 'Heading is required' }
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin
     .from('promo_cards')
@@ -101,6 +105,7 @@ export async function updatePromoCard(
 }
 
 export async function deletePromoCard(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('promo_cards').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -109,6 +114,7 @@ export async function deletePromoCard(id: string) {
 }
 
 export async function togglePromoCard(id: string, active: boolean) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('promo_cards').update({ active }).eq('id', id)
   if (error) return { error: error.message }
@@ -117,6 +123,7 @@ export async function togglePromoCard(id: string, active: boolean) {
 }
 
 export async function fetchCouponByCode(code: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { data } = await admin
     .from('coupons')

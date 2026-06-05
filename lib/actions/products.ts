@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { slugify } from '@/lib/utils'
@@ -24,6 +25,7 @@ const ProductSchema = z.object({
 )
 
 export async function createProduct(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = ProductSchema.safeParse(raw)
   if (!parsed.success) {
@@ -64,6 +66,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = ProductSchema.safeParse(raw)
   if (!parsed.success) {
@@ -100,6 +103,7 @@ export async function updateProduct(id: string, formData: FormData) {
 }
 
 export async function deleteProduct(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   await admin.from('products').delete().eq('id', id)
   revalidatePath('/admin/products')
@@ -107,6 +111,7 @@ export async function deleteProduct(id: string) {
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
+  await requireAdmin()
   const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
   if (!validStatuses.includes(status)) return { error: 'Invalid status' }
 
@@ -148,6 +153,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
 }
 
 export async function confirmCodPayment(orderId: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin
     .from('orders')
@@ -169,6 +175,7 @@ export async function confirmCodPayment(orderId: string) {
 }
 
 export async function uploadProductVideo(formData: FormData) {
+  await requireAdmin()
   const file = formData.get('file') as File
   if (!file) return { error: 'No file provided' }
 
@@ -195,6 +202,7 @@ export async function uploadProductVideo(formData: FormData) {
 }
 
 export async function uploadProductImage(formData: FormData) {
+  await requireAdmin()
   const file = formData.get('file') as File
   if (!file) return { error: 'No file provided' }
 

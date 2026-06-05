@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { slugify } from '@/lib/utils'
 import type { Brand } from '@/lib/supabase/types'
@@ -17,6 +18,7 @@ export async function fetchBrands(): Promise<Brand[]> {
 }
 
 export async function createBrand(formData: FormData) {
+  await requireAdmin()
   const admin = createAdminClient()
   const name = formData.get('name') as string
   const { error } = await admin.from('brands').insert({
@@ -33,6 +35,7 @@ export async function createBrand(formData: FormData) {
 }
 
 export async function updateBrand(id: string, formData: FormData) {
+  await requireAdmin()
   const admin = createAdminClient()
   const name = formData.get('name') as string
   const { error } = await admin.from('brands').update({
@@ -49,6 +52,7 @@ export async function updateBrand(id: string, formData: FormData) {
 }
 
 export async function deleteBrand(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('brands').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -58,6 +62,7 @@ export async function deleteBrand(id: string) {
 }
 
 export async function assignProductBrand(productId: string, brandId: string | null) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('products').update({ brand_id: brandId }).eq('id', productId)
   if (error) return { error: error.message }

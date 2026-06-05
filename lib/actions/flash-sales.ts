@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import type { FlashSale, FlashSaleWithItems } from '@/lib/supabase/types'
 
@@ -31,6 +32,7 @@ export async function fetchActiveFlashSale(): Promise<FlashSaleWithItems | null>
 }
 
 export async function fetchAllFlashSalesAdmin(): Promise<FlashSale[]> {
+  await requireAdmin()
   const admin = createAdminClient()
   const { data } = await admin
     .from('flash_sales')
@@ -52,6 +54,7 @@ export async function createFlashSale(
   active: boolean,
   items: FlashSaleItemInput[]
 ) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { data: sale, error } = await admin
     .from('flash_sales')
@@ -80,6 +83,7 @@ export async function updateFlashSale(
   active: boolean,
   items: FlashSaleItemInput[]
 ) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin
     .from('flash_sales')
@@ -147,6 +151,7 @@ export async function getFlashSalePriceMap(
 }
 
 export async function deleteFlashSale(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('flash_sales').delete().eq('id', id)
   if (error) return { error: error.message }

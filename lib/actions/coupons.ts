@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 
 export async function validateCoupon(
@@ -49,6 +50,7 @@ export async function createCoupon(data: {
   expires_at?: string | null
   active: boolean
 }) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('coupons').insert({
     ...data,
@@ -68,6 +70,7 @@ export async function updateCoupon(id: string, data: {
   expires_at?: string | null
   active: boolean
 }) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('coupons').update({
     ...data,
@@ -79,6 +82,7 @@ export async function updateCoupon(id: string, data: {
 }
 
 export async function deleteCoupon(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('coupons').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -87,6 +91,7 @@ export async function deleteCoupon(id: string) {
 }
 
 export async function toggleCoupon(id: string, active: boolean) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('coupons').update({ active }).eq('id', id)
   if (error) return { error: error.message }

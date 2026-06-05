@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { Banner } from '@/lib/supabase/types'
@@ -27,6 +28,7 @@ export async function fetchBanners(): Promise<Banner[]> {
 }
 
 export async function fetchAllBannersAdmin(): Promise<Banner[]> {
+  await requireAdmin()
   const admin = createAdminClient()
   const { data } = await admin.from('banners').select('*').order('sort_order')
   return data ?? []
@@ -37,6 +39,7 @@ export async function createBanner(formData: FormData) {
   const parsed = BannerSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
+  await requireAdmin()
   const admin = createAdminClient()
   const { data, error } = await admin.from('banners').insert({
     ...parsed.data,
@@ -55,6 +58,7 @@ export async function updateBanner(id: string, formData: FormData) {
   const parsed = BannerSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors }
 
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('banners').update({
     ...parsed.data,
@@ -69,6 +73,7 @@ export async function updateBanner(id: string, formData: FormData) {
 }
 
 export async function deleteBanner(id: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('banners').delete().eq('id', id)
   if (error) return { error: error.message }

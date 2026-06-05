@@ -1,9 +1,11 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 
 export async function banUser(userId: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.auth.admin.updateUserById(userId, {
     ban_duration: '87660h', // ~10 years
@@ -15,6 +17,7 @@ export async function banUser(userId: string) {
 }
 
 export async function unbanUser(userId: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.auth.admin.updateUserById(userId, {
     ban_duration: 'none',
@@ -26,6 +29,7 @@ export async function unbanUser(userId: string) {
 }
 
 export async function deleteUser(userId: string) {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.auth.admin.deleteUser(userId)
   if (error) return { error: error.message }
@@ -34,6 +38,7 @@ export async function deleteUser(userId: string) {
 }
 
 export async function setUserRole(userId: string, role: 'admin' | 'customer') {
+  await requireAdmin()
   const admin = createAdminClient()
   const { error } = await admin.from('users').update({ role }).eq('id', userId)
   if (error) return { error: error.message }

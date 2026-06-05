@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 
 export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin()
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { filename, contentType } = await req.json()
+
+  if (!filename || typeof filename !== 'string')
+    return NextResponse.json({ error: 'filename is required' }, { status: 400 })
 
   const allowed = ['video/mp4', 'video/webm', 'video/quicktime']
   if (!allowed.includes(contentType))

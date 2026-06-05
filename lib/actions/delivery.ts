@@ -1,9 +1,11 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 
 export async function updateDeliveryFee(region: string, fee: number, enabled: boolean) {
+  await requireAdmin()
   if (fee < 0) return { error: 'Fee cannot be negative' }
   const admin = createAdminClient()
   const { error } = await admin
