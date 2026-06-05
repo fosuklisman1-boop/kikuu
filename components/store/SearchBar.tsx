@@ -3,9 +3,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, TrendingUp } from 'lucide-react'
+import { formatGHS } from '@/lib/utils'
 import type { TrendingSearch } from '@/lib/supabase/types'
 
-type Suggestion = { name: string; slug: string }
+type Suggestion = {
+  id: string
+  name: string
+  slug: string
+  price: number
+  compare_at_price: number | null
+  images: string[]
+}
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value)
@@ -35,11 +43,14 @@ export default function SearchBar({
 
   useEffect(() => {
     if (debouncedQuery.length < 2) { setSuggestions([]); return }
+    let active = true
     setLoading(true)
     fetch(`/api/search/suggestions?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json())
-      .then(({ suggestions }) => setSuggestions(suggestions))
-      .finally(() => setLoading(false))
+      .then(({ suggestions }) => { if (active) setSuggestions(suggestions ?? []) })
+      .finally(() => { if (active) setLoading(false) })
+    // Ignore a slow response if the query changed before it resolved
+    return () => { active = false }
   }, [debouncedQuery])
 
   useEffect(() => {
@@ -112,19 +123,46 @@ export default function SearchBar({
           ) : suggestions.length === 0 ? (
             <div className="px-4 py-3 text-sm text-gray-400">No results for "{query}"</div>
           ) : (
-            <ul>
-              {suggestions.map((s) => (
-                <li key={s.slug}>
-                  <button
-                    onClick={() => handleSuggestion(s.slug)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-[#fdf6ec] text-left text-sm text-gray-800"
-                  >
-                    <Search size={13} className="text-gray-300 shrink-0" />
-                    {s.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="max-h-80 overflow-y-auto">
+                {suggestions.map((s) => {
+                  const onSale = s.compare_at_price != null && s.compare_at_price > s.price
+                  return (
+                    <li key={s.id}>
+                      <button
+                        onClick={() => handleSuggestion(s.slug)}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-[#fdf6ec] text-left transition-colors"
+                      >
+                        <div className="w-11 h-11 rounded-lg bg-[#f5f0e8] shrink-0 overflow-hidden flex items-center justify-center">
+                          {s.images?.[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={s.images[0]} alt={s.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Search size={15} className="text-gray-300" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-gray-800 line-clamp-1">{s.name}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#b45309]">{formatGHS(s.price)}</span>
+                            {onSale && (
+                              <span className="text-xs text-gray-400 line-through">{formatGHS(s.compare_at_price!)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+              <button
+                onClick={handleSubmit}
+                className="flex items-center gap-2 w-full px-4 py-2.5 border-t border-[#ede8df] text-left text-xs font-semibold text-[#b45309] hover:bg-[#fdf6ec] transition-colors"
+              >
+                <Search size={13} className="shrink-0" />
+                See all results for &ldquo;{query.trim()}&rdquo;
+              </button>
+            </>
           )}
         </div>
       )}
