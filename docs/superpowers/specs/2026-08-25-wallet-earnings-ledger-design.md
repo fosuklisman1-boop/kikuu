@@ -157,14 +157,18 @@ base_price: shop_id ? shopBasePriceMap.get(product.id)! : null,
 
 ---
 
-## Server actions (`lib/actions/wallet.ts`) — new file
+## Server actions and internal ledger functions — two files, deliberately split
+
+**Security note, learned from sub-project 1's final review:** everything exported from a `'use server'` file becomes a client-callable POST endpoint, regardless of whether any UI actually references it. `creditShopEarnings`/`reverseShopEarnings` are meant to run ONLY from trusted server-side triggers (webhooks, admin actions) with no user session involved — they must never be reachable as a callable action at all, not just guarded. So they live in a plain (non-`'use server'`) module instead, which Next.js never turns into an endpoint since it's only ever imported by other server-side code. Both functions also independently re-verify the precondition they depend on (payment actually confirmed / order actually cancelled) rather than trusting the caller — the same "every privileged function re-checks its own invariant" discipline `requireAdmin()`'s own doc comment establishes elsewhere in this codebase.
+
+### `lib/actions/wallet.ts` — new file, `'use server'`, client-facing reads only
 
 ```ts
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireShopOwner } from '@/lib/auth/require-shop-owner'
-import type { WalletTransaction, OrderItem } from '@/lib/supabase/types'
+import type { WalletTransaction } from '@/lib/supabase/types'
 
 export async function getWalletBalance(): Promise<number> {
   const { shopId } = await requireShopOwner()
@@ -183,24 +187,42 @@ export async function getWalletTransactions(): Promise<WalletTransaction[]> {
     .order('created_at', { ascending: false })
   return data ?? []
 }
+```
 
-// Server-only — called from payment-confirmation code paths, never from a client.
-// No requireShopOwner() here: there is no logged-in seller session in a webhook.
+### `lib/wallet-earnings.ts` — new file, pure calculation (no DB, no directive)
+
+```ts
+import type { OrderItem } from '@/lib/supabase/types'
+
+export function computeOrderEarnings(items: OrderItem[]): number {
+  return items.reduce(
+    (sum, item) => sum + (item.base_price !== null ? (item.price - item.base_price) * item.quantity : 0),
+    0
+  )
+}
+```
+
+### `lib/wallet-ledger.ts` — new file, NOT `'use server'` — server-only, never client-callable
+
+```ts
+import { createAdminClient } from '@/lib/supabase/admin'
+import { computeOrderEarnings } from '@/lib/wallet-earnings'
+import type { OrderItem } from '@/lib/supabase/types'
+
+// Called only from payment-confirmation code paths (Paystack inline callback,
+// webhook). Re-verifies payment_status itself rather than trusting the caller.
 export async function creditShopEarnings(orderId: string): Promise<void> {
   const admin = createAdminClient()
   const { data: order } = await admin
     .from('orders')
-    .select('shop_id, order_number, items')
+    .select('shop_id, order_number, items, payment_status')
     .eq('id', orderId)
     .single()
 
   if (!order?.shop_id) return // not a shop order — no-op
+  if (order.payment_status !== 'paid') return // precondition not actually met — no-op
 
-  const items = (order.items as OrderItem[]) ?? []
-  const amount = items.reduce(
-    (sum, item) => sum + (item.base_price !== null ? (item.price - item.base_price) * item.quantity : 0),
-    0
-  )
+  const amount = computeOrderEarnings((order.items as OrderItem[]) ?? [])
   if (amount <= 0) return
 
   const { error } = await admin.from('wallet_transactions').insert({
@@ -214,16 +236,18 @@ export async function creditShopEarnings(orderId: string): Promise<void> {
   if (error && error.code !== '23505') throw new Error(error.message)
 }
 
-// Server-only — called from admin order-status updates, never from a client.
+// Called only from the admin order-status update action. Re-verifies the
+// order's current status itself rather than trusting the caller.
 export async function reverseShopEarnings(orderId: string): Promise<void> {
   const admin = createAdminClient()
   const { data: order } = await admin
     .from('orders')
-    .select('shop_id, order_number')
+    .select('shop_id, order_number, status')
     .eq('id', orderId)
     .single()
 
   if (!order?.shop_id) return
+  if (order.status !== 'cancelled' && order.status !== 'refunded') return
 
   const { data: credit } = await admin
     .from('wallet_transactions')
@@ -268,7 +292,7 @@ if (updated && updated.length > 0) {
 }
 ```
 
-Add `import { creditShopEarnings } from '@/lib/actions/wallet'` at the top.
+Add `import { creditShopEarnings } from '@/lib/wallet-ledger'` at the top.
 
 ### `app/api/webhooks/paystack/route.ts`
 
@@ -288,7 +312,7 @@ if ((status === 'cancelled' || status === 'refunded') && order?.shop_id && order
 }
 ```
 
-Add `import { reverseShopEarnings } from '@/lib/actions/wallet'` at the top.
+Add `import { reverseShopEarnings } from '@/lib/wallet-ledger'` at the top.
 
 ---
 
@@ -324,9 +348,8 @@ Add to `NAV`:
 
 - **Migration/constraint tests**: `wallet_transactions.amount > 0` check; unique `(order_id, type)` allows exactly one credit + one debit per order but multiple `order_id IS NULL` rows.
 - **`wallet_balances` view test**: insert a credit and a debit for the same shop, confirm `balance` equals `credit − debit`.
-- **`creditShopEarnings` unit-style test** (pure calculation, extractable): given a set of `OrderItem`s with `price`/`base_price`/`quantity`, the computed total matches `Σ (price − base_price) × quantity`, and items with `base_price: null` (non-shop items, shouldn't occur in a shop order but defensively) contribute 0.
-- **Idempotency test**: calling `creditShopEarnings(orderId)` twice results in exactly one `credit` row (second call's unique-violation is swallowed).
-- **Reversal test**: `reverseShopEarnings` on a credited order inserts a `debit` for the exact original amount (not recomputed); on a never-credited order, it's a no-op.
+- **`computeOrderEarnings` unit tests** (real, DB-free, run automatically): given a set of `OrderItem`s with `price`/`base_price`/`quantity`, the computed total matches `Σ (price − base_price) × quantity`; items with `base_price: null` (non-shop items) contribute 0; an empty array returns 0.
+- **`creditShopEarnings`/`reverseShopEarnings` DB-integration behavior** (manual, same deferred-to-human pattern as sub-project 1's DB-touching pieces): idempotency (calling `creditShopEarnings` twice on the same order yields exactly one `credit` row), the `payment_status !== 'paid'` guard (calling it directly on a pending order is a no-op), the `status` guard on reversal (calling `reverseShopEarnings` on a still-paid, non-cancelled order is a no-op), and that reversal amount matches the original credit exactly.
 - **Integration checkpoint** (manual, same deferred-to-human pattern as sub-project 1): place a real shop order end-to-end, confirm payment via Paystack test mode, verify `wallet_transactions` gets exactly one credit row for the right amount; mark it refunded via the admin panel, verify a matching debit appears and `wallet_balances.balance` returns to what it was before the order.
 
 ---
@@ -338,7 +361,9 @@ Add to `NAV`:
 | Create | `supabase/migrations/017_seller_wallet.sql` |
 | Modify | `lib/supabase/types.ts` (add `wallet_transactions` table, `WalletTransaction` type, `OrderItem.base_price`) |
 | Modify | `app/api/checkout/route.ts` (freeze `base_price` per item for shop orders) |
-| Create | `lib/actions/wallet.ts` |
+| Create | `lib/actions/wallet.ts` (client-facing reads, `'use server'`) |
+| Create | `lib/wallet-earnings.ts` (pure calculation, unit-tested) |
+| Create | `lib/wallet-ledger.ts` (server-only credit/reverse, never `'use server'`) |
 | Modify | `app/api/payment/verify/route.ts` (call `creditShopEarnings`) |
 | Modify | `app/api/webhooks/paystack/route.ts` (select `shop_id`, call `creditShopEarnings`) |
 | Modify | `lib/actions/products.ts` (`updateOrderStatus` calls `reverseShopEarnings` on cancel/refund) |
