@@ -224,6 +224,19 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['shop_products']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['shop_products']['Insert']>
       }
+      wallet_transactions: {
+        Row: {
+          id: string
+          shop_id: string
+          order_id: string | null
+          type: 'credit' | 'debit'
+          amount: number
+          description: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['wallet_transactions']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['wallet_transactions']['Insert']>
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -247,6 +260,7 @@ export type ProductColor = Database['public']['Tables']['product_colors']['Row']
 export type ProductSize  = Database['public']['Tables']['product_sizes']['Row']
 export type Shop = Database['public']['Tables']['shops']['Row']
 export type ShopProduct = Database['public']['Tables']['shop_products']['Row']
+export type WalletTransaction = Database['public']['Tables']['wallet_transactions']['Row']
 
 export interface ShopProductPriced {
   id: string
@@ -282,6 +296,7 @@ export interface OrderItem {
   product_name: string
   product_image: string
   price: number
+  base_price: number | null
   quantity: number
   is_preorder: boolean
   preorder_ship_date: string | null
