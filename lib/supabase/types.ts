@@ -62,6 +62,7 @@ export interface Database {
           payment_method: string | null
           payment_reference: string | null
           paystack_reference: string | null
+          shop_id: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -198,6 +199,31 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['trending_searches']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['trending_searches']['Insert']>
       }
+      shops: {
+        Row: {
+          id: string
+          owner_id: string
+          name: string
+          slug: string
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['shops']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['shops']['Insert']>
+      }
+      shop_products: {
+        Row: {
+          id: string
+          shop_id: string
+          product_id: string
+          markup_type: 'flat' | 'percentage'
+          markup_value: number
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['shop_products']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['shop_products']['Insert']>
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
@@ -219,6 +245,20 @@ export type TrendingSearch = Database['public']['Tables']['trending_searches']['
 export type PromoCard = Database['public']['Tables']['promo_cards']['Row']
 export type ProductColor = Database['public']['Tables']['product_colors']['Row']
 export type ProductSize  = Database['public']['Tables']['product_sizes']['Row']
+export type Shop = Database['public']['Tables']['shops']['Row']
+export type ShopProduct = Database['public']['Tables']['shop_products']['Row']
+
+export interface ShopProductPriced {
+  id: string
+  shop_id: string
+  product_id: string
+  markup_type: 'flat' | 'percentage'
+  markup_value: number
+  base_price: number
+  shop_price: number
+  created_at: string
+  product: Product
+}
 
 export interface ProductVariantColor { name: string; hex: string }
 export interface ProductAttributes {
