@@ -35,6 +35,13 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Redirect unauthenticated users away from /seller — shop-ownership enforcement is in seller/(shop)/layout.tsx
+  if (request.nextUrl.pathname.startsWith('/seller')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/account/login?redirect=/seller', request.url))
+    }
+  }
+
   // /account/login is always public — skip auth check
   if (request.nextUrl.pathname === '/account/login') {
     if (user) {
@@ -58,5 +65,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/account/:path*'],
+  matcher: ['/admin/:path*', '/account/:path*', '/seller/:path*'],
 }
