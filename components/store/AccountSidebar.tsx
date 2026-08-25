@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, Heart, User, MapPin, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, Heart, User, MapPin, LogOut, Store } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useWishlist } from '@/lib/wishlist'
 import { useEffect } from 'react'
@@ -18,9 +18,11 @@ interface Props {
   displayName: string
   email: string
   initials: string
+  shopHref: string
+  shopLabel: string
 }
 
-export default function AccountSidebar({ displayName, email, initials }: Props) {
+export default function AccountSidebar({ displayName, email, initials, shopHref, shopLabel }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const { count: wishlistCount, clear: clearWishlist } = useWishlist()
@@ -82,6 +84,14 @@ export default function AccountSidebar({ displayName, email, initials }: Props) 
             </Link>
           )
         })}
+
+        <Link
+          href={shopHref}
+          className="flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-[#b45309] hover:bg-[#fdf6ec] transition-all border-b border-gray-50"
+        >
+          <Store size={17} className="text-[#b45309]" />
+          {shopLabel}
+        </Link>
 
         <button
           onClick={handleSignOut}

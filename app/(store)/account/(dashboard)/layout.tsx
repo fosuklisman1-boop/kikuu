@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AccountSidebar from '@/components/store/AccountSidebar'
+import { getMyShop } from '@/lib/actions/shops'
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -15,6 +16,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
     .single()
 
   if (profile?.role === 'admin') redirect('/admin')
+
+  const shop = await getMyShop()
 
   const meta = user.user_metadata as Record<string, string> | null
   const displayName = meta?.full_name || user.email?.split('@')[0] || 'My Account'
@@ -33,6 +36,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
             displayName={displayName}
             email={user.email ?? ''}
             initials={initials}
+            shopHref={shop ? '/seller/dashboard' : '/seller/onboarding'}
+            shopLabel={shop ? 'My Shop' : 'Sell on Kikuu'}
           />
           <main className="flex-1 min-w-0">{children}</main>
         </div>

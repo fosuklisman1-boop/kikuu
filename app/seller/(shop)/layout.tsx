@@ -18,7 +18,7 @@ export default async function SellerShopLayout({ children }: { children: React.R
   return (
     <div className="flex h-screen bg-gray-100">
       <SellerSidebar shopName={shop.name} shopSlug={shop.slug} />
-      <main className="flex-1 min-w-0 overflow-auto p-4 lg:p-6">{children}</main>
+      <main className="flex-1 min-w-0 overflow-auto p-4 lg:p-6 pt-16 lg:pt-6">{children}</main>
     </div>
   )
 }
