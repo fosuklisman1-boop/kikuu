@@ -21,6 +21,7 @@ const CheckoutSchema = z.object({
   address: AddressSchema,
   coupon_code: z.string().optional(),
   payment_type: z.literal('paystack').default('paystack'),
+  shop_id: z.string().uuid().optional(),
   items: z.array(
     z.object({
       product_id: z.string().uuid(),
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { email, address, items: rawItems, coupon_code } = parsed.data
+    const { email, address, items: rawItems, coupon_code, shop_id } = parsed.data
     const supabase = await createClient()
     const admin = createAdminClient()
 
@@ -73,6 +74,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to load products' }, { status: 500 })
     }
 
+    // If this order came from a shop, validate it and build a shop price map
+    const shopPriceMap = new Map<string, number>()
+    if (shop_id) {
+      const { data: shopRow } = await admin.from('shops').select('id, active').eq('id', shop_id).single()
+      if (!shopRow || !shopRow.active) {
+        return NextResponse.json({ error: 'This shop is not available.' }, { status: 400 })
+      }
+      const { data: shopProducts } = await admin
+        .from('shop_products_priced')
+        .select('product_id, shop_price')
+        .eq('shop_id', shop_id)
+        .in('product_id', productIds)
+      for (const sp of shopProducts ?? []) {
+        shopPriceMap.set(sp.product_id, sp.shop_price)
+      }
+    }
+
     // Fetch flash sale prices for cart products (only if a sale is active)
     const flashPrices = new Map<string, number>()
     if (activeSale) {
@@ -93,6 +111,9 @@ export async function POST(req: NextRequest) {
       if (!product) {
         return NextResponse.json({ error: `Product not found: ${raw.product_id}` }, { status: 400 })
       }
+      if (shop_id && !shopPriceMap.has(product.id)) {
+        return NextResponse.json({ error: `${product.name} is not available in this shop.` }, { status: 400 })
+      }
       // Skip stock check for pre-order products
       if (product.status !== 'pre_order' && product.stock_qty < raw.quantity) {
         return NextResponse.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
@@ -110,7 +131,7 @@ export async function POST(req: NextRequest) {
         product_id: product.id,
         product_name: product.name,
         product_image: product.images[0] ?? '',
-        price: flashPrices.get(product.id) ?? product.price,
+        price: shop_id ? shopPriceMap.get(product.id)! : (flashPrices.get(product.id) ?? product.price),
         quantity: raw.quantity,
         is_preorder: product.status === 'pre_order',
         preorder_ship_date: itemPreorderShipDate,
@@ -198,6 +219,7 @@ export async function POST(req: NextRequest) {
         payment_status: 'pending',
         is_preorder: hasPreorder,
         pre_order_ship_date: latestPreorderDate,
+        shop_id: shop_id ?? null,
         order_number: '', // set by trigger
       })
       .select()

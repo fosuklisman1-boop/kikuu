@@ -14,7 +14,7 @@ import Link from 'next/link'
 import Script from 'next/script'
 
 export default function CheckoutForm() {
-  const { items, total, clearCart, hasPreorderItems, _hasHydrated } = useCart()
+  const { items, total, clearCart, hasPreorderItems, _hasHydrated, shopId } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -164,6 +164,7 @@ export default function CheckoutForm() {
           },
           coupon_code: couponApplied || undefined,
           payment_type: 'paystack',
+          shop_id: shopId || undefined,
           items: items.map((i) => ({
             product_id: i.product_id ?? i.id,
             quantity: i.quantity,
