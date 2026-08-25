@@ -11,7 +11,7 @@ export default async function SellerProductsPage() {
   const supabase = await createClient()
   const [{ data: products }, curated] = await Promise.all([
     supabase.from('products').select('*').eq('status', 'active').order('name'),
-    getShopProductsPriced(shop.id),
+    getShopProductsPriced(),
   ])
 
   const curatedIds = new Set(curated.map((c) => c.product_id))

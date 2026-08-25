@@ -79,7 +79,8 @@ export async function removeShopProduct(shopProductId: string): Promise<{ error?
   return {}
 }
 
-export async function getShopProductsPriced(shopId: string): Promise<ShopProductPriced[]> {
+export async function getShopProductsPriced(): Promise<ShopProductPriced[]> {
+  const { shopId } = await requireShopOwner()
   const admin = createAdminClient()
   const { data: priced } = await admin
     .from('shop_products_priced')

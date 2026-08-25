@@ -7,7 +7,7 @@ export default async function SellerDashboardPage() {
   const shop = await getMyShop()
   if (!shop) return null // layout already redirects if there's no shop; this satisfies TypeScript
 
-  const products = await getShopProductsPriced(shop.id)
+  const products = await getShopProductsPriced()
 
   return (
     <div>

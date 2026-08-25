@@ -39,7 +39,7 @@ export default async function ShopProductPage({ params }: Props) {
     .from('products')
     .select('*, categories(name, slug)')
     .eq('slug', productSlug)
-    .in('status', ['active', 'pre_order'])
+    .eq('status', 'active')
     .single() as { data: any }
 
   if (!product) notFound()
