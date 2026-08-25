@@ -97,8 +97,12 @@ export default function CheckoutForm() {
     setSelectedSavedId(addr.id)
   }
 
-  // Use live (server-authoritative) prices when loaded — reflects active flash sales
-  const liveSubtotal = livePrices
+  // Use live (server-authoritative) prices when loaded — reflects active flash sales.
+  // Shop carts already carry the authoritative shop price on each item (set when the item
+  // was added to cart, and re-validated server-side in /api/checkout) — getCurrentPrices()
+  // only knows about base/flash-sale pricing, which doesn't apply to shop purchases, so skip
+  // the live-price override entirely for shop carts and trust the cart's own total instead.
+  const liveSubtotal = (livePrices && !shopId)
     ? items.reduce((sum, i) => sum + (livePrices[i.product_id ?? i.id] ?? i.price) * i.quantity, 0)
     : total
 
@@ -453,7 +457,7 @@ export default function CheckoutForm() {
                   <p className="text-gray-800 line-clamp-1 font-medium">{item.name}</p>
                   <p className="text-gray-400 text-xs">×{item.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold shrink-0">{formatGHS((livePrices?.[item.product_id ?? item.id] ?? item.price) * item.quantity)}</p>
+                <p className="text-sm font-semibold shrink-0">{formatGHS(((!shopId ? livePrices?.[item.product_id ?? item.id] : undefined) ?? item.price) * item.quantity)}</p>
               </div>
             ))}
           </div>
