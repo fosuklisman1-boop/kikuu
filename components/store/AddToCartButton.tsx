@@ -13,6 +13,9 @@ export default function AddToCartButton({
   salePrice,
   selectedColor,
   selectedSize,
+  shopId,
+  shopSlug,
+  shopPrice,
 }: {
   product: Product
   disabled?: boolean
@@ -20,6 +23,9 @@ export default function AddToCartButton({
   salePrice?: number
   selectedColor?: { name: string; hex: string }
   selectedSize?: string
+  shopId?: string
+  shopSlug?: string
+  shopPrice?: number
 }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
@@ -27,10 +33,10 @@ export default function AddToCartButton({
   const isPreorder = product.status === 'pre_order'
 
   function handleAdd() {
-    const itemToAdd = salePrice !== undefined && salePrice < product.price
-      ? { ...product, price: salePrice }
-      : product
-    const result = addItem(itemToAdd, 1, selectedColor, selectedSize)
+    const overridePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : undefined)
+    const itemToAdd = overridePrice !== undefined ? { ...product, price: overridePrice } : product
+    const shopContext = shopId && shopSlug ? { shopId, shopSlug } : undefined
+    const result = addItem(itemToAdd, 1, selectedColor, selectedSize, shopContext)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 5000)

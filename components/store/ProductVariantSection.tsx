@@ -11,6 +11,9 @@ interface Props {
   disabled?: boolean
   variantColors: ProductVariantColor[]
   variantSizes: string[]
+  shopId?: string
+  shopSlug?: string
+  shopPrice?: number
 }
 
 export default function ProductVariantSection({
@@ -19,6 +22,9 @@ export default function ProductVariantSection({
   disabled,
   variantColors,
   variantSizes,
+  shopId,
+  shopSlug,
+  shopPrice,
 }: Props) {
   const [selectedColor, setSelectedColor] = useState<ProductVariantColor | null>(null)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
@@ -49,6 +55,9 @@ export default function ProductVariantSection({
         salePrice={salePrice}
         selectedColor={selectedColor ?? undefined}
         selectedSize={selectedSize ?? undefined}
+        shopId={shopId}
+        shopSlug={shopSlug}
+        shopPrice={shopPrice}
       />
     </>
   )

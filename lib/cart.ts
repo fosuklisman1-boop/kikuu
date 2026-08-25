@@ -34,6 +34,8 @@ interface CartStore {
   total: number
   count: number
   hasPreorderItems: boolean
+  shopId: string | null
+  shopSlug: string | null
   _hasHydrated: boolean
   setHasHydrated: (v: boolean) => void
   addItem: (
@@ -41,6 +43,7 @@ interface CartStore {
     qty?: number,
     selectedColor?: { name: string; hex: string },
     selectedSize?: string,
+    shopContext?: { shopId: string; shopSlug: string },
   ) => { error?: string }
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
@@ -54,10 +57,12 @@ export const useCart = create<CartStore>()(
       total: 0,
       count: 0,
       hasPreorderItems: false,
+      shopId: null,
+      shopSlug: null,
       _hasHydrated: false,
       setHasHydrated(v) { set({ _hasHydrated: v }) },
 
-      addItem(product, qty = 1, selectedColor, selectedSize) {
+      addItem(product, qty = 1, selectedColor, selectedSize, shopContext) {
         const state = get()
         const isPreorder = product.status === 'pre_order'
 
@@ -69,6 +74,14 @@ export const useCart = create<CartStore>()(
           }
           if (!isPreorder && cartHasPreorder) {
             return { error: 'Regular items cannot be mixed with pre-order items. Please clear your cart first or complete your pre-order.' }
+          }
+        }
+
+        // Block mixing items from a different shop (or shop + main site) in one cart
+        if (state.items.length > 0) {
+          const newShopId = shopContext?.shopId ?? null
+          if (state.shopId !== newShopId) {
+            return { error: 'Your cart has items from another store. Clear your cart or finish checkout first.' }
           }
         }
 
@@ -105,13 +118,19 @@ export const useCart = create<CartStore>()(
             },
           ]
         }
-        set({ items, ...deriveCart(items) })
+        set({
+          items,
+          shopId: shopContext?.shopId ?? state.shopId,
+          shopSlug: shopContext?.shopSlug ?? state.shopSlug,
+          ...deriveCart(items),
+        })
         return {}
       },
 
       removeItem(id) {
         const items = get().items.filter((i) => i.id !== id)
-        set({ items, ...deriveCart(items) })
+        const shopReset = items.length === 0 ? { shopId: null, shopSlug: null } : {}
+        set({ items, ...shopReset, ...deriveCart(items) })
       },
 
       updateQty(id, qty) {
@@ -126,7 +145,7 @@ export const useCart = create<CartStore>()(
       },
 
       clearCart() {
-        set({ items: [], total: 0, count: 0, hasPreorderItems: false })
+        set({ items: [], shopId: null, shopSlug: null, total: 0, count: 0, hasPreorderItems: false })
       },
     }),
     {
