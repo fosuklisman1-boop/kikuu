@@ -4,13 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { z } from 'zod'
+import { ShopSchema } from '@/lib/shop-schema'
 import type { Shop } from '@/lib/supabase/types'
-
-export const ShopSchema = z.object({
-  name: z.string().min(2).max(80),
-  slug: z.string().regex(/^[a-z0-9-]{3,40}$/, 'Slug must be 3-40 lowercase letters, numbers, or hyphens'),
-})
 
 export async function getMyShop(): Promise<Shop | null> {
   const supabase = await createClient()

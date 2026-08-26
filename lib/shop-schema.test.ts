@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ShopSchema } from './shops'
+import { ShopSchema } from './shop-schema'
 
 describe('ShopSchema', () => {
   it('accepts a valid name and slug', () => {
