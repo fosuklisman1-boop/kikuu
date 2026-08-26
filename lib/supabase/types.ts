@@ -205,6 +205,8 @@ export interface Database {
           owner_id: string
           name: string
           slug: string
+          momo_number: string | null
+          momo_name: string | null
           active: boolean
           created_at: string
           updated_at: string
@@ -229,6 +231,7 @@ export interface Database {
           id: string
           shop_id: string
           order_id: string | null
+          withdrawal_request_id: string | null
           type: 'credit' | 'debit'
           amount: number
           description: string
@@ -236,6 +239,29 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['wallet_transactions']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['wallet_transactions']['Insert']>
+      }
+      withdrawal_settings: {
+        Row: { id: boolean; min_amount: number; updated_at: string }
+        Insert: Omit<Database['public']['Tables']['withdrawal_settings']['Row'], 'updated_at'>
+        Update: Partial<Database['public']['Tables']['withdrawal_settings']['Insert']>
+      }
+      withdrawal_requests: {
+        Row: {
+          id: string
+          shop_id: string
+          amount: number
+          momo_number: string
+          momo_name: string
+          status: 'pending' | 'paid' | 'rejected'
+          admin_note: string | null
+          requested_at: string
+          processed_at: string | null
+          processed_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['withdrawal_requests']['Row'], 'id' | 'requested_at' | 'processed_at' | 'processed_by' | 'admin_note' | 'status'> & {
+          status?: 'pending' | 'paid' | 'rejected'
+        }
+        Update: Partial<Database['public']['Tables']['withdrawal_requests']['Row']>
       }
     }
     Views: Record<string, never>
@@ -261,6 +287,12 @@ export type ProductSize  = Database['public']['Tables']['product_sizes']['Row']
 export type Shop = Database['public']['Tables']['shops']['Row']
 export type ShopProduct = Database['public']['Tables']['shop_products']['Row']
 export type WalletTransaction = Database['public']['Tables']['wallet_transactions']['Row']
+export type WithdrawalSettings = Database['public']['Tables']['withdrawal_settings']['Row']
+export type WithdrawalRequest = Database['public']['Tables']['withdrawal_requests']['Row']
+
+export interface WithdrawalRequestWithShop extends WithdrawalRequest {
+  shop: Pick<Shop, 'id' | 'name' | 'slug'>
+}
 
 export interface ShopProductPriced {
   id: string
