@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateWebhookSignature } from '@/lib/paystack'
+import { creditShopEarnings } from '@/lib/wallet-ledger'
 
 export async function POST(req: NextRequest) {
   const signature = req.headers.get('x-paystack-signature') ?? ''
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const { data: order, error: orderErr } = await admin
       .from('orders')
-      .select('id, status, total, items')
+      .select('id, status, total, items, shop_id')
       .eq('paystack_reference', reference)
       .maybeSingle()
 
@@ -71,6 +72,8 @@ export async function POST(req: NextRequest) {
         })
       }
     }
+
+    await creditShopEarnings(order.id)
   }
 
   return NextResponse.json({ received: true })

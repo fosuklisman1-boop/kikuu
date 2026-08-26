@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyTransaction } from '@/lib/paystack'
+import { creditShopEarnings } from '@/lib/wallet-ledger'
 
 type SupabaseAdmin = ReturnType<typeof createAdminClient>
 
@@ -69,6 +70,8 @@ async function processVerification(
           })
         }
       }
+
+      await creditShopEarnings(orderId)
     }
 
     return { ok: true }
