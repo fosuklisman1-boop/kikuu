@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp, Palette, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp, Palette, Menu, X, Store, Banknote } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -13,6 +13,7 @@ const NAV = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/shops', label: 'Shops', icon: Store },
   { href: '/admin/categories', label: 'Categories', icon: Tag },
   { href: '/admin/delivery', label: 'Delivery Fees', icon: Truck },
   { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
@@ -21,6 +22,7 @@ const NAV = [
   { href: '/admin/brands', label: 'Brands', icon: Building2 },
   { href: '/admin/product-options', label: 'Product Options', icon: Palette },
   { href: '/admin/trending-searches', label: 'Trending', icon: TrendingUp },
+  { href: '/admin/withdrawals', label: 'Withdrawals', icon: Banknote },
 ]
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
