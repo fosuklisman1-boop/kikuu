@@ -5,7 +5,7 @@ import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { slugify } from '@/lib/utils'
-import { reverseShopEarnings } from '@/lib/wallet-ledger'
+import { creditShopEarnings, reverseShopEarnings } from '@/lib/wallet-ledger'
 import { z } from 'zod'
 
 const ProductSchema = z.object({
@@ -173,6 +173,8 @@ export async function confirmCodPayment(orderId: string) {
     event: 'Payment Collected',
     description: 'Cash on delivery payment confirmed by admin.',
   })
+
+  await creditShopEarnings(orderId)
 
   revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath('/admin/orders')

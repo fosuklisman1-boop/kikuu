@@ -36,4 +36,19 @@ describe('computeOrderEarnings', () => {
   it('returns 0 for an empty order', () => {
     expect(computeOrderEarnings([])).toBe(0)
   })
+
+  it('treats a missing base_price key (not just null) as a non-shop item', () => {
+    const legacyItem = {
+      product_id: 'p1',
+      product_name: 'Legacy Product',
+      product_image: '',
+      price: 60,
+      quantity: 1,
+      is_preorder: false,
+      preorder_ship_date: null,
+      preorder_note: null,
+      // no base_price key at all — simulates data written before this field existed
+    } as unknown as OrderItem
+    expect(computeOrderEarnings([legacyItem])).toBe(0)
+  })
 })

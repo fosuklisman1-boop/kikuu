@@ -36,6 +36,18 @@ export async function POST(req: NextRequest) {
 
     console.log('[webhook] found order:', order.id, 'status:', order.status)
 
+    const expectedPesewas = Math.round(order.total * 100)
+    if (event.data.amount < expectedPesewas) {
+      console.warn('[webhook] amount mismatch for order', order.id, '- expected', expectedPesewas, 'got', event.data.amount)
+      await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id).eq('status', 'pending')
+      await admin.from('order_events').insert({
+        order_id: order.id,
+        event: 'Payment Mismatch',
+        description: `Expected GHS ${(expectedPesewas / 100).toFixed(2)} but received GHS ${(event.data.amount / 100).toFixed(2)} (webhook). Order cancelled.`,
+      })
+      return NextResponse.json({ received: true })
+    }
+
     // Atomic guard: only update if status is still 'pending'.
     // If the verify callback already ran, this matches 0 rows and we skip
     // stock decrement — preventing a double-decrement race condition.
