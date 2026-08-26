@@ -6,12 +6,13 @@ import type { OrderItem } from '@/lib/supabase/types'
 // webhook). Re-verifies payment_status itself rather than trusting the caller.
 export async function creditShopEarnings(orderId: string): Promise<void> {
   const admin = createAdminClient()
-  const { data: order } = await admin
+  const { data: order, error: orderError } = await admin
     .from('orders')
     .select('shop_id, order_number, items, payment_status')
     .eq('id', orderId)
     .single()
 
+  if (orderError) throw new Error(orderError.message)
   if (!order?.shop_id) return
   if (order.payment_status !== 'paid') return
 
@@ -32,22 +33,24 @@ export async function creditShopEarnings(orderId: string): Promise<void> {
 // order's current status itself rather than trusting the caller.
 export async function reverseShopEarnings(orderId: string): Promise<void> {
   const admin = createAdminClient()
-  const { data: order } = await admin
+  const { data: order, error: orderError } = await admin
     .from('orders')
     .select('shop_id, order_number, status')
     .eq('id', orderId)
     .single()
 
+  if (orderError) throw new Error(orderError.message)
   if (!order?.shop_id) return
   if (order.status !== 'cancelled' && order.status !== 'refunded') return
 
-  const { data: credit } = await admin
+  const { data: credit, error: creditError } = await admin
     .from('wallet_transactions')
     .select('amount')
     .eq('order_id', orderId)
     .eq('type', 'credit')
     .maybeSingle()
 
+  if (creditError) throw new Error(creditError.message)
   if (!credit) return
 
   const { error } = await admin.from('wallet_transactions').insert({
