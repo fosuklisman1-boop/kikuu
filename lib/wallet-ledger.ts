@@ -62,3 +62,38 @@ export async function reverseShopEarnings(orderId: string): Promise<void> {
   })
   if (error && error.code !== '23505') throw new Error(error.message)
 }
+
+export async function computeWithdrawableBalance(shopId: string): Promise<number> {
+  const admin = createAdminClient()
+  const [{ data: balanceRow }, { data: pending }] = await Promise.all([
+    admin.from('wallet_balances').select('balance').eq('shop_id', shopId).maybeSingle(),
+    admin.from('withdrawal_requests').select('amount').eq('shop_id', shopId).eq('status', 'pending').maybeSingle(),
+  ])
+  const balance = balanceRow?.balance ?? 0
+  const pendingAmount = pending?.amount ?? 0
+  return Math.max(0, balance - pendingAmount)
+}
+
+// Called only from markWithdrawalPaid (already requireAdmin()-gated). Re-verifies
+// the request is actually 'paid' rather than trusting the caller, same discipline
+// as creditShopEarnings/reverseShopEarnings above.
+export async function debitWalletForWithdrawal(withdrawalRequestId: string): Promise<void> {
+  const admin = createAdminClient()
+  const { data: request, error } = await admin
+    .from('withdrawal_requests')
+    .select('shop_id, amount, status')
+    .eq('id', withdrawalRequestId)
+    .single()
+  if (error) throw new Error(error.message)
+  if (!request || request.status !== 'paid') return
+
+  const { error: insertError } = await admin.from('wallet_transactions').insert({
+    shop_id: request.shop_id,
+    order_id: null,
+    withdrawal_request_id: withdrawalRequestId,
+    type: 'debit',
+    amount: request.amount,
+    description: 'Withdrawal payout',
+  })
+  if (insertError && insertError.code !== '23505') throw new Error(insertError.message)
+}
