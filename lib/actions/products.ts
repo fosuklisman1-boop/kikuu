@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { slugify } from '@/lib/utils'
+import { reverseShopEarnings } from '@/lib/wallet-ledger'
 import { z } from 'zod'
 
 const ProductSchema = z.object({
@@ -120,12 +121,16 @@ export async function updateOrderStatus(orderId: string, status: string) {
   // Fetch order to check for pre-order items before updating
   const { data: order } = await admin
     .from('orders')
-    .select('is_preorder, items')
+    .select('is_preorder, items, shop_id, payment_status')
     .eq('id', orderId)
     .single()
 
   const { error } = await admin.from('orders').update({ status }).eq('id', orderId)
   if (error) return { error: error.message }
+
+  if ((status === 'cancelled' || status === 'refunded') && order?.shop_id && order?.payment_status === 'paid') {
+    await reverseShopEarnings(orderId)
+  }
 
   await admin.from('order_events').insert({
     order_id: orderId,
