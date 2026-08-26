@@ -69,12 +69,12 @@ export async function getWithdrawalHistory(): Promise<WithdrawalRequestWithShop[
 }
 
 export async function markWithdrawalPaid(requestId: string): Promise<{ error?: string }> {
-  await requireAdmin()
+  const adminUserId = await requireAdmin()
   const admin = createAdminClient()
 
   const { data: updated, error } = await admin
     .from('withdrawal_requests')
-    .update({ status: 'paid', processed_at: new Date().toISOString() })
+    .update({ status: 'paid', processed_at: new Date().toISOString(), processed_by: adminUserId })
     .eq('id', requestId)
     .eq('status', 'pending')
     .select('id')
@@ -82,24 +82,34 @@ export async function markWithdrawalPaid(requestId: string): Promise<{ error?: s
   if (error) return { error: error.message }
   if (!updated || updated.length === 0) return { error: 'This request was already processed.' }
 
-  await debitWalletForWithdrawal(requestId)
+  try {
+    await debitWalletForWithdrawal(requestId)
+  } catch (err) {
+    console.error('debitWalletForWithdrawal failed after marking paid:', err)
+    return {
+      error: 'Marked as paid, but recording the wallet debit failed. Use Manual Adjustment to debit this shop for the payout amount (with this request\'s order number left blank), then investigate.',
+    }
+  }
+
   revalidatePath('/admin/withdrawals')
+  revalidatePath('/seller/wallet')
   return {}
 }
 
 export async function rejectWithdrawal(requestId: string, reason: string): Promise<{ error?: string }> {
-  await requireAdmin()
+  const adminUserId = await requireAdmin()
   if (!reason.trim()) return { error: 'A reason is required.' }
 
   const admin = createAdminClient()
   const { error } = await admin
     .from('withdrawal_requests')
-    .update({ status: 'rejected', admin_note: reason, processed_at: new Date().toISOString() })
+    .update({ status: 'rejected', admin_note: reason, processed_at: new Date().toISOString(), processed_by: adminUserId })
     .eq('id', requestId)
     .eq('status', 'pending')
 
   if (error) return { error: error.message }
   revalidatePath('/admin/withdrawals')
+  revalidatePath('/seller/wallet')
   return {}
 }
 
@@ -123,7 +133,8 @@ export async function adjustWalletBalance(
   shopSlug: string,
   type: 'credit' | 'debit',
   amount: number,
-  reason: string
+  reason: string,
+  orderNumber?: string
 ): Promise<{ error?: string }> {
   await requireAdmin()
   if (!Number.isFinite(amount) || amount <= 0) return { error: 'Enter a valid amount.' }
@@ -133,15 +144,28 @@ export async function adjustWalletBalance(
   const { data: shop } = await admin.from('shops').select('id').eq('slug', shopSlug).single()
   if (!shop) return { error: 'No shop found with that URL slug.' }
 
+  let orderId: string | null = null
+  if (orderNumber && orderNumber.trim()) {
+    const { data: order } = await admin.from('orders').select('id').eq('order_number', orderNumber.trim()).single()
+    if (!order) return { error: 'No order found with that order number.' }
+    orderId = order.id
+  }
+
   const { error } = await admin.from('wallet_transactions').insert({
     shop_id: shop.id,
-    order_id: null,
+    order_id: orderId,
     withdrawal_request_id: null,
     type,
     amount,
-    description: `Manual adjustment: ${reason}`,
+    description: `Manual adjustment: ${reason.trim()}`,
   })
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') {
+      return { error: 'A ledger entry already exists for this order in this direction — it may already have been reversed or credited automatically. Leave the order number blank to record an adjustment unrelated to a specific order.' }
+    }
+    return { error: error.message }
+  }
   revalidatePath('/admin/withdrawals')
+  revalidatePath('/admin/shops')
   return {}
 }

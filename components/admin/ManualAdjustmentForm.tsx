@@ -14,7 +14,8 @@ export default function ManualAdjustmentForm() {
         String(formData.get('shop_slug')),
         formData.get('type') as 'credit' | 'debit',
         Number(formData.get('amount')),
-        String(formData.get('reason'))
+        String(formData.get('reason')),
+        String(formData.get('order_number') ?? '') || undefined
       )
       if (result?.error) setMessage(result.error)
       else setMessage('Adjustment applied.')
@@ -33,6 +34,7 @@ export default function ManualAdjustmentForm() {
         <input name="amount" type="number" step="0.01" placeholder="Amount" className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm" />
       </div>
       <input name="reason" placeholder="Reason (required)" className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm" />
+      <input name="order_number" placeholder="Order number (optional — links this to a specific order)" className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm" />
       {message && <p className="text-xs text-gray-600">{message}</p>}
       <button type="submit" disabled={pending} className="text-sm font-semibold text-green-600 disabled:text-gray-300">
         Apply Adjustment

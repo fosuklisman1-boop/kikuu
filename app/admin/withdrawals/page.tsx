@@ -4,6 +4,7 @@ import { getWithdrawalSettings } from '@/lib/actions/wallet'
 import { formatGHS } from '@/lib/utils'
 import WithdrawalActions from '@/components/admin/WithdrawalActions'
 import ManualAdjustmentForm from '@/components/admin/ManualAdjustmentForm'
+import MinAmountForm from '@/components/admin/MinAmountForm'
 
 export default async function AdminWithdrawalsPage() {
   const [pending, history, settings] = await Promise.all([
@@ -16,7 +17,7 @@ export default async function AdminWithdrawalsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-bold text-gray-900 mb-1">Withdrawals</h1>
-        <p className="text-sm text-gray-400">Minimum withdrawal: {formatGHS(settings.min_amount)}</p>
+        <MinAmountForm initialAmount={settings.min_amount} />
       </div>
 
       <div>

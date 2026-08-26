@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { getAllShops } from '@/lib/actions/shops-admin'
 import ShopActiveToggle from '@/components/admin/ShopActiveToggle'
 import Link from 'next/link'
+import { formatGHS } from '@/lib/utils'
 
 export default async function AdminShopsPage() {
   const shops = await getAllShops()
@@ -20,6 +21,7 @@ export default async function AdminShopsPage() {
               <th className="py-2 pr-4">Owner</th>
               <th className="py-2 pr-4">Products</th>
               <th className="py-2 pr-4">Created</th>
+              <th className="py-2 pr-4">Balance</th>
               <th className="py-2">Status</th>
             </tr>
           </thead>
@@ -37,6 +39,7 @@ export default async function AdminShopsPage() {
                 <td className="py-3 pr-4 text-gray-500">
                   {new Date(s.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </td>
+                <td className="py-3 pr-4 font-medium">{formatGHS(s.wallet_balance)}</td>
                 <td className="py-3"><ShopActiveToggle shopId={s.id} active={s.active} /></td>
               </tr>
             ))}
