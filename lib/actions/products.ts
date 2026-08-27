@@ -132,6 +132,10 @@ export async function updateOrderStatus(orderId: string, status: string) {
     await reverseShopEarnings(orderId)
   }
 
+  if (status === 'delivered' && order?.shop_id) {
+    await creditShopEarnings(orderId)
+  }
+
   await admin.from('order_events').insert({
     order_id: orderId,
     event: `Status updated to ${status}`,

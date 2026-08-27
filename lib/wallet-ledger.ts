@@ -2,19 +2,23 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { computeOrderEarnings } from '@/lib/wallet-earnings'
 import type { OrderItem } from '@/lib/supabase/types'
 
-// Called only from payment-confirmation code paths (Paystack inline callback,
-// webhook). Re-verifies payment_status itself rather than trusting the caller.
+// Called from payment-confirmation code paths (Paystack inline callback,
+// webhook, COD confirmation) and from the admin order-status update action when
+// an order is marked delivered. Re-verifies payment_status itself rather than
+// trusting the caller. Pre-order orders are deliberately not credited at payment
+// time — they wait until an admin marks the order delivered.
 export async function creditShopEarnings(orderId: string): Promise<void> {
   const admin = createAdminClient()
   const { data: order, error: orderError } = await admin
     .from('orders')
-    .select('shop_id, order_number, items, payment_status')
+    .select('shop_id, order_number, items, payment_status, is_preorder, status')
     .eq('id', orderId)
     .single()
 
   if (orderError) throw new Error(orderError.message)
   if (!order?.shop_id) return
   if (order.payment_status !== 'paid') return
+  if (order.is_preorder && order.status !== 'delivered') return
 
   const amount = computeOrderEarnings((order.items as OrderItem[]) ?? [])
   if (amount <= 0) return
