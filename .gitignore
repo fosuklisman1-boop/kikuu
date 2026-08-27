@@ -44,3 +44,6 @@ next-env.d.ts
 
 # superpowers scratch workspace (subagent-driven-development ledgers/briefs/reports)
 .superpowers/
+
+# git worktrees created for isolated feature branches
+.worktrees/
