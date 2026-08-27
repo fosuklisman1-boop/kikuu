@@ -6,6 +6,7 @@ import ProductImages from '@/components/store/ProductImages'
 import ProductVariantSection from '@/components/store/ProductVariantSection'
 import type { Metadata } from 'next'
 import type { ProductAttributes } from '@/lib/supabase/types'
+import { CalendarClock } from 'lucide-react'
 
 interface Props {
   params: Promise<{ slug: string; productSlug: string }>
@@ -39,7 +40,7 @@ export default async function ShopProductPage({ params }: Props) {
     .from('products')
     .select('*, categories(name, slug)')
     .eq('slug', productSlug)
-    .eq('status', 'active')
+    .in('status', ['active', 'pre_order'])
     .single() as { data: any }
 
   if (!product) notFound()
@@ -75,14 +76,34 @@ export default async function ShopProductPage({ params }: Props) {
           </div>
 
           <div className="mb-6">
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            {isPreorder ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-700">
+                <CalendarClock size={14} />
+                Pre-order
+              </span>
+            ) : (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                 inStock ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-              }`}
-            >
-              {inStock ? `In Stock (${product.stock_qty} left)` : 'Out of Stock'}
-            </span>
+              }`}>
+                {inStock ? `In Stock (${product.stock_qty} left)` : 'Out of Stock'}
+              </span>
+            )}
           </div>
+
+          {isPreorder && product.preorder_days && (
+            <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-6">
+              <CalendarClock size={16} className="text-orange-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-orange-800">Pre-order Item</p>
+                <p className="text-xs text-orange-600 mt-0.5">
+                  Expected delivery within {product.preorder_days} days of purchase.
+                </p>
+                {product.preorder_note && (
+                  <p className="text-xs text-orange-500 mt-0.5">{product.preorder_note}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {product.description && <p className="text-gray-600 text-sm mb-8">{product.description}</p>}
 

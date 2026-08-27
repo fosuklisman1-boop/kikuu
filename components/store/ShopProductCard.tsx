@@ -23,6 +23,7 @@ export default function ShopProductCard({
   const [cartError, setCartError] = useState('')
   const product = item.product
   const outOfStock = product.stock_qty === 0 && product.status !== 'pre_order'
+  const isPreorder = product.status === 'pre_order'
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
@@ -57,6 +58,11 @@ export default function ShopProductCard({
               <span className="text-[11px] font-semibold text-[#6b6360] bg-white px-3 py-1.5 rounded-full border border-[#ede8df] shadow-sm tracking-wide">
                 Out of Stock
               </span>
+            </div>
+          )}
+          {isPreorder && (
+            <div className="absolute top-2 left-2 bg-orange-50 text-orange-700 text-[10px] font-semibold px-2 py-1 rounded-full border border-orange-200">
+              Pre-order
             </div>
           )}
         </div>

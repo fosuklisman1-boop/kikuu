@@ -42,7 +42,7 @@ export default async function ShopPage({ params }: Props) {
 
   const productIds = (priced ?? []).map((p) => p.product_id)
   const { data: products } = productIds.length
-    ? await supabase.from('products').select('*').in('id', productIds).eq('status', 'active')
+    ? await supabase.from('products').select('*').in('id', productIds).in('status', ['active', 'pre_order'])
     : { data: [] as Product[] }
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]))

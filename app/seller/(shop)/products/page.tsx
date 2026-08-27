@@ -10,7 +10,7 @@ export default async function SellerProductsPage() {
 
   const supabase = await createClient()
   const [{ data: products }, curated] = await Promise.all([
-    supabase.from('products').select('*').eq('status', 'active').order('name'),
+    supabase.from('products').select('*').in('status', ['active', 'pre_order']).order('name'),
     getShopProductsPriced(),
   ])
 

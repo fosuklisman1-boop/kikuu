@@ -64,6 +64,11 @@ export default function ShopProductPicker({ products }: { products: Product[] })
               onChange={() => toggle(product.id)}
               className="absolute top-2 right-2 w-4 h-4"
             />
+            {product.status === 'pre_order' && (
+              <span className="absolute top-2 left-2 bg-orange-50 text-orange-700 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-orange-200">
+                Pre-order
+              </span>
+            )}
             <div className="aspect-square bg-gray-50 rounded-lg mb-2 overflow-hidden">
               {product.images[0] && (
                 <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
