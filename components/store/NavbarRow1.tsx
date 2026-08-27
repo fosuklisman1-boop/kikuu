@@ -2,16 +2,17 @@
 
 import Link from 'next/link'
 import Logo from '@/components/store/Logo'
-import { ShoppingCart, Heart, User, ChevronDown, Package, LayoutDashboard, LogOut } from 'lucide-react'
+import { ShoppingCart, Heart, User } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
-import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import SearchBar from '@/components/store/SearchBar'
 import type { TrendingSearch } from '@/lib/supabase/types'
+import ProfileSidebar from '@/components/store/ProfileSidebar'
+import { getMyShop } from '@/lib/actions/shops'
 
 interface NavbarRow1Props {
   trendingSearches: TrendingSearch[]
@@ -22,8 +23,7 @@ export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
   const { count: wishlistCount } = useWishlist()
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const router = useRouter()
-  const userMenuRef = useRef<HTMLDivElement>(null)
+  const [shop, setShop] = useState<{ slug: string } | null>(null)
 
   useEffect(() => {
     useWishlist.persist.rehydrate()
@@ -40,22 +40,13 @@ export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
   }, [])
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false)
-      }
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShop(null)
+      return
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    setUserMenuOpen(false)
-    router.push('/')
-    router.refresh()
-  }
+    getMyShop().then((s) => setShop(s ? { slug: s.slug } : null))
+  }, [user])
 
   const meta = user?.user_metadata as Record<string, string> | null
   const displayName = meta?.full_name || user?.email?.split('@')[0] || ''
@@ -129,66 +120,20 @@ export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
 
             {/* User */}
             {user ? (
-              <div className="relative" ref={userMenuRef}>
-                <motion.button
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#fdf6ec] transition-colors"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#b45309] to-[#92400e] flex items-center justify-center text-white text-xs font-extrabold">
-                    {initials}
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-[10px] text-[#a89e96] leading-none">Hello,</span>
-                    <span className="text-xs font-semibold text-[#0a0a0a] max-w-[72px] truncate leading-tight">
-                      {displayName.split(' ')[0]}
-                    </span>
-                  </div>
-                  <ChevronDown size={13} className={`text-[#6b6360] transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                </motion.button>
-
-                <AnimatePresence>
-                  {userMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-[#ede8df] overflow-hidden z-50"
-                    >
-                      <div className="px-4 py-3 border-b border-[#f5f0e8]">
-                        <p className="font-semibold text-[#0a0a0a] text-sm truncate">{displayName}</p>
-                        <p className="text-xs text-[#a89e96] truncate">{user.email}</p>
-                      </div>
-                      {[
-                        { href: '/account', label: 'Dashboard', icon: LayoutDashboard },
-                        { href: '/account/orders', label: 'My Orders', icon: Package },
-                        { href: '/account/wishlist', label: 'Wishlist', icon: Heart },
-                        { href: '/account/profile', label: 'Profile & Addresses', icon: User },
-                      ].map(({ href, label, icon: Icon }) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-3 text-sm text-[#6b6360] hover:bg-[#fdf6ec] hover:text-[#b45309] transition-colors"
-                        >
-                          <Icon size={15} className="text-[#a89e96]" />
-                          {label}
-                        </Link>
-                      ))}
-                      <div className="border-t border-[#f5f0e8]">
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                          <LogOut size={15} />
-                          Sign Out
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <button
+                onClick={() => setUserMenuOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#fdf6ec] transition-colors"
+              >
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#b45309] to-[#92400e] flex items-center justify-center text-white text-xs font-extrabold">
+                  {initials}
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-[10px] text-[#a89e96] leading-none">Hello,</span>
+                  <span className="text-xs font-semibold text-[#0a0a0a] max-w-[72px] truncate leading-tight">
+                    {displayName.split(' ')[0]}
+                  </span>
+                </div>
+              </button>
             ) : (
               <Link href="/account/login">
                 <motion.div
@@ -203,6 +148,19 @@ export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
           </div>
         </div>
       </div>
+
+      {user && (
+        <ProfileSidebar
+          displayName={displayName}
+          email={user.email ?? ''}
+          initials={initials}
+          wishlistCount={wishlistCount}
+          shopHref={shop ? '/seller/dashboard' : '/seller/onboarding'}
+          shopLabel={shop ? 'My Shop' : 'Sell on Kikuu'}
+          open={userMenuOpen}
+          onClose={() => setUserMenuOpen(false)}
+        />
+      )}
     </div>
   )
 }
