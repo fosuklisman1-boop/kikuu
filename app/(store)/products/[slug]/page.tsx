@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
+import { getMyShop } from '@/lib/actions/shops'
 import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
 import ProductImages from '@/components/store/ProductImages'
 import ProductVariantSection from '@/components/store/ProductVariantSection'
+import AddToShopButton from '@/components/store/AddToShopButton'
 import { CalendarClock, Zap } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { ProductAttributes } from '@/lib/supabase/types'
@@ -42,6 +44,7 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound()
 
   const salePrices = await getFlashSalePriceMap([product.id])
+  const shop = await getMyShop()
   const salePrice = salePrices[product.id]
   const onSale = salePrice !== undefined && salePrice < product.price
   const displayPrice = onSale ? salePrice : product.price
@@ -108,6 +111,12 @@ export default async function ProductPage({ params }: Props) {
               </span>
             )}
           </div>
+
+          {shop && (
+            <div className="mb-4">
+              <AddToShopButton productId={product.id} basePrice={displayPrice} />
+            </div>
+          )}
 
           {/* Pre-order info block */}
           {isPreorder && product.preorder_days && (

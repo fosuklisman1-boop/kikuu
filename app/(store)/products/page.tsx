@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
+import { getMyShop } from '@/lib/actions/shops'
 import ProductCard from '@/components/store/ProductCard'
 import SearchBar from '@/components/store/SearchBar'
 import CategoryFilter from '@/components/store/CategoryFilter'
@@ -68,13 +69,16 @@ export default async function ProductsPage({ searchParams }: Props) {
     { count: preorderCount },
     { data: categories },
     { data: trendingSearches },
+    shop,
   ] = await Promise.all([
     buildQuery(activeStatus).range(from, from + PAGE_SIZE - 1),
     buildQuery('active'),
     buildQuery('pre_order'),
     supabase.from('categories').select('*').is('parent_id', null).order('sort_order'),
     supabase.from('trending_searches').select('*').eq('active', true).order('sort_order').limit(8),
+    getMyShop(),
   ])
+  const hasShop = !!shop
 
   const totalPages = Math.ceil((tabCount ?? 0) / PAGE_SIZE)
 
@@ -112,7 +116,7 @@ export default async function ProductsPage({ searchParams }: Props) {
           {products && products.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} salePrice={salePrices[product.id]} />
+                <ProductCard key={product.id} product={product} salePrice={salePrices[product.id]} hasShop={hasShop} />
               ))}
             </div>
           ) : (

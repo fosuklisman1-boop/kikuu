@@ -8,8 +8,9 @@ import { Heart, Clock } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
 import { useState, useEffect } from 'react'
+import AddToShopButton from './AddToShopButton'
 
-export default function ProductCard({ product, salePrice }: { product: Product; salePrice?: number }) {
+export default function ProductCard({ product, salePrice, hasShop = false }: { product: Product; salePrice?: number; hasShop?: boolean }) {
   const { addItem } = useCart()
   const { toggle, has } = useWishlist()
   const [added, setAdded] = useState(false)
@@ -103,6 +104,13 @@ export default function ProductCard({ product, salePrice }: { product: Product; 
             >
               <Heart size={14} className={wishlisted ? 'fill-[#b45309] text-[#b45309]' : 'text-[#a89e96]'} />
             </button>
+
+            {/* Add to shop button — stacked below wishlist to avoid overlap */}
+            {hasShop && (
+              <div className="absolute top-12 right-2.5 z-10">
+                <AddToShopButton productId={product.id} basePrice={displayPrice} />
+              </div>
+            )}
 
             {/* Out of stock overlay */}
             {outOfStock && (
