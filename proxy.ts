@@ -21,9 +21,14 @@ export async function proxy(request: NextRequest) {
   // Supabase client entirely for every other path now that the matcher is
   // broad (needed to catch subdomain requests above), so this doesn't add
   // overhead to /products, the homepage, etc.
+  // Exact-or-slash-boundary checks: the broad matcher above means a bare
+  // startsWith would also capture /admin-guide, /accounts-payable, /sellers,
+  // etc. The old narrow matcher gave this boundary for free; now it's explicit.
   const pathname = request.nextUrl.pathname
-  const needsAuthCheck =
-    pathname.startsWith('/admin') || pathname.startsWith('/account') || pathname.startsWith('/seller')
+  const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/')
+  const isAccountPath = pathname === '/account' || pathname.startsWith('/account/')
+  const isSellerPath = pathname === '/seller' || pathname.startsWith('/seller/')
+  const needsAuthCheck = isAdminPath || isAccountPath || isSellerPath
   if (!needsAuthCheck) {
     return NextResponse.next()
   }
@@ -55,14 +60,14 @@ export async function proxy(request: NextRequest) {
   const user = session?.user ?? null
 
   // Redirect unauthenticated users away from /admin — role enforcement is in admin/layout.tsx
-  if (pathname.startsWith('/admin')) {
+  if (isAdminPath) {
     if (!user) {
       return NextResponse.redirect(new URL('/account/login?redirect=/admin', request.url))
     }
   }
 
   // Redirect unauthenticated users away from /seller — shop-ownership enforcement is in seller/(shop)/layout.tsx
-  if (pathname.startsWith('/seller')) {
+  if (isSellerPath) {
     if (!user) {
       return NextResponse.redirect(new URL('/account/login?redirect=/seller', request.url))
     }
@@ -78,7 +83,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // All other /account/* routes require auth
-  if (pathname.startsWith('/account')) {
+  if (isAccountPath) {
     if (!user) {
       const redirectUrl = encodeURIComponent(pathname)
       return NextResponse.redirect(
