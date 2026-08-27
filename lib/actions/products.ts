@@ -121,7 +121,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
   // Fetch order to check for pre-order items before updating
   const { data: order } = await admin
     .from('orders')
-    .select('is_preorder, items, shop_id, payment_status, status')
+    .select('is_preorder, items, shop_id, payment_status')
     .eq('id', orderId)
     .single()
 
@@ -132,12 +132,24 @@ export async function updateOrderStatus(orderId: string, status: string) {
     await reverseShopEarnings(orderId)
   }
 
-  // `order.status` here is the PRE-transition status (fetched above, before the
-  // update). A pre-order order that was refunded/cancelled before it was ever
-  // credited has no ledger row, so the unique(order_id, type) constraint would
-  // not stop a credit — this guard does.
-  if (status === 'delivered' && order?.shop_id && order.status !== 'cancelled' && order.status !== 'refunded') {
-    await creditShopEarnings(orderId)
+  // A pre-order order is credited on delivery, not at payment — so an order that
+  // was cancelled/refunded before delivery has an empty ledger, and the
+  // unique(order_id, type) constraint cannot stop a wrongful credit here.
+  // Checking the order's current/previous status is not enough (an intermediate
+  // status overwrites it), so check order_events for the full history: was this
+  // order EVER cancelled or refunded? These rows are written below on every
+  // transition, and updateOrderStatus is the only writer of those statuses.
+  if (status === 'delivered' && order?.shop_id) {
+    const { data: priorReversal } = await admin
+      .from('order_events')
+      .select('id')
+      .eq('order_id', orderId)
+      .or('event.eq.Status updated to cancelled,event.eq.Status updated to refunded')
+      .limit(1)
+      .maybeSingle()
+    if (!priorReversal) {
+      await creditShopEarnings(orderId)
+    }
   }
 
   await admin.from('order_events').insert({
