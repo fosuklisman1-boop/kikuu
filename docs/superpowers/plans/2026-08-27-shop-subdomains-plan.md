@@ -127,7 +127,7 @@ export function resolveShopSubdomainRewrite(shopSlug: string, pathname: string):
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run lib/shop-subdomain.test.ts`
-Expected: PASS (13 tests: 6 for `getShopSlugFromHost` + 7 for `resolveShopSubdomainRewrite`, counting the `it.each` as 7 individual cases).
+Expected: PASS (16 tests: 6 for `getShopSlugFromHost` + 10 for `resolveShopSubdomainRewrite` — 2 discrete rewrite cases + 7 individual cases from the `it.each` passthrough list + 1 false-positive case).
 
 - [ ] **Step 5: Commit**
 
