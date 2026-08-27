@@ -106,3 +106,14 @@ export async function getShopProductsPriced(): Promise<ShopProductPriced[]> {
     })
     .filter((p): p is ShopProductPriced => p !== null)
 }
+
+export async function getShopOrderStats(): Promise<{ total: number; pending: number }> {
+  const { shopId } = await requireShopOwner()
+  const admin = createAdminClient()
+  const [{ count: total }, { count: pending }] = await Promise.all([
+    admin.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shopId),
+    admin.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shopId)
+      .in('status', ['pending', 'paid', 'processing', 'shipped']),
+  ])
+  return { total: total ?? 0, pending: pending ?? 0 }
+}
