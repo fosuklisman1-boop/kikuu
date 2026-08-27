@@ -25,6 +25,14 @@ describe('getShopSlugFromHost', () => {
   it('strips the port before comparing', () => {
     expect(getShopSlugFromHost('theirshop.kikuu.store:3000', 'kikuu.store')).toBe('theirshop')
   })
+
+  it('returns null for a multi-level subdomain', () => {
+    expect(getShopSlugFromHost('theirshop.staging.kikuu.store', 'kikuu.store')).toBeNull()
+  })
+
+  it('lowercases a mixed-case host before extracting the slug', () => {
+    expect(getShopSlugFromHost('TheirShop.kikuu.store', 'kikuu.store')).toBe('theirshop')
+  })
 })
 
 describe('resolveShopSubdomainRewrite', () => {
@@ -36,7 +44,7 @@ describe('resolveShopSubdomainRewrite', () => {
     expect(resolveShopSubdomainRewrite('theirshop', '/some-product')).toBe('/shop/theirshop/some-product')
   })
 
-  it.each(['/checkout', '/cart', '/api/checkout', '/account/login', '/admin', '/seller/dashboard', '/products'])(
+  it.each(['/checkout', '/cart', '/orders', '/api/checkout', '/account/login', '/admin', '/seller/dashboard', '/products'])(
     'passes %s through unrewritten',
     (pathname) => {
       expect(resolveShopSubdomainRewrite('theirshop', pathname)).toBeNull()

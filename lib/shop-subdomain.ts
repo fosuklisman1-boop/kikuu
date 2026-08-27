@@ -11,12 +11,17 @@ const PASSTHROUGH_PREFIXES = ['/api', '/cart', '/checkout', '/orders', '/account
 // inert until NEXT_PUBLIC_ROOT_DOMAIN is set).
 export function getShopSlugFromHost(host: string, rootDomain: string): string | null {
   if (!rootDomain) return null
-  const hostWithoutPort = host.split(':')[0]
+  // Host headers are case-insensitive; normalize once here so every caller
+  // gets a lowercase slug that matches the (lowercase-only) shops.slug column.
+  const hostWithoutPort = host.split(':')[0].toLowerCase()
   const suffix = `.${rootDomain}`
   if (hostWithoutPort === rootDomain || hostWithoutPort === `www.${rootDomain}`) return null
   if (!hostWithoutPort.endsWith(suffix)) return null
   const subdomain = hostWithoutPort.slice(0, -suffix.length)
-  return subdomain || null
+  // Must look like a real shop slug (see lib/shop-schema.ts) — this also
+  // rejects multi-level hosts like "shop.staging.kikuu.store" (literal dot).
+  if (!/^[a-z0-9-]{3,40}$/.test(subdomain)) return null
+  return subdomain
 }
 
 // Given a shop slug (already confirmed via getShopSlugFromHost) and the

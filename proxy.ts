@@ -97,10 +97,11 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on every path except Next.js internals, favicon/icon, and any
-    // path with a file extension (static assets) — needed so subdomain
-    // requests to "/" and "/product-slug" are caught, not just the three
-    // previously-guarded prefixes.
-    '/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\..*).*)',
+    // Run on every path except Next.js internals, favicon/icon, /api (never
+    // rewritten or auth-gated here — keeps the proxy off the payment-critical
+    // path entirely), and any path with a file extension (static assets) —
+    // needed so subdomain requests to "/" and "/product-slug" are caught, not
+    // just the three previously-guarded prefixes.
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|api|.*\\..*).*)',
   ],
 }
