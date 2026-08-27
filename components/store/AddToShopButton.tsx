@@ -7,6 +7,7 @@ import { addShopProducts } from '@/lib/actions/shop-products'
 import MarkupForm from '@/components/seller/MarkupForm'
 
 const POPOVER_WIDTH = 256 // w-64
+const POPOVER_HEIGHT_ESTIMATE = 160 // heading + MarkupForm row + Add button + padding, generous estimate
 
 export default function AddToShopButton({ productId, basePrice }: { productId: string; basePrice: number }) {
   const [open, setOpen] = useState(false)
@@ -22,7 +23,14 @@ export default function AddToShopButton({ productId, basePrice }: { productId: s
     const rect = triggerRef.current?.getBoundingClientRect()
     if (rect) {
       const left = Math.max(8, Math.min(rect.right - POPOVER_WIDTH, window.innerWidth - POPOVER_WIDTH - 8))
-      setPosition({ top: rect.bottom + 8, left })
+      // Flip upward if there isn't enough room below the trigger — otherwise
+      // the popover's "Add" button would render past the bottom of the
+      // (position: fixed, viewport-relative) visible area.
+      const spaceBelow = window.innerHeight - rect.bottom
+      const top = spaceBelow >= POPOVER_HEIGHT_ESTIMATE + 8
+        ? rect.bottom + 8
+        : Math.max(8, rect.top - POPOVER_HEIGHT_ESTIMATE - 8)
+      setPosition({ top, left })
     }
     setOpen(true)
   }
