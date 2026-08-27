@@ -5,15 +5,18 @@ import { useState } from 'react'
 import { formatGHS } from '@/lib/utils'
 import { useCart } from '@/lib/cart'
 import type { ShopProductPriced } from '@/lib/supabase/types'
+import { shopProductHref } from '@/lib/shop-url'
 
 export default function ShopProductCard({
   shopId,
   shopSlug,
   item,
+  onSubdomain,
 }: {
   shopId: string
   shopSlug: string
   item: ShopProductPriced
+  onSubdomain: boolean
 }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
@@ -40,7 +43,7 @@ export default function ShopProductCard({
   return (
     <div className="group relative">
       <Link
-        href={`/shop/${shopSlug}/${product.slug}`}
+        href={shopProductHref(shopSlug, product.slug, onSubdomain)}
         className="block bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_40px_rgba(0,0,0,0.14)] transition-shadow duration-300"
       >
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-[#fdf6ec] to-[#faecd8]">

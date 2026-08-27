@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import ShopProductCard from '@/components/store/ShopProductCard'
 import type { Metadata } from 'next'
 import type { Product } from '@/lib/supabase/types'
+import { headers } from 'next/headers'
+import { getShopSlugFromHost } from '@/lib/shop-subdomain'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -28,6 +30,9 @@ export default async function ShopPage({ params }: Props) {
     .single()
 
   if (!shop) notFound()
+
+  const host = (await headers()).get('host') ?? ''
+  const onSubdomain = getShopSlugFromHost(host, process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? '') === shop.slug
 
   const { data: priced } = await supabase
     .from('shop_products_priced')
@@ -56,7 +61,7 @@ export default async function ShopPage({ params }: Props) {
       {items.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {items.map((item) => (
-            <ShopProductCard key={item.id} shopId={shop.id} shopSlug={shop.slug} item={item} />
+            <ShopProductCard key={item.id} shopId={shop.id} shopSlug={shop.slug} item={item} onSubdomain={onSubdomain} />
           ))}
         </div>
       ) : (
