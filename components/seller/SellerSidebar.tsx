@@ -6,6 +6,7 @@ import { LayoutDashboard, Package, LogOut, ExternalLink, Menu, X, Wallet } from 
 import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
+import { shopUrl } from '@/lib/shop-url'
 
 const NAV = [
   { href: '/seller/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -66,7 +67,7 @@ function SidebarContent({
       </nav>
 
       <div className="p-3 space-y-1 border-t border-gray-800 shrink-0">
-        <Link href={`/shop/${shopSlug}`} target="_blank" onClick={onClose}>
+        <Link href={shopUrl(shopSlug)} target="_blank" onClick={onClose}>
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-800 hover:text-white transition-colors">
             <ExternalLink size={16} />
             View My Shop
