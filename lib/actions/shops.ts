@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { ShopSchema } from '@/lib/shop-schema'
+import { ShopSchema, RESERVED_SHOP_SLUGS } from '@/lib/shop-schema'
 import type { Shop } from '@/lib/supabase/types'
 
 export async function getMyShop(): Promise<Shop | null> {
@@ -19,6 +19,7 @@ export async function getMyShop(): Promise<Shop | null> {
 
 export async function checkSlugAvailable(slug: string): Promise<boolean> {
   if (!/^[a-z0-9-]{3,40}$/.test(slug)) return false
+  if (RESERVED_SHOP_SLUGS.has(slug)) return false
   const admin = createAdminClient()
   const { data } = await admin.from('shops').select('id').eq('slug', slug).maybeSingle()
   return !data
