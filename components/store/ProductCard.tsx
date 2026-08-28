@@ -108,7 +108,9 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
             {/* Add to shop button — stacked below wishlist to avoid overlap */}
             {hasShop && (
               <div className="absolute top-12 right-2.5 z-10">
-                <AddToShopButton productId={product.id} basePrice={displayPrice} />
+                {/* List price, not displayPrice — shop markup is computed off
+                    products.price in shop_products_priced, never a sale price. */}
+                <AddToShopButton productId={product.id} basePrice={product.price} />
               </div>
             )}
 

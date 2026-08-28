@@ -111,6 +111,12 @@ export async function deleteProduct(id: string) {
   revalidatePath('/')
 }
 
+// Single source of truth for the order_events label written on a status
+// transition. The pre-order earnings guard below matches on these exact
+// strings, so the writer and the reader must derive them from here — a
+// reword of the label would otherwise silently break the money guard.
+const statusEventLabel = (s: string) => `Status updated to ${s}`
+
 export async function updateOrderStatus(orderId: string, status: string) {
   await requireAdmin()
   const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
@@ -150,7 +156,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
       .from('order_events')
       .select('id')
       .eq('order_id', orderId)
-      .or('event.eq.Status updated to cancelled,event.eq.Status updated to refunded')
+      .in('event', [statusEventLabel('cancelled'), statusEventLabel('refunded')])
       .limit(1)
       .maybeSingle()
     if (!reversalError && !priorReversal) {
@@ -158,11 +164,19 @@ export async function updateOrderStatus(orderId: string, status: string) {
     }
   }
 
-  await admin.from('order_events').insert({
+  const { error: eventError } = await admin.from('order_events').insert({
     order_id: orderId,
-    event: `Status updated to ${status}`,
+    event: statusEventLabel(status),
     description: `Admin updated order status to "${status}".`,
   })
+
+  // The guard above depends on cancelled/refunded transitions having left a
+  // history row. If that write fails we must surface it rather than swallow it
+  // — a missing row would let a later 'delivered' transition wrongly credit a
+  // reversed order. Other statuses aren't load-bearing, so they don't block.
+  if (eventError && (status === 'cancelled' || status === 'refunded')) {
+    return { error: `Order status updated, but recording the ${status} history failed: ${eventError.message}. Please retry.` }
+  }
 
   // Decrement stock for pre-order items when admin moves order to processing
   // (this is when items are physically pulled from inventory)

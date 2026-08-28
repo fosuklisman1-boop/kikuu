@@ -23,7 +23,7 @@ export default async function SellerDashboardPage() {
       <h1 className="text-xl font-bold text-gray-900 mb-1">{shop.name}</h1>
       <p className="text-sm text-gray-400 mb-6">{shopUrl(shop.slug)}</p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-3">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 mb-1">
             <Wallet size={14} className="text-gray-400" />
@@ -60,6 +60,10 @@ export default async function SellerDashboardPage() {
           <p className="text-2xl font-bold text-gray-900">{products.length}</p>
         </div>
       </div>
+
+      <p className="text-xs text-gray-400 mb-8">
+        Pre-order earnings are added to your wallet once the order is marked delivered.
+      </p>
 
       <div className="flex gap-3">
         <Link

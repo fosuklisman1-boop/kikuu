@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { LayoutDashboard, Package, Heart, User, LogOut, Store, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -35,6 +37,16 @@ export default function ProfileSidebar({
   onClose,
 }: ProfileSidebarProps) {
   const router = useRouter()
+  // The navbar this drawer is rendered from has `backdrop-blur-sm`, and a
+  // non-`none` backdrop-filter creates a containing block for fixed-position
+  // descendants — which would clip the drawer to the ~57px navbar strip.
+  // Portal to document.body to escape it, same as AddToShopButton does for its
+  // own clipping ancestor. `mounted` keeps createPortal off the server render.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+  }, [])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -44,7 +56,9 @@ export default function ProfileSidebar({
     router.refresh()
   }
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -120,6 +134,7 @@ export default function ProfileSidebar({
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

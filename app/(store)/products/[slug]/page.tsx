@@ -114,7 +114,9 @@ export default async function ProductPage({ params }: Props) {
 
           {shop && (
             <div className="mb-4">
-              <AddToShopButton productId={product.id} basePrice={displayPrice} />
+              {/* List price, not displayPrice — shop markup is computed off
+                  products.price in shop_products_priced, never a sale price. */}
+              <AddToShopButton productId={product.id} basePrice={product.price} />
             </div>
           )}
 
