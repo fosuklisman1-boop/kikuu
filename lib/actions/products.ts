@@ -137,17 +137,23 @@ export async function updateOrderStatus(orderId: string, status: string) {
   // unique(order_id, type) constraint cannot stop a wrongful credit here.
   // Checking the order's current/previous status is not enough (an intermediate
   // status overwrites it), so check order_events for the full history: was this
-  // order EVER cancelled or refunded? These rows are written below on every
-  // transition, and updateOrderStatus is the only writer of those statuses.
+  // order EVER cancelled or refunded? Those rows are written below on every
+  // transition, and updateOrderStatus is the only writer of 'refunded' — and the
+  // only writer of 'cancelled' for an order whose payment_status is 'paid'. (The
+  // Paystack verify/webhook routes also cancel, but only orders still 'pending',
+  // and they never set payment_status, so creditShopEarnings' own
+  // payment_status !== 'paid' check already blocks those.)
+  // On a read error we skip crediting rather than risk a wrongful payout: a
+  // missed credit is recoverable later, a credit on a refunded order is not.
   if (status === 'delivered' && order?.shop_id) {
-    const { data: priorReversal } = await admin
+    const { data: priorReversal, error: reversalError } = await admin
       .from('order_events')
       .select('id')
       .eq('order_id', orderId)
       .or('event.eq.Status updated to cancelled,event.eq.Status updated to refunded')
       .limit(1)
       .maybeSingle()
-    if (!priorReversal) {
+    if (!reversalError && !priorReversal) {
       await creditShopEarnings(orderId)
     }
   }
