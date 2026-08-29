@@ -5,57 +5,28 @@ import Logo from '@/components/store/Logo'
 import { ShoppingCart, Heart, User } from 'lucide-react'
 import { useCart } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import SearchBar from '@/components/store/SearchBar'
 import type { TrendingSearch } from '@/lib/supabase/types'
-import ProfileSidebar from '@/components/store/ProfileSidebar'
-import { getMyShop } from '@/lib/actions/shops'
 
 interface NavbarRow1Props {
   trendingSearches: TrendingSearch[]
+  user: SupabaseUser | null
+  displayName: string
+  initials: string
+  onOpenUserMenu: () => void
 }
 
-export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
+export default function NavbarRow1({ trendingSearches, user, displayName, initials, onOpenUserMenu }: NavbarRow1Props) {
   const { count } = useCart()
   const { count: wishlistCount } = useWishlist()
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [shop, setShop] = useState<{ slug: string } | null>(null)
 
   useEffect(() => {
     useWishlist.persist.rehydrate()
     useCart.persist.rehydrate()
   }, [])
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShop(null)
-      return
-    }
-    getMyShop().then((s) => setShop(s ? { slug: s.slug } : null))
-  }, [user])
-
-  const meta = user?.user_metadata as Record<string, string> | null
-  const displayName = meta?.full_name || user?.email?.split('@')[0] || ''
-  const initials = displayName
-    .split(' ')
-    .map((w: string) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || '?'
 
   return (
     <div className="bg-[#fafaf8]/95 backdrop-blur-sm border-b border-[#ede8df]">
@@ -121,7 +92,7 @@ export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
             {/* User */}
             {user ? (
               <button
-                onClick={() => setUserMenuOpen(true)}
+                onClick={onOpenUserMenu}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#fdf6ec] transition-colors"
               >
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#b45309] to-[#92400e] flex items-center justify-center text-white text-xs font-extrabold">
@@ -148,19 +119,6 @@ export default function NavbarRow1({ trendingSearches }: NavbarRow1Props) {
           </div>
         </div>
       </div>
-
-      {user && (
-        <ProfileSidebar
-          displayName={displayName}
-          email={user.email ?? ''}
-          initials={initials}
-          wishlistCount={wishlistCount}
-          shopHref={shop ? '/seller/dashboard' : '/seller/onboarding'}
-          shopLabel={shop ? 'My Shop' : 'Sell on Kikuu'}
-          open={userMenuOpen}
-          onClose={() => setUserMenuOpen(false)}
-        />
-      )}
     </div>
   )
 }

@@ -2,14 +2,19 @@
 
 import Link from 'next/link'
 import Logo from '@/components/store/Logo'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Menu } from 'lucide-react'
 import { useCart } from '@/lib/cart'
-import { useEffect } from 'react'
+import { useWishlist } from '@/lib/wishlist'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createClient } from '@/lib/supabase/client'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 import NavbarRow1 from './NavbarRow1'
 import NavbarRow2 from './NavbarRow2'
 import SearchBar from '@/components/store/SearchBar'
 import type { Category, TrendingSearch } from '@/lib/supabase/types'
+import ProfileSidebar from '@/components/store/ProfileSidebar'
+import { getMyShop } from '@/lib/actions/shops'
 
 interface NavbarProps {
   categories: Category[]
@@ -18,10 +23,50 @@ interface NavbarProps {
 
 export default function Navbar({ categories, trendingSearches }: NavbarProps) {
   const { count } = useCart()
+  const { count: wishlistCount } = useWishlist()
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [shop, setShop] = useState<{ slug: string } | null>(null)
 
   useEffect(() => {
     useCart.persist.rehydrate()
+    useWishlist.persist.rehydrate()
   }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShop(null)
+      return
+    }
+    getMyShop().then((s) => setShop(s ? { slug: s.slug } : null))
+  }, [user])
+
+  const meta = user?.user_metadata as Record<string, string> | null
+  const displayName = meta?.full_name || user?.email?.split('@')[0] || ''
+  const initials = displayName
+    .split(' ')
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '?'
+
+  function handleMenuTrigger() {
+    if (user) {
+      setUserMenuOpen(true)
+    } else {
+      window.location.href = '/account/login'
+    }
+  }
 
   return (
     <motion.header
@@ -32,7 +77,13 @@ export default function Navbar({ categories, trendingSearches }: NavbarProps) {
     >
       {/* Desktop: two-row header */}
       <div className="hidden md:block">
-        <NavbarRow1 trendingSearches={trendingSearches} />
+        <NavbarRow1
+          trendingSearches={trendingSearches}
+          user={user}
+          displayName={displayName}
+          initials={initials}
+          onOpenUserMenu={() => setUserMenuOpen(true)}
+        />
         <NavbarRow2 categories={categories} />
       </div>
 
@@ -63,8 +114,30 @@ export default function Navbar({ categories, trendingSearches }: NavbarProps) {
               )}
             </AnimatePresence>
           </Link>
+
+          {/* Menu / profile trigger */}
+          <button
+            onClick={handleMenuTrigger}
+            className="shrink-0 text-[#6b6360] p-0.5"
+            aria-label="Open menu"
+          >
+            <Menu size={22} />
+          </button>
         </div>
       </div>
+
+      {user && (
+        <ProfileSidebar
+          displayName={displayName}
+          email={user.email ?? ''}
+          initials={initials}
+          wishlistCount={wishlistCount}
+          shopHref={shop ? '/seller/dashboard' : '/seller/onboarding'}
+          shopLabel={shop ? 'My Shop' : 'Sell on Kikuu'}
+          open={userMenuOpen}
+          onClose={() => setUserMenuOpen(false)}
+        />
+      )}
     </motion.header>
   )
 }
