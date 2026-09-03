@@ -6,10 +6,15 @@
 // configured yet — the whole feature is inert until NEXT_PUBLIC_ROOT_DOMAIN
 // is set, same convention as lib/shop-subdomain.ts.
 export function getCookieDomain(host: string, rootDomain: string): string | undefined {
-  if (!rootDomain) return undefined
+  // Normalize the configured root domain the same way the host is normalized
+  // below: a stray space or capital letter in NEXT_PUBLIC_ROOT_DOMAIN would
+  // otherwise silently turn this whole feature off (DNS is case-insensitive,
+  // so the subdomain would still resolve — just without a shared session).
+  const root = rootDomain.trim().toLowerCase()
+  if (!root) return undefined
   const hostWithoutPort = host.split(':')[0].toLowerCase()
-  if (hostWithoutPort === rootDomain || hostWithoutPort.endsWith(`.${rootDomain}`)) {
-    return `.${rootDomain}`
+  if (hostWithoutPort === root || hostWithoutPort.endsWith(`.${root}`)) {
+    return `.${root}`
   }
   return undefined
 }

@@ -10,12 +10,16 @@ const PASSTHROUGH_PREFIXES = ['/api', '/cart', '/checkout', '/orders', '/account
 // domain, www, or no root domain configured yet — the whole feature is
 // inert until NEXT_PUBLIC_ROOT_DOMAIN is set).
 export function getShopSlugFromHost(host: string, rootDomain: string): string | null {
-  if (!rootDomain) return null
+  // Normalize the configured root domain too: a stray space or capital letter
+  // in NEXT_PUBLIC_ROOT_DOMAIN would otherwise silently disable the rewrite
+  // while DNS still serves the subdomain.
+  const root = rootDomain.trim().toLowerCase()
+  if (!root) return null
   // Host headers are case-insensitive; normalize once here so every caller
   // gets a lowercase slug that matches the (lowercase-only) shops.slug column.
   const hostWithoutPort = host.split(':')[0].toLowerCase()
-  const suffix = `.${rootDomain}`
-  if (hostWithoutPort === rootDomain || hostWithoutPort === `www.${rootDomain}`) return null
+  const suffix = `.${root}`
+  if (hostWithoutPort === root || hostWithoutPort === `www.${root}`) return null
   if (!hostWithoutPort.endsWith(suffix)) return null
   const subdomain = hostWithoutPort.slice(0, -suffix.length)
   // Must look like a real shop slug (see lib/shop-schema.ts) — this also

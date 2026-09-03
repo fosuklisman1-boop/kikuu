@@ -33,4 +33,8 @@ describe('getCookieDomain', () => {
   it('strips the port before comparing', () => {
     expect(getCookieDomain('telomall.com:3000', 'telomall.com')).toBe('.telomall.com')
   })
+
+  it('rejects a lookalike domain that is not a real subdomain', () => {
+    expect(getCookieDomain('evil-telomall.com', 'telomall.com')).toBeUndefined()
+  })
 })

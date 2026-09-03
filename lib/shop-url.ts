@@ -1,4 +1,7 @@
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? ''
+// Normalized the same way lib/cookie-domain.ts and lib/shop-subdomain.ts
+// normalize it, so the URLs emitted here always match the hosts those two
+// functions will actually recognize.
+const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? '').trim().toLowerCase()
 
 // Absolute, cross-origin link to a shop's storefront — for links rendered on
 // the main domain that need to point AT a shop's subdomain (e.g. "View My

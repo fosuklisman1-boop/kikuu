@@ -255,12 +255,21 @@ With `NEXT_PUBLIC_ROOT_DOMAIN` unset (the local default), log in at `/account/lo
 
 - [ ] **Step 9: Manually verify against the live `telomall.com` deployment — the case this task exists for**
 
-This step requires `NEXT_PUBLIC_ROOT_DOMAIN=telomall.com` to be set in the Vercel project's environment variables and a deploy to have gone out with it set — coordinate with whoever controls the Vercel project before doing this, since setting that env var is the exact activation switch this whole plan exists to make safe. Once it's set and deployed:
+This step requires `NEXT_PUBLIC_ROOT_DOMAIN=telomall.com` to be set in the Vercel project's environment variables and a deploy to have gone out with it set — coordinate with whoever controls the Vercel project before doing this, since setting that env var is the exact activation switch this whole plan exists to make safe.
 
-1. Log in at `https://telomall.com/account/login`.
-2. Open dev tools → Application/Storage → Cookies, confirm the Supabase session cookie(s) now show `Domain: .telomall.com` (not host-only).
-3. Navigate to any existing shop's subdomain (e.g. `https://clings.telomall.com/`, using the one real shop in production as of this session) — confirm you're still shown as logged in (e.g. the profile sidebar shows your name, not a "Sign In" prompt).
-4. Complete a test purchase from that shop subdomain while logged in, then check `/account/orders` on the apex domain — confirm the order appears there (proving `buyer_id` was correctly attributed, not left null).
+Two checks belong *before* flipping that switch:
+
+1. **Check the env var's value is clean.** Confirm `NEXT_PUBLIC_ROOT_DOMAIN` has no leading/trailing whitespace and is all lowercase. The code now normalizes this defensively (`.trim().toLowerCase()` in `lib/cookie-domain.ts`, `lib/shop-subdomain.ts`, and `lib/shop-url.ts`), but a clean value avoids relying on that normalization in the first place.
+2. **Audit `telomall.com`'s DNS for third-party and dangling subdomains.** Look for any subdomain delegated to a third-party service (a help desk, status page, or marketing/analytics tool on a `*.telomall.com` CNAME) and any dangling/unclaimed subdomain record. Once cookie-domain sharing is active, the session cookie is readable by JavaScript on *every* subdomain (this app's Supabase cookies are not `httpOnly`, by Supabase's own default) — a third-party or attacker-controlled subdomain would gain full account-takeover-level access to any visiting user's session. **Standing rule going forward: never point a `telomall.com` subdomain at a third-party service without first confirming that this is an acceptable trust boundary.**
+
+Once the env var is set and deployed:
+
+3. Log in at `https://telomall.com/account/login`.
+4. Open dev tools → Application/Storage → Cookies, confirm the Supabase session cookie(s) now show `Domain: .telomall.com` (not host-only).
+5. Navigate to any existing shop's subdomain (e.g. `https://clings.telomall.com/`, using the one real shop in production as of this session) — confirm you're still shown as logged in (e.g. the profile sidebar shows your name, not a "Sign In" prompt).
+6. Complete a test purchase from that shop subdomain while logged in, then check `/account/orders` on the apex domain — confirm the order appears there (proving `buyer_id` was correctly attributed, not left null).
+7. **Repeat the login check on a browser profile that was already logged in BEFORE the activating deploy**, not only a fresh/clean profile. Confirm the pre-existing session either re-authenticates cleanly or the user is prompted to log in again — without landing in a broken state. Expect friction here: browser and server-side cookie handling resolve duplicate same-name cookies in *opposite* directions (the browser keeps the first/stale one it sees; the server reads the last/fresh one), so an already-logged-in browser can end up with the browser and the server disagreeing about which session is active, which can trip Supabase's refresh-token-reuse detection and force a full logout. This is expected and has no code-level fix — it's a one-time transition cost for any user who was logged in at the exact moment of activation.
+8. **Then test sign-out on that same pre-activation profile.** Because the pre-existing session cookie is host-only (no `Domain` attribute) while sign-out deletes the new `Domain`-scoped cookie, sign-out may not fully clear the old cookie until it naturally expires (session JWTs typically expire in about an hour). This is a known, accepted limitation — not a bug to chase — but worth knowing so it isn't mistaken for a broken sign-out during verification.
 
 - [ ] **Step 10: Commit**
 
