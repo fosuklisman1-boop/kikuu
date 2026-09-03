@@ -1,13 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getShopSlugFromHost, resolveShopSubdomainRewrite } from '@/lib/shop-subdomain'
+import { getCookieDomain } from '@/lib/cookie-domain'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? ''
 
 export async function proxy(request: NextRequest) {
   // Shop subdomain routing — inert until NEXT_PUBLIC_ROOT_DOMAIN is configured.
   // Runs first and skips Supabase entirely: shop storefronts are public.
-  const shopSlug = getShopSlugFromHost(request.headers.get('host') ?? '', ROOT_DOMAIN)
+  const host = request.headers.get('host') ?? ''
+  const shopSlug = getShopSlugFromHost(host, ROOT_DOMAIN)
   if (shopSlug) {
     const rewritePath = resolveShopSubdomainRewrite(shopSlug, request.nextUrl.pathname)
     if (rewritePath) {
@@ -39,6 +41,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { domain: getCookieDomain(host, ROOT_DOMAIN) },
       cookies: {
         getAll() {
           return request.cookies.getAll()
