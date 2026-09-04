@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp, Palette, Menu, X, Store, Banknote } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp, Palette, Menu, X, Store, Banknote, CreditCard } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,6 +23,7 @@ const NAV = [
   { href: '/admin/product-options', label: 'Product Options', icon: Palette },
   { href: '/admin/trending-searches', label: 'Trending', icon: TrendingUp },
   { href: '/admin/withdrawals', label: 'Withdrawals', icon: Banknote },
+  { href: '/admin/payments', label: 'Payment Gateways', icon: CreditCard },
 ]
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {

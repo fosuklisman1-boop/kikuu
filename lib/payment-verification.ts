@@ -51,7 +51,7 @@ export async function processVerification(
   if (result.success) {
     const expectedPesewas = Math.round(order.total * 100)
 
-    if (result.amount > expectedPesewas * 10) {
+    if (!Number.isFinite(result.amount) || result.amount > expectedPesewas * 10) {
       await admin.from('order_events').insert({
         order_id: orderId,
         event: 'Payment Verification Error',
