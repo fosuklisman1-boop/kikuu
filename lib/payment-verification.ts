@@ -28,9 +28,10 @@ export async function processVerification(
 
   // Already processed (webhook, or a racing reconciliation-cron run, may have beaten us)
   if (order.status !== 'pending') {
-    return order.status === 'paid'
-      ? { ok: true }
-      : { ok: false, error: 'Order is not payable.', code: 'not_pending' }
+    const isTerminallyFailed = order.status === 'cancelled' || order.status === 'refunded'
+    return isTerminallyFailed
+      ? { ok: false, error: 'Order is not payable.', code: 'not_pending' }
+      : { ok: true }
   }
 
   const result = order.payment_type === 'theteller'
