@@ -8,8 +8,10 @@ type SupabaseAdmin = ReturnType<typeof createAdminClient>
 export async function processVerification(
   admin: SupabaseAdmin,
   orderId: string,
-  reference: string
+  reference: string,
+  options?: { autoCancel?: boolean }
 ): Promise<{ ok: true } | { ok: false; error: string; code?: string }> {
+  const autoCancel = options?.autoCancel ?? true
   const { data: order } = await admin
     .from('orders')
     .select('*')
@@ -26,7 +28,9 @@ export async function processVerification(
 
   // Already processed (webhook, or a racing reconciliation-cron run, may have beaten us)
   if (order.status !== 'pending') {
-    return { ok: true }
+    return order.status === 'paid'
+      ? { ok: true }
+      : { ok: false, error: 'Order is not payable.', code: 'not_pending' }
   }
 
   const result = order.payment_type === 'theteller'
@@ -102,6 +106,9 @@ export async function processVerification(
 
     return { ok: true }
   } else {
+    if (!autoCancel) {
+      return { ok: false, error: `Payment ${result.statusLabel}.`, code: 'payment_not_confirmed' }
+    }
     await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
     await admin.from('order_events').insert({
       order_id: orderId,
