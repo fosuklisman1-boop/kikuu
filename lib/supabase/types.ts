@@ -55,13 +55,14 @@ export interface Database {
           discount_amount: number
           total: number
           status: 'pending' | 'confirmed' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
-          payment_type: 'paystack' | 'cod'
+          payment_type: 'paystack' | 'cod' | 'theteller'
           payment_status: 'pending' | 'paid' | 'awaiting_cod'
           is_preorder: boolean
           pre_order_ship_date: string | null
           payment_method: string | null
           payment_reference: string | null
           paystack_reference: string | null
+          theteller_transaction_id: string | null
           shop_id: string | null
           notes: string | null
           created_at: string

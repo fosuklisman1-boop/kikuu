@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
+import ClearCartOnSuccess from '@/components/store/ClearCartOnSuccess'
 import type { OrderItem, GhanaAddress } from '@/lib/supabase/types'
 import type { Metadata } from 'next'
 
@@ -86,6 +87,10 @@ export default async function OrderPage({ params, searchParams }: Props) {
 
       {/* Payment success banner */}
       {success === '1' && (
+        <>
+        {/* Clears the cart on confirmed payment success — covers the gateways
+            whose redirect flow unmounts the checkout page before it can. */}
+        <ClearCartOnSuccess />
         <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-4 mb-6 flex items-start gap-3">
           <span className="text-2xl">🎉</span>
           <div>
@@ -95,6 +100,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
             </p>
           </div>
         </div>
+        </>
       )}
 
 

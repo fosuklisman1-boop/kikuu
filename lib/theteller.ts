@@ -37,7 +37,7 @@ export async function initiatePayment(params: InitiatePaymentParams): Promise<In
       merchant_id: MERCHANT_ID,
       transaction_id: params.transactionId,
       desc: params.desc,
-      amount: params.amount.toFixed(2),
+      amount: Math.round(params.amount * 100).toString().padStart(12, '0'), // GHS -> pesewas, zero-padded per TheTeller's documented amount format
       redirect_url: params.redirectUrl,
       email: params.email,
       API_Key: API_KEY,

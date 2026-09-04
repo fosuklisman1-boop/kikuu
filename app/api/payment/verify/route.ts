@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyTransaction } from '@/lib/paystack'
+import { checkTransactionStatus } from '@/lib/theteller'
 import { creditShopEarnings } from '@/lib/wallet-ledger'
 
 type SupabaseAdmin = ReturnType<typeof createAdminClient>
 
-async function processVerification(
+export async function processVerification(
   admin: SupabaseAdmin,
   orderId: string,
   reference: string
@@ -16,18 +17,34 @@ async function processVerification(
     .eq('id', orderId)
     .single()
 
-  if (!order || order.paystack_reference !== reference) {
+  const expectedReference = order?.payment_type === 'theteller'
+    ? order.theteller_transaction_id
+    : order?.paystack_reference
+
+  if (!order || expectedReference !== reference) {
     return { ok: false, error: 'Invalid order or reference', code: 'invalid_order' }
   }
 
-  // Already processed (webhook may have beaten us)
+  // Already processed (webhook, or a racing reconciliation-cron run, may have beaten us)
   if (order.status !== 'pending') {
     return { ok: true }
   }
 
-  const result = await verifyTransaction(reference)
+  const result = order.payment_type === 'theteller'
+    ? await checkTransactionStatus(reference).then((r) => ({
+        success: r.code === '000',
+        amount: Math.round(r.amount * 100), // GHS -> pesewas, matching Paystack's existing units
+        channel: 'theteller',
+        statusLabel: r.status, // e.g. 'approved', or a failure reason string
+      }))
+    : await verifyTransaction(reference).then((r) => ({
+        success: r.status === 'success',
+        amount: r.amount, // already pesewas
+        channel: r.channel,
+        statusLabel: r.status,
+      }))
 
-  if (result.status === 'success') {
+  if (result.success) {
     const expectedPesewas = Math.round(order.total * 100)
     if (result.amount < expectedPesewas) {
       await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
@@ -48,7 +65,7 @@ async function processVerification(
         status: 'paid',
         payment_status: 'paid',
         payment_method: result.channel,
-        payment_reference: result.reference,
+        payment_reference: reference,
       })
       .eq('id', orderId)
       .eq('status', 'pending')
@@ -80,9 +97,9 @@ async function processVerification(
     await admin.from('order_events').insert({
       order_id: orderId,
       event: 'Payment Failed',
-      description: `Payment ${result.status}.`,
+      description: `Payment ${result.statusLabel}.`,
     })
-    return { ok: false, error: `Payment ${result.status}. Order cancelled.`, code: 'payment_failed' }
+    return { ok: false, error: `Payment ${result.statusLabel}. Order cancelled.`, code: 'payment_failed' }
   }
 }
 
