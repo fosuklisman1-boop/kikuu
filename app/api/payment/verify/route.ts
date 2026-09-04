@@ -33,7 +33,7 @@ export async function processVerification(
   const result = order.payment_type === 'theteller'
     ? await checkTransactionStatus(reference).then((r) => ({
         success: r.code === '000',
-        amount: Math.round(r.amount * 100), // GHS -> pesewas, matching Paystack's existing units
+        amount: Math.round(r.amount * 100), // GHS -> pesewas, ASSUMING r.amount is GHS decimal (unverified — see amount-sanity guard below, and the note on TransactionStatusResult.amount)
         channel: 'theteller',
         statusLabel: r.status, // e.g. 'approved', or a failure reason string
       }))
@@ -46,6 +46,16 @@ export async function processVerification(
 
   if (result.success) {
     const expectedPesewas = Math.round(order.total * 100)
+
+    if (result.amount > expectedPesewas * 10) {
+      await admin.from('order_events').insert({
+        order_id: orderId,
+        event: 'Payment Verification Error',
+        description: `Amount sanity check failed: expected GHS ${(expectedPesewas / 100).toFixed(2)}, gateway reported ${result.amount} (raw units, unit unconfirmed). Refusing to mark paid — possible currency-unit mismatch. Order left pending for manual review.`,
+      })
+      return { ok: false, error: 'Payment verification error. Please contact support.', code: 'amount_sanity_check_failed' }
+    }
+
     if (result.amount < expectedPesewas) {
       await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
       await admin.from('order_events').insert({
@@ -93,7 +103,7 @@ export async function processVerification(
 
     return { ok: true }
   } else {
-    await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
+    await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
     await admin.from('order_events').insert({
       order_id: orderId,
       event: 'Payment Failed',

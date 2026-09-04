@@ -53,7 +53,12 @@ export interface TransactionStatusResult {
   status: string // 'approved' on success
   code: string // '000' on success
   transactionId: string
-  amount: number // in GHS
+  amount: number // UNVERIFIED unit — assumed GHS decimal by callers, but
+                  // TheTeller's docs never confirm this for the /status
+                  // response (the /initiate REQUEST side is confirmed
+                  // pesewas). Do not remove this note until a real test
+                  // transaction confirms the unit. See processVerification's
+                  // amount-sanity guard, which fails closed if this is wrong.
 }
 
 // Poll TheTeller's transaction status endpoint. Used both by the redirect
