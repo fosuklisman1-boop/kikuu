@@ -4,6 +4,7 @@ import { useCart } from '@/lib/cart'
 import { formatGHS, GHANA_REGIONS, SHIPPING_FEES, isValidGhanaPhone } from '@/lib/utils'
 import { validateCoupon } from '@/lib/actions/coupons'
 import { getCurrentPrices } from '@/lib/actions/prices'
+import { getPaymentGatewaySettings } from '@/lib/actions/payment-settings'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -30,6 +31,9 @@ export default function CheckoutForm() {
   const [user, setUser] = useState<User | null>(null)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [selectedSavedId, setSelectedSavedId] = useState<string>('')
+  const [paystackEnabled, setPaystackEnabled] = useState(true)
+  const [tellerEnabled, setTellerEnabled] = useState(false)
+  const [paymentType, setPaymentType] = useState<'paystack' | 'theteller'>('paystack')
 
   const [form, setForm] = useState({
     email: '',
@@ -60,6 +64,15 @@ export default function CheckoutForm() {
         Object.assign(map, SHIPPING_FEES)
       }
       setDeliveryFees(map)
+    })
+  }, [])
+
+  // Load which payment gateways the admin has enabled
+  useEffect(() => {
+    getPaymentGatewaySettings().then(({ paystackEnabled, tellerEnabled }) => {
+      setPaystackEnabled(paystackEnabled)
+      setTellerEnabled(tellerEnabled)
+      if (!paystackEnabled && tellerEnabled) setPaymentType('theteller')
     })
   }, [])
 
@@ -167,7 +180,7 @@ export default function CheckoutForm() {
             city: form.city,
           },
           coupon_code: couponApplied || undefined,
-          payment_type: 'paystack',
+          payment_type: paymentType,
           shop_id: shopId || undefined,
           items: items.map((i) => ({
             product_id: i.product_id ?? i.id,
@@ -196,6 +209,11 @@ export default function CheckoutForm() {
           setLoading(false)
           return
         }
+      }
+
+      if (paymentType === 'theteller') {
+        window.location.href = data.checkout_url
+        return
       }
 
       // Paystack Popup v2 — no form-element requirement
@@ -539,6 +557,29 @@ export default function CheckoutForm() {
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
             {error}
           </p>
+        )}
+
+        {paystackEnabled && tellerEnabled && (
+          <div className="mb-4 space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="payment_type"
+                checked={paymentType === 'paystack'}
+                onChange={() => setPaymentType('paystack')}
+              />
+              Pay with Card / Bank Transfer
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="payment_type"
+                checked={paymentType === 'theteller'}
+                onChange={() => setPaymentType('theteller')}
+              />
+              Pay with Mobile Money
+            </label>
+          </div>
         )}
 
         <button

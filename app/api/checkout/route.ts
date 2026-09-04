@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { initializePayment, generateReference } from '@/lib/paystack'
+import { initiatePayment, generateTransactionId } from '@/lib/theteller'
+import { getPaymentGatewaySettings } from '@/lib/actions/payment-settings'
 import type { OrderItem } from '@/lib/supabase/types'
 import { SHIPPING_FEES } from '@/lib/utils'
 import { z } from 'zod'
@@ -20,7 +22,7 @@ const CheckoutSchema = z.object({
   email: z.string().email(),
   address: AddressSchema,
   coupon_code: z.string().optional(),
-  payment_type: z.literal('paystack').default('paystack'),
+  payment_type: z.enum(['paystack', 'theteller']).default('paystack'),
   shop_id: z.string().uuid().optional(),
   items: z.array(
     z.object({
@@ -43,7 +45,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { email, address, items: rawItems, coupon_code, shop_id } = parsed.data
+    const { email, address, items: rawItems, coupon_code, shop_id, payment_type } = parsed.data
+
+    const gatewaySettings = await getPaymentGatewaySettings()
+    if (payment_type === 'theteller' && !gatewaySettings.tellerEnabled) {
+      return NextResponse.json({ error: 'This payment method is currently unavailable.' }, { status: 400 })
+    }
+    if (payment_type === 'paystack' && !gatewaySettings.paystackEnabled) {
+      return NextResponse.json({ error: 'This payment method is currently unavailable.' }, { status: 400 })
+    }
+
     const supabase = await createClient()
     const admin = createAdminClient()
 
@@ -203,7 +214,7 @@ export async function POST(req: NextRequest) {
 
     const total = subtotal + shippingFee - discountAmount
 
-    // Create order in DB — all orders go through Paystack, always start as pending
+    // Create order in DB — always starts pending regardless of gateway
     const { data: order, error: orderError } = await admin
       .from('orders')
       .insert({
@@ -218,7 +229,7 @@ export async function POST(req: NextRequest) {
         discount_amount: discountAmount,
         total,
         status: 'pending',
-        payment_type: 'paystack',
+        payment_type,
         payment_status: 'pending',
         is_preorder: hasPreorder,
         pre_order_ship_date: latestPreorderDate,
@@ -251,6 +262,45 @@ export async function POST(req: NextRequest) {
       event: 'Order Placed',
       description: eventDescription,
     })
+
+    if (payment_type === 'theteller') {
+      const transactionId = generateTransactionId()
+      let tellerPayment
+      try {
+        tellerPayment = await initiatePayment({
+          email,
+          amount: total,
+          transactionId,
+          desc: `Order ${order.order_number}`,
+          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/theteller-verify?order_id=${order.id}`,
+        })
+      } catch (tellerErr: any) {
+        console.error('TheTeller init error:', tellerErr)
+        await admin.from('orders').delete().eq('id', order.id)
+        return NextResponse.json(
+          { error: tellerErr?.message ?? 'Payment provider error. Please try again.' },
+          { status: 502 }
+        )
+      }
+
+      const { error: tellerRefError } = await admin
+        .from('orders')
+        .update({ theteller_transaction_id: transactionId })
+        .eq('id', order.id)
+
+      if (tellerRefError) {
+        console.error('Failed to save theteller_transaction_id:', tellerRefError)
+        await admin.from('orders').delete().eq('id', order.id)
+        return NextResponse.json({ error: 'Failed to save payment reference. Please try again.' }, { status: 500 })
+      }
+
+      return NextResponse.json({
+        order_id: order.id,
+        order_number: order.order_number,
+        checkout_url: tellerPayment.checkoutUrl,
+        total,
+      })
+    }
 
     // Initialize Paystack payment
     const reference = generateReference(order.id)
