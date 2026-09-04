@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { processVerification } from '@/app/api/payment/verify/route'
+import { processVerification } from '@/lib/payment-verification'
 
 // GET — TheTeller redirects the shopper's browser here after checkout,
 // appending ?code=&status=&reason=&transaction_id= as query params.
