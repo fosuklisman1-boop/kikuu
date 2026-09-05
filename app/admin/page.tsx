@@ -13,12 +13,15 @@ export default async function AdminDashboard() {
     { count: pendingOrders },
     { data: revenueData },
     { count: totalProducts },
+    { count: lowStockProducts },
   ] = await Promise.all([
     // Exclude unpaid ghost orders (initiated but payment never completed)
     admin.from('orders').select('*', { count: 'exact', head: true }).neq('status', 'pending'),
     admin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
     admin.from('orders').select('total').in('status', ['paid', 'processing', 'shipped', 'delivered']),
     admin.from('products').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    // Matches the stock_qty < 5 low-stock highlight on /admin/products
+    admin.from('products').select('*', { count: 'exact', head: true }).eq('status', 'active').lt('stock_qty', 5),
   ])
 
   const totalRevenue = revenueData?.reduce((sum, o) => sum + o.total, 0) ?? 0
@@ -28,6 +31,7 @@ export default async function AdminDashboard() {
     { label: 'Total Orders', value: String(totalOrders ?? 0), color: 'bg-blue-500' },
     { label: 'Paid (Unprocessed)', value: String(pendingOrders ?? 0), color: 'bg-yellow-500' },
     { label: 'Active Products', value: String(totalProducts ?? 0), color: 'bg-purple-500' },
+    { label: 'Low Stock', value: String(lowStockProducts ?? 0), color: 'bg-red-500' },
   ]
 
   const { data: recentOrders } = await admin
@@ -41,7 +45,7 @@ export default async function AdminDashboard() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {stats.map((s) => (
           <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm">
             <div className={`w-3 h-3 rounded-full ${s.color} mb-2`} />

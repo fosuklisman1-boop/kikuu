@@ -451,17 +451,25 @@ export default function CheckoutForm() {
           </div>
         )}
 
-        {/* Payment method — Paystack only */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <h2 className="font-bold text-gray-900 mb-3">Payment Method</h2>
-          <div className="flex items-start gap-3 p-3 rounded-xl border border-[#b45309] bg-[#fdf6ec]">
-            <CreditCard size={16} className="text-[#b45309] mt-0.5 shrink-0" />
-            <div>
-              <span className="text-sm font-semibold text-gray-900">Pay Online</span>
-              <p className="text-xs text-gray-500 mt-0.5">MTN MoMo, Vodafone Cash, Card, Bank Transfer</p>
+        {/* Payment method — static summary when only one gateway is enabled */}
+        {!(paystackEnabled && tellerEnabled) && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h2 className="font-bold text-gray-900 mb-3">Payment Method</h2>
+            <div className="flex items-start gap-3 p-3 rounded-xl border border-[#b45309] bg-[#fdf6ec]">
+              <CreditCard size={16} className="text-[#b45309] mt-0.5 shrink-0" />
+              <div>
+                <span className="text-sm font-semibold text-gray-900">
+                  {tellerEnabled ? 'Pay with Mobile Money' : 'Pay Online'}
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {tellerEnabled
+                    ? 'MTN MoMo, Vodafone Cash, AirtelTigo Money'
+                    : 'MTN MoMo, Vodafone Cash, Card, Bank Transfer'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <h2 className="font-bold text-gray-900 mb-4">Order Summary</h2>
@@ -595,7 +603,9 @@ export default function CheckoutForm() {
         </button>
 
         <p className="text-xs text-center text-gray-400">
-          Secure checkout by Paystack. Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer.
+          {paymentType === 'theteller'
+            ? 'Secure checkout by TheTeller. Pay with MTN MoMo, Vodafone Cash, or AirtelTigo Money.'
+            : 'Secure checkout by Paystack. Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer.'}
         </p>
       </div>
     </form>
