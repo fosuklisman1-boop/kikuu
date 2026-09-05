@@ -45,7 +45,14 @@ export async function initiatePayment(params: InitiatePaymentParams): Promise<In
     }),
   })
   const json = await res.json()
-  if (json.status !== 'success') throw new Error(json.reason || 'TheTeller initiate failed')
+  if (json.status !== 'success') {
+    // TheTeller's `reason` is usually a string, but a validation-style
+    // rejection (e.g. a malformed redirect_url) returns it as an object
+    // of per-field messages — stringify it so the error is ever readable
+    // instead of collapsing to "[object Object]".
+    const reason = typeof json.reason === 'string' ? json.reason : JSON.stringify(json.reason)
+    throw new Error(reason || 'TheTeller initiate failed')
+  }
   return { checkoutUrl: json.checkout_url, token: json.token }
 }
 
