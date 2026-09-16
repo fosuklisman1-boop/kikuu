@@ -22,7 +22,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           <p className="text-xs text-gray-400 mt-0.5">Removed from cart</p>
         </div>
         <button
-          onClick={() => updateQty(item.id, 1)}
+          onClick={() => updateQty(item.id, item.min_order_qty ?? 1)}
           className="flex items-center gap-1.5 text-xs font-semibold text-[#b45309] hover:text-[#92400e] bg-[#fdf6ec] hover:bg-[#faecd8] px-3 py-1.5 rounded-xl transition-colors shrink-0"
         >
           <RotateCcw size={12} /> Undo
@@ -79,7 +79,8 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           <div className="flex items-center gap-0 border border-[#e8e5e0] rounded-xl overflow-hidden">
             <button
               onClick={() => updateQty(item.id, item.quantity - 1)}
-              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              disabled={item.quantity <= (item.min_order_qty ?? 1)}
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Minus size={12} />
             </button>
@@ -88,7 +89,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
             </span>
             <button
               onClick={() => updateQty(item.id, item.quantity + 1)}
-              disabled={!item.is_preorder && item.quantity >= item.stock_qty}
+              disabled={item.quantity >= (item.max_order_qty ? Math.min(item.stock_qty, item.max_order_qty) : item.stock_qty)}
               className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Plus size={12} />

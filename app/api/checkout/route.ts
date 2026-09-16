@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const [{ data: products, error: productsError }, { data: activeSale }] = await Promise.all([
       admin
         .from('products')
-        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note')
+        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note, min_order_qty, max_order_qty')
         .in('id', productIds)
         .in('status', ['active', 'pre_order']),
       admin
@@ -127,9 +127,22 @@ export async function POST(req: NextRequest) {
       if (shop_id && !shopPriceMap.has(product.id)) {
         return NextResponse.json({ error: `${product.name} is not available in this shop.` }, { status: 400 })
       }
-      // Skip stock check for pre-order products
-      if (product.status !== 'pre_order' && product.stock_qty < raw.quantity) {
+      if (product.stock_qty < raw.quantity) {
         return NextResponse.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
+      }
+      if (product.status === 'pre_order') {
+        if (product.min_order_qty && raw.quantity < product.min_order_qty) {
+          return NextResponse.json(
+            { error: `Minimum order quantity for ${product.name} is ${product.min_order_qty}` },
+            { status: 400 }
+          )
+        }
+        if (product.max_order_qty && raw.quantity > product.max_order_qty) {
+          return NextResponse.json(
+            { error: `Maximum order quantity for ${product.name} is ${product.max_order_qty}` },
+            { status: 400 }
+          )
+        }
       }
 
       // Compute delivery date for pre-order items at purchase time

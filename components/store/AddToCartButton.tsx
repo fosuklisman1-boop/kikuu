@@ -36,7 +36,8 @@ export default function AddToCartButton({
     const overridePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : undefined)
     const itemToAdd = overridePrice !== undefined ? { ...product, price: overridePrice } : product
     const shopContext = shopId && shopSlug ? { shopId, shopSlug } : undefined
-    const result = addItem(itemToAdd, 1, selectedColor, selectedSize, shopContext)
+    const initialQty = product.min_order_qty ?? 1
+    const result = addItem(itemToAdd, initialQty, selectedColor, selectedSize, shopContext)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 5000)
@@ -101,7 +102,7 @@ export default function AddToCartButton({
                   {selectionHint}
                 </>
               ) : disabled ? (
-                'Out of Stock'
+                isPreorder ? 'Pre-order Sold Out' : 'Out of Stock'
               ) : isPreorder ? (
                 <>
                   <Clock size={18} />

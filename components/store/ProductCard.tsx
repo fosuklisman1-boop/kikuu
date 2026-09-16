@@ -25,7 +25,7 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
   }, [product.id, has])
 
   const isPreorder = product.status === 'pre_order'
-  const outOfStock = product.stock_qty === 0 && !isPreorder
+  const outOfStock = product.stock_qty === 0
   const attrs = (product.attributes ?? {}) as ProductAttributes
   const hasVariants = (attrs.colors?.length ?? 0) > 0 || (attrs.sizes?.length ?? 0) > 0
   // Flash sale takes precedence over compare_at_price discount
@@ -39,7 +39,7 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     if (outOfStock) return
-    const result = addItem(onSale ? { ...product, price: salePrice! } : product)
+    const result = addItem(onSale ? { ...product, price: salePrice! } : product, product.min_order_qty ?? 1)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 4000)
@@ -118,7 +118,7 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
             {outOfStock && (
               <div className="absolute inset-0 bg-white/75 backdrop-blur-[1.5px] flex items-center justify-center">
                 <span className="text-[11px] font-semibold text-[#6b6360] bg-white px-3 py-1.5 rounded-full border border-[#ede8df] shadow-sm tracking-wide">
-                  Out of Stock
+                  {isPreorder ? 'Pre-order Sold Out' : 'Out of Stock'}
                 </span>
               </div>
             )}
@@ -146,7 +146,7 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
               )}
             </div>
 
-            {product.stock_qty > 0 && product.stock_qty <= 5 && !isPreorder && (
+            {product.stock_qty > 0 && product.stock_qty <= 5 && (
               <p className="text-[10px] text-[#b45309] font-semibold mb-2 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-[#b45309] rounded-full animate-pulse inline-block" />
                 Only {product.stock_qty} left
@@ -182,7 +182,13 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
                     : 'bg-[#b45309] hover:bg-[#92400e] text-white'
                 }`}
               >
-                {added ? '✓ Added!' : isPreorder ? 'Pre-order Now' : outOfStock ? 'Out of Stock' : 'Add to Cart'}
+                {added
+                  ? '✓ Added!'
+                  : outOfStock
+                  ? (isPreorder ? 'Pre-order Sold Out' : 'Out of Stock')
+                  : isPreorder
+                  ? 'Pre-order Now'
+                  : 'Add to Cart'}
               </button>
             )}
           </div>

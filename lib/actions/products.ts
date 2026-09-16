@@ -19,10 +19,15 @@ const ProductSchema = z.object({
   featured: z.coerce.boolean().default(false),
   preorder_days: z.coerce.number().int().min(1).optional().or(z.literal('')),
   preorder_note: z.string().max(150).optional(),
+  min_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
+  max_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
   attributes: z.string().optional(),
 }).refine(
   (data) => data.status !== 'pre_order' || !!data.preorder_days,
   { message: 'Days until delivery is required for pre-order products', path: ['preorder_days'] }
+).refine(
+  (data) => !data.min_order_qty || !data.max_order_qty || Number(data.max_order_qty) >= Number(data.min_order_qty),
+  { message: 'Maximum order quantity must be greater than or equal to the minimum', path: ['max_order_qty'] }
 )
 
 export async function createProduct(formData: FormData) {
@@ -33,7 +38,7 @@ export async function createProduct(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_days, preorder_note, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -50,6 +55,8 @@ export async function createProduct(formData: FormData) {
     compare_at_price: compare_at_price || null,
     preorder_days: rest.status === 'pre_order' ? (Number(preorder_days) || null) : null,
     preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
+    min_order_qty: rest.status === 'pre_order' ? (Number(min_order_qty) || null) : null,
+    max_order_qty: rest.status === 'pre_order' ? (Number(max_order_qty) || null) : null,
     images,
     videos,
     slug: slugify(rest.name),
@@ -74,7 +81,7 @@ export async function updateProduct(id: string, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_days, preorder_note, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -90,6 +97,8 @@ export async function updateProduct(id: string, formData: FormData) {
     compare_at_price: compare_at_price || null,
     preorder_days: rest.status === 'pre_order' ? (Number(preorder_days) || null) : null,
     preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
+    min_order_qty: rest.status === 'pre_order' ? (Number(min_order_qty) || null) : null,
+    max_order_qty: rest.status === 'pre_order' ? (Number(max_order_qty) || null) : null,
     images,
     videos,
     slug: slugify(rest.name),
@@ -124,10 +133,10 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
   const admin = createAdminClient()
 
-  // Fetch order to check for pre-order items before updating
+  // Fetch order to check payment/reversal state before updating
   const { data: order } = await admin
     .from('orders')
-    .select('is_preorder, items, shop_id, payment_status')
+    .select('shop_id, payment_status')
     .eq('id', orderId)
     .single()
 
@@ -176,20 +185,6 @@ export async function updateOrderStatus(orderId: string, status: string) {
   // reversed order. Other statuses aren't load-bearing, so they don't block.
   if (eventError && (status === 'cancelled' || status === 'refunded')) {
     return { error: `Order status updated, but recording the ${status} history failed: ${eventError.message}. Please retry.` }
-  }
-
-  // Decrement stock for pre-order items when admin moves order to processing
-  // (this is when items are physically pulled from inventory)
-  if (status === 'processing' && order?.is_preorder) {
-    const items = (order.items as { product_id: string; quantity: number; is_preorder: boolean }[]) ?? []
-    for (const item of items) {
-      if (item.is_preorder) {
-        await admin.rpc('decrement_stock', {
-          p_product_id: item.product_id,
-          p_qty: item.quantity,
-        })
-      }
-    }
   }
 
   revalidatePath(`/admin/orders/${orderId}`)

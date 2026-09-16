@@ -73,16 +73,15 @@ export async function POST(req: NextRequest) {
       description: `Payment received via ${event.data.channel} (webhook).`,
     })
 
-    // Decrement stock for non-preorder items so inventory stays accurate
-    // even if the user closes their browser before the callback URL loads.
+    // Decrement stock so inventory stays accurate even if the user closes
+    // their browser before the callback URL loads. Pre-order items use the
+    // same stock_qty cap as regular items (see decrement_stock).
     const items = order.items as { product_id: string; quantity: number; is_preorder: boolean }[]
     for (const item of items) {
-      if (!item.is_preorder) {
-        await admin.rpc('decrement_stock', {
-          p_product_id: item.product_id,
-          p_qty: item.quantity,
-        })
-      }
+      await admin.rpc('decrement_stock', {
+        p_product_id: item.product_id,
+        p_qty: item.quantity,
+      })
     }
 
     await creditShopEarnings(order.id)

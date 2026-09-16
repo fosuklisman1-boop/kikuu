@@ -92,14 +92,15 @@ export async function processVerification(
         description: `Payment received via ${result.channel}.`,
       })
 
+      // Pre-order items now use the same stock_qty cap as regular items,
+      // decremented here rather than on a later admin status transition, so
+      // "remaining stock" stays accurate as soon as payment is confirmed.
       const items = order.items as any[]
       for (const item of items) {
-        if (!item.is_preorder) {
-          await admin.rpc('decrement_stock', {
-            p_product_id: item.product_id,
-            p_qty: item.quantity,
-          })
-        }
+        await admin.rpc('decrement_stock', {
+          p_product_id: item.product_id,
+          p_qty: item.quantity,
+        })
       }
 
       await creditShopEarnings(orderId)

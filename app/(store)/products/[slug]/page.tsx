@@ -50,7 +50,7 @@ export default async function ProductPage({ params }: Props) {
   const displayPrice = onSale ? salePrice : product.price
 
   const isPreorder = product.status === 'pre_order'
-  const inStock = product.stock_qty > 0 || isPreorder
+  const inStock = product.stock_qty > 0
 
   const attrs = (product.attributes ?? {}) as ProductAttributes
   const variantColors = attrs.colors ?? []
@@ -99,9 +99,11 @@ export default async function ProductPage({ params }: Props) {
           {/* Stock / pre-order badge */}
           <div className="mb-6">
             {isPreorder ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-orange-50 text-orange-700">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
+                inStock ? 'bg-orange-50 text-orange-700' : 'bg-red-50 text-red-700'
+              }`}>
                 <CalendarClock size={14} />
-                Pre-order
+                {inStock ? `Pre-order (${product.stock_qty} left)` : 'Pre-order Sold Out'}
               </span>
             ) : (
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
@@ -131,6 +133,13 @@ export default async function ProductPage({ params }: Props) {
                 </p>
                 {product.preorder_note && (
                   <p className="text-xs text-orange-500 mt-0.5">{product.preorder_note}</p>
+                )}
+                {(product.min_order_qty || product.max_order_qty) && (
+                  <p className="text-xs text-orange-500 mt-0.5">
+                    {product.min_order_qty && `Minimum order: ${product.min_order_qty}`}
+                    {product.min_order_qty && product.max_order_qty && ' · '}
+                    {product.max_order_qty && `Maximum order: ${product.max_order_qty}`}
+                  </p>
                 )}
               </div>
             </div>

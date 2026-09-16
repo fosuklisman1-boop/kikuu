@@ -31,6 +31,8 @@ export interface Database {
           status: 'active' | 'draft' | 'out_of_stock' | 'pre_order'
           preorder_days: number | null
           preorder_note: string | null
+          min_order_qty: number | null
+          max_order_qty: number | null
           featured: boolean
           brand_id: string | null
           attributes: Json

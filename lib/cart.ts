@@ -15,6 +15,8 @@ export interface CartItem {
   is_preorder: boolean
   preorder_days: number | null
   preorder_note: string | null
+  min_order_qty: number | null
+  max_order_qty: number | null
   selected_color?: { name: string; hex: string }
   selected_size?: string
 }
@@ -90,12 +92,16 @@ export const useCart = create<CartStore>()(
           ? `${product.id}__${selectedColor?.name ?? ''}__${selectedSize ?? ''}`
           : product.id
 
+        // Stock is always the hard ceiling; max_order_qty (pre-order only)
+        // can tighten it further, never loosen it.
+        const ceiling = product.max_order_qty
+          ? Math.min(product.stock_qty, product.max_order_qty)
+          : product.stock_qty
+
         const existing = state.items.find((i) => i.id === variantId)
         let items: CartItem[]
         if (existing) {
-          const newQty = isPreorder
-            ? existing.quantity + qty
-            : Math.min(existing.quantity + qty, product.stock_qty)
+          const newQty = Math.min(existing.quantity + qty, ceiling)
           items = state.items.map((i) =>
             i.id === variantId ? { ...i, quantity: newQty } : i
           )
@@ -108,11 +114,13 @@ export const useCart = create<CartStore>()(
               name: product.name,
               price: product.price,
               image: product.images[0] ?? '',
-              quantity: isPreorder ? qty : Math.min(qty, product.stock_qty),
+              quantity: Math.min(qty, ceiling),
               stock_qty: product.stock_qty,
               is_preorder: isPreorder,
               preorder_days: product.preorder_days ?? null,
               preorder_note: product.preorder_note ?? null,
+              min_order_qty: product.min_order_qty ?? null,
+              max_order_qty: product.max_order_qty ?? null,
               selected_color: selectedColor,
               selected_size: selectedSize,
             },
@@ -136,11 +144,11 @@ export const useCart = create<CartStore>()(
       updateQty(id, qty) {
         if (qty < 0) return
         // qty=0 keeps the item in the array (grayed out) until the cart page unmounts
-        const items = get().items.map((i) =>
-          i.id === id
-            ? { ...i, quantity: qty === 0 ? 0 : Math.min(qty, i.stock_qty) }
-            : i
-        )
+        const items = get().items.map((i) => {
+          if (i.id !== id) return i
+          const ceiling = i.max_order_qty ? Math.min(i.stock_qty, i.max_order_qty) : i.stock_qty
+          return { ...i, quantity: qty === 0 ? 0 : Math.min(qty, ceiling) }
+        })
         set({ items, ...deriveCart(items) })
       },
 

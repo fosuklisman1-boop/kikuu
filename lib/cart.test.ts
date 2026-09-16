@@ -16,6 +16,8 @@ const baseProduct: Product = {
   status: 'active',
   preorder_days: null,
   preorder_note: null,
+  min_order_qty: null,
+  max_order_qty: null,
   featured: false,
   brand_id: null,
   attributes: {},

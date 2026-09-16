@@ -234,21 +234,24 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
           />
         </div>
-        {selectedStatus !== 'pre_order' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Qty *</label>
-            <input
-              name="stock_qty"
-              type="number"
-              min="0"
-              defaultValue={product?.stock_qty ?? 0}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
-            />
-          </div>
-        ) : (
-          <input type="hidden" name="stock_qty" value="0" />
-        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Stock Qty *
+          </label>
+          <input
+            name="stock_qty"
+            type="number"
+            min="0"
+            defaultValue={product?.stock_qty ?? 0}
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+          />
+          {selectedStatus === 'pre_order' && (
+            <p className="text-xs text-gray-400 mt-1">
+              Total units available for this pre-order batch. Counts down as orders are paid; reaches 0 = sold out.
+            </p>
+          )}
+        </div>
       </div>
 
       <div>
@@ -550,6 +553,35 @@ export default function ProductForm({ product, categories, allColors, allSizes }
               Shown to customers alongside the expected delivery date.
             </p>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Min order qty <span className="text-gray-400">(optional)</span>
+              </label>
+              <input
+                name="min_order_qty"
+                type="number"
+                min="1"
+                defaultValue={product?.min_order_qty ?? ''}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Max order qty <span className="text-gray-400">(optional)</span>
+              </label>
+              <input
+                name="max_order_qty"
+                type="number"
+                min="1"
+                defaultValue={product?.max_order_qty ?? ''}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 -mt-2">
+            Limits how many units a customer can order at once. Leave blank for no limit.
+          </p>
         </div>
       )}
 

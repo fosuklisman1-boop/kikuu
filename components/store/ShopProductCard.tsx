@@ -22,14 +22,14 @@ export default function ShopProductCard({
   const [added, setAdded] = useState(false)
   const [cartError, setCartError] = useState('')
   const product = item.product
-  const outOfStock = product.stock_qty === 0 && product.status !== 'pre_order'
+  const outOfStock = product.stock_qty === 0
   const isPreorder = product.status === 'pre_order'
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     if (outOfStock) return
     const result = addItem(
-      { ...product, price: item.shop_price }, 1, undefined, undefined,
+      { ...product, price: item.shop_price }, product.min_order_qty ?? 1, undefined, undefined,
       { shopId, shopSlug }
     )
     if (result?.error) {
@@ -56,7 +56,7 @@ export default function ShopProductCard({
           {outOfStock && (
             <div className="absolute inset-0 bg-white/75 backdrop-blur-[1.5px] flex items-center justify-center">
               <span className="text-[11px] font-semibold text-[#6b6360] bg-white px-3 py-1.5 rounded-full border border-[#ede8df] shadow-sm tracking-wide">
-                Out of Stock
+                {isPreorder ? 'Pre-order Sold Out' : 'Out of Stock'}
               </span>
             </div>
           )}
@@ -83,7 +83,13 @@ export default function ShopProductCard({
                 : 'bg-[#b45309] hover:bg-[#92400e] text-white'
             }`}
           >
-            {added ? '✓ Added!' : outOfStock ? 'Out of Stock' : 'Add to Cart'}
+            {added
+              ? '✓ Added!'
+              : outOfStock
+              ? (isPreorder ? 'Pre-order Sold Out' : 'Out of Stock')
+              : isPreorder
+              ? 'Pre-order Now'
+              : 'Add to Cart'}
           </button>
         </div>
       </Link>
