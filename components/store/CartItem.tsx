@@ -72,7 +72,17 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           </p>
         )}
 
-        <p className="text-[#b45309] font-semibold text-sm mb-3">{formatGHS(item.price)}</p>
+        <p className="text-[#b45309] font-semibold text-sm mb-3 flex items-center gap-1.5 flex-wrap">
+          {formatGHS(item.price)}
+          {item.is_preorder && !!item.min_order_qty && item.min_order_qty > 1 && (
+            <>
+              <span className="text-xs font-normal text-gray-400">/unit</span>
+              <span className="text-[9px] font-bold text-white bg-[#b45309] px-1.5 py-0.5 rounded-md tracking-wide">
+                Min {item.min_order_qty}
+              </span>
+            </>
+          )}
+        </p>
 
         <div className="flex items-center gap-2">
           {/* Qty controls */}

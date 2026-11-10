@@ -2,7 +2,7 @@
 
 import { useCart } from '@/lib/cart'
 import type { Product } from '@/lib/supabase/types'
-import { ShoppingCart, Check, Clock } from 'lucide-react'
+import { ShoppingCart, Check, Clock, Minus, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -32,12 +32,15 @@ export default function AddToCartButton({
   const [cartError, setCartError] = useState('')
   const isPreorder = product.status === 'pre_order'
 
+  const minQty = product.min_order_qty ?? 1
+  const maxQty = product.max_order_qty ? Math.min(product.stock_qty, product.max_order_qty) : product.stock_qty
+  const [qty, setQty] = useState(minQty)
+
   function handleAdd() {
     const overridePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : undefined)
     const itemToAdd = overridePrice !== undefined ? { ...product, price: overridePrice } : product
     const shopContext = shopId && shopSlug ? { shopId, shopSlug } : undefined
-    const initialQty = product.min_order_qty ?? 1
-    const result = addItem(itemToAdd, initialQty, selectedColor, selectedSize, shopContext)
+    const result = addItem(itemToAdd, qty, selectedColor, selectedSize, shopContext)
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 5000)
@@ -45,10 +48,38 @@ export default function AddToCartButton({
     }
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
+    setQty(minQty)
   }
 
   return (
     <div className="space-y-2">
+      {!disabled && maxQty >= minQty && (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-gray-600">Quantity</span>
+          <div className="flex items-center gap-0 border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.max(minQty, q - 1))}
+              disabled={qty <= minQty}
+              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Minus size={13} />
+            </button>
+            <span className="w-11 text-center text-sm font-semibold text-gray-900 border-x border-gray-200">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+              disabled={qty >= maxQty}
+              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Plus size={13} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {cartError && (
         <motion.p
           initial={{ opacity: 0, y: -4 }}

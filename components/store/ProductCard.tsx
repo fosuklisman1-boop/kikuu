@@ -130,9 +130,12 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
               {product.name}
             </p>
 
-            <div className="flex items-baseline gap-2 mb-2.5">
+            <div className="flex items-baseline gap-2 mb-2.5 flex-wrap">
               <span className={`font-extrabold text-sm tracking-tight ${onSale ? 'text-red-500' : 'text-[#b45309]'}`}>
                 {formatGHS(displayPrice)}
+                {isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && (
+                  <span className="text-[10px] font-normal text-[#a89e96] ml-0.5">/unit</span>
+                )}
               </span>
               {onSale && (
                 <span className="text-xs text-[#a89e96] line-through font-normal">
@@ -142,6 +145,11 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
               {!onSale && hasDiscount && (
                 <span className="text-xs text-[#a89e96] line-through font-normal">
                   {formatGHS(product.compare_at_price!)}
+                </span>
+              )}
+              {isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && (
+                <span className="text-[9px] font-bold text-white bg-[#b45309] px-1.5 py-0.5 rounded-md tracking-wide">
+                  Min {product.min_order_qty}
                 </span>
               )}
             </div>

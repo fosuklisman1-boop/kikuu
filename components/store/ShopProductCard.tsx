@@ -69,8 +69,18 @@ export default function ShopProductCard({
 
         <div className="px-3.5 pt-3 pb-3.5">
           <p className="text-[13px] font-medium text-[#0a0a0a] line-clamp-2 leading-[1.45] mb-2">{product.name}</p>
-          <div className="flex items-baseline gap-2 mb-2.5">
-            <span className="font-extrabold text-sm tracking-tight text-[#b45309]">{formatGHS(item.shop_price)}</span>
+          <div className="flex items-baseline gap-2 mb-2.5 flex-wrap">
+            <span className="font-extrabold text-sm tracking-tight text-[#b45309]">
+              {formatGHS(item.shop_price)}
+              {isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && (
+                <span className="text-[10px] font-normal text-[#a89e96] ml-0.5">/unit</span>
+              )}
+            </span>
+            {isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && (
+              <span className="text-[9px] font-bold text-white bg-[#b45309] px-1.5 py-0.5 rounded-md tracking-wide">
+                Min {product.min_order_qty}
+              </span>
+            )}
           </div>
           <button
             onClick={handleAdd}
