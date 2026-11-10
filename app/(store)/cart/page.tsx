@@ -1,6 +1,7 @@
 'use client'
 
 import { useCart } from '@/lib/cart'
+import { getPreorderRules } from '@/lib/actions/prices'
 import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
 import CartItem from '@/components/store/CartItem'
@@ -8,7 +9,14 @@ import { ShoppingBag, ArrowRight, Clock } from 'lucide-react'
 import { useEffect } from 'react'
 
 export default function CartPage() {
-  const { items, total, hasPreorderItems, _hasHydrated, removeItem } = useCart()
+  const { items, total, hasPreorderItems, _hasHydrated, removeItem, applyPreorderRules } = useCart()
+
+  // Pull the live min/max/top-up for pre-order lines (carts saved earlier may lack them)
+  const preorderIds = items.filter((i) => i.is_preorder).map((i) => i.product_id).join(',')
+  useEffect(() => {
+    if (!_hasHydrated || !preorderIds) return
+    getPreorderRules(preorderIds.split(',')).then(applyPreorderRules)
+  }, [_hasHydrated, preorderIds, applyPreorderRules])
 
   // Flush qty=0 items when the cart page is closed/navigated away from
   useEffect(() => {

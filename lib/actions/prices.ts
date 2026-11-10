@@ -40,3 +40,31 @@ export async function getCurrentPrices(
 
   return priceMap
 }
+
+export interface PreorderRules {
+  min_order_qty: number | null
+  max_order_qty: number | null
+  below_min_topup: number | null
+}
+
+// Current min/max/top-up for the given products, so carts saved before a
+// rule existed (or before an admin changed it) pick up the live values.
+export async function getPreorderRules(
+  productIds: string[]
+): Promise<Record<string, PreorderRules>> {
+  if (!productIds.length) return {}
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('products')
+    .select('id, min_order_qty, max_order_qty, categories(below_min_topup)')
+    .in('id', productIds)
+  const out: Record<string, PreorderRules> = {}
+  for (const p of (data ?? []) as any[]) {
+    out[p.id] = {
+      min_order_qty: p.min_order_qty ?? null,
+      max_order_qty: p.max_order_qty ?? null,
+      below_min_topup: Number(p.categories?.below_min_topup ?? 0) || null,
+    }
+  }
+  return out
+}

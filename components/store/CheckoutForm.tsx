@@ -3,7 +3,7 @@
 import { useCart, cartUnitPrice } from '@/lib/cart'
 import { formatGHS, GHANA_REGIONS, SHIPPING_FEES, isValidGhanaPhone } from '@/lib/utils'
 import { validateCoupon } from '@/lib/actions/coupons'
-import { getCurrentPrices } from '@/lib/actions/prices'
+import { getCurrentPrices, getPreorderRules } from '@/lib/actions/prices'
 import { getPaymentGatewaySettings } from '@/lib/actions/payment-settings'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,7 @@ import Link from 'next/link'
 import Script from 'next/script'
 
 export default function CheckoutForm() {
-  const { items, total, clearCart, hasPreorderItems, _hasHydrated, shopId } = useCart()
+  const { items, total, clearCart, hasPreorderItems, _hasHydrated, shopId, applyPreorderRules } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -48,6 +48,13 @@ export default function CheckoutForm() {
     if (!_hasHydrated || !items.length) return
     getCurrentPrices(items.map((i) => i.product_id ?? i.id)).then(setLivePrices)
   }, [_hasHydrated, items.length])
+
+  // Refresh pre-order min/max/top-up so the total shown matches what the server will charge
+  const preorderIds = items.filter((i) => i.is_preorder).map((i) => i.product_id).join(',')
+  useEffect(() => {
+    if (!_hasHydrated || !preorderIds) return
+    getPreorderRules(preorderIds.split(',')).then(applyPreorderRules)
+  }, [_hasHydrated, preorderIds, applyPreorderRules])
 
   // Load delivery fees from DB, fall back to hardcoded if table missing/empty
   useEffect(() => {

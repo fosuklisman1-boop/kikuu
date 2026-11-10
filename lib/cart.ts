@@ -62,6 +62,7 @@ interface CartStore {
   ) => { error?: string }
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
+  applyPreorderRules: (rules: Record<string, { min_order_qty: number | null; max_order_qty: number | null; below_min_topup: number | null }>) => void
   clearCart: () => void
 }
 
@@ -163,6 +164,16 @@ export const useCart = create<CartStore>()(
           if (i.id !== id) return i
           const ceiling = i.max_order_qty ? Math.min(i.stock_qty, i.max_order_qty) : i.stock_qty
           return { ...i, quantity: qty === 0 ? 0 : Math.min(qty, ceiling) }
+        })
+        set({ items, ...deriveCart(items) })
+      },
+
+      applyPreorderRules(rules) {
+        const { shopId } = get()
+        const items = get().items.map((i) => {
+          const r = rules[i.product_id]
+          if (!r || !i.is_preorder) return i
+          return { ...i, min_order_qty: r.min_order_qty, max_order_qty: r.max_order_qty, below_min_topup: shopId ? null : r.below_min_topup }
         })
         set({ items, ...deriveCart(items) })
       },
