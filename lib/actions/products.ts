@@ -1,11 +1,14 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth/require-admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { slugify } from '@/lib/utils'
 import { creditShopEarnings, reverseShopEarnings } from '@/lib/wallet-ledger'
+import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
+import type { Product } from '@/lib/supabase/types'
 import { z } from 'zod'
 
 const ProductSchema = z.object({
@@ -268,4 +271,61 @@ export async function uploadProductImage(formData: FormData) {
     .getPublicUrl(path)
 
   return { url: publicUrl }
+}
+
+const PRODUCTS_PAGE_SIZE = 20
+
+export interface ProductsPageFilters {
+  tab: 'available' | 'preorder'
+  query?: string
+  categorySlug?: string
+  brandSlug?: string
+}
+
+// Public read — mirrors app/(store)/products/page.tsx's server-rendered
+// first page exactly, so infinite scroll never produces a different set
+// or order of products than a fresh page load would.
+export async function fetchProductsPage(
+  filters: ProductsPageFilters,
+  page: number
+): Promise<{ products: Product[]; salePrices: Record<string, number>; hasMore: boolean }> {
+  const supabase = await createClient()
+  const from = (page - 1) * PRODUCTS_PAGE_SIZE
+
+  let categoryId: string | null = null
+  if (filters.categorySlug) {
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', filters.categorySlug)
+      .single()
+    categoryId = cat?.id ?? null
+  }
+
+  let brandId: string | null = null
+  if (filters.brandSlug) {
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('slug', filters.brandSlug)
+      .eq('active', true)
+      .maybeSingle()
+    brandId = brandRow?.id ?? null
+  }
+
+  const status = filters.tab === 'preorder' ? 'pre_order' : 'active'
+  let q = supabase
+    .from('products')
+    .select('*', { count: 'exact' })
+    .eq('status', status)
+    .order('created_at', { ascending: false })
+  if (filters.query) q = q.textSearch('search_vector', filters.query)
+  if (categoryId) q = q.eq('category_id', categoryId)
+  if (brandId) q = q.eq('brand_id', brandId)
+
+  const { data: products, count } = await q.range(from, from + PRODUCTS_PAGE_SIZE - 1)
+  const salePrices = await getFlashSalePriceMap((products ?? []).map((p) => p.id))
+  const hasMore = (count ?? 0) > from + (products?.length ?? 0)
+
+  return { products: products ?? [], salePrices, hasMore }
 }

@@ -2,14 +2,15 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import { getMyShop } from '@/lib/actions/shops'
-import ProductCard from '@/components/store/ProductCard'
 import SearchBar from '@/components/store/SearchBar'
 import CategoryFilter from '@/components/store/CategoryFilter'
 import ProductTabs from '@/components/store/ProductTabs'
+import ProductsInfiniteGrid from '@/components/store/ProductsInfiniteGrid'
+import type { ProductsPageFilters } from '@/lib/actions/products'
 import { Suspense } from 'react'
 
 interface Props {
-  searchParams: Promise<{ q?: string; category?: string; page?: string; tab?: string; brand?: string }>
+  searchParams: Promise<{ q?: string; category?: string; tab?: string; brand?: string }>
 }
 
 const PAGE_SIZE = 20
@@ -18,10 +19,8 @@ export default async function ProductsPage({ searchParams }: Props) {
   const params = await searchParams
   const query = params.q ?? ''
   const categorySlug = params.category ?? ''
-  const page = parseInt(params.page ?? '1', 10)
   const tab = params.tab === 'preorder' ? 'preorder' : 'available'
   const brandSlug = params.brand ?? ''
-  const from = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
 
@@ -71,7 +70,7 @@ export default async function ProductsPage({ searchParams }: Props) {
     { data: trendingSearches },
     shop,
   ] = await Promise.all([
-    buildQuery(activeStatus).range(from, from + PAGE_SIZE - 1),
+    buildQuery(activeStatus).range(0, PAGE_SIZE - 1),
     buildQuery('active'),
     buildQuery('pre_order'),
     supabase.from('categories').select('*').is('parent_id', null).order('sort_order'),
@@ -80,7 +79,8 @@ export default async function ProductsPage({ searchParams }: Props) {
   ])
   const hasShop = !!shop
 
-  const totalPages = Math.ceil((tabCount ?? 0) / PAGE_SIZE)
+  const hasMore = (tabCount ?? 0) > (products?.length ?? 0)
+  const filters: ProductsPageFilters = { tab, query, categorySlug, brandSlug }
 
   const salePrices = await getFlashSalePriceMap((products ?? []).map((p) => p.id))
 
@@ -114,11 +114,14 @@ export default async function ProductsPage({ searchParams }: Props) {
           </p>
 
           {products && products.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} salePrice={salePrices[product.id]} hasShop={hasShop} />
-              ))}
-            </div>
+            <ProductsInfiniteGrid
+              key={`${tab}-${query}-${categorySlug}-${brandSlug}`}
+              initialProducts={products}
+              initialSalePrices={salePrices}
+              initialHasMore={hasMore}
+              filters={filters}
+              hasShop={hasShop}
+            />
           ) : (
             <div className="text-center py-28 text-gray-400">
               <p className="text-4xl mb-4">🔍</p>
@@ -126,27 +129,6 @@ export default async function ProductsPage({ searchParams }: Props) {
                 {tab === 'preorder' ? 'No pre-order products yet.' : 'No products found.'}
               </p>
               {query && <p className="text-sm mt-1.5 text-gray-400">Try a different search term.</p>}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-10">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <a
-                  key={p}
-                  href={`/products?${new URLSearchParams({
-                    ...(query && { q: query }),
-                    ...(categorySlug && { category: categorySlug }),
-                    ...(brandSlug && { brand: brandSlug }),
-                    ...(tab === 'preorder' && { tab: 'preorder' }),
-                    page: String(p),
-                  })}`}
-                  className={`px-3 py-1 rounded border text-sm ${p === page ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 text-gray-700 hover:border-green-600'}`}
-                >
-                  {p}
-                </a>
-              ))}
             </div>
           )}
         </div>

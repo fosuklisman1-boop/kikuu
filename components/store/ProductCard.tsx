@@ -159,15 +159,15 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
               </p>
             )}
 
-            {/* Add to Cart / Choose Options button */}
+            {/* Add to Cart / Choose Options button. Purely visual when
+                variants exist — the surrounding <Link> below already
+                navigates here on any click inside the card; a second
+                nested <a> for the same href is both redundant and invalid
+                HTML (causes a hydration error). */}
             {hasVariants ? (
-              <Link
-                href={`/products/${product.slug}`}
-                onClick={(e) => e.stopPropagation()}
-                className="block w-full py-2.5 rounded-xl text-[11px] font-bold tracking-wide text-center bg-[#b45309] hover:bg-[#92400e] text-white transition-colors"
-              >
+              <span className="block w-full py-2.5 rounded-xl text-[11px] font-bold tracking-wide text-center bg-[#b45309] group-hover:bg-[#92400e] text-white transition-colors">
                 Choose Options
-              </Link>
+              </span>
             ) : (
               <button
                 onClick={handleAdd}
