@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { PurchaseMode } from '@/lib/below-min'
 import type { Product, ProductVariantColor } from '@/lib/supabase/types'
 import ProductVariantPicker from '@/components/store/ProductVariantPicker'
 import AddToCartButton from '@/components/store/AddToCartButton'
@@ -30,10 +31,14 @@ export default function ProductVariantSection({
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
 
   // Single purchases pick color/size per unit inside the add-to-cart box
-  const [perUnitMode, setPerUnitMode] = useState(false)
+  const [purchaseMode, setPurchaseMode] = useState<PurchaseMode | undefined>(undefined)
+  const perUnitMode = purchaseMode === 'single'
+  // Bulk orders choose a color only; size isn't part of a bulk purchase
+  const bulkMode = purchaseMode === 'bulk'
+  const pickerSizes = bulkMode ? [] : variantSizes
 
   const needsColor = variantColors.length > 0 && !selectedColor
-  const needsSize = variantSizes.length > 0 && !selectedSize
+  const needsSize = pickerSizes.length > 0 && !selectedSize
   const variantBlocked = needsColor || needsSize
 
   let hint = ''
@@ -46,7 +51,7 @@ export default function ProductVariantSection({
       {!perUnitMode && (
         <ProductVariantPicker
           colors={variantColors}
-          sizes={variantSizes}
+          sizes={pickerSizes}
           selectedColor={selectedColor}
           selectedSize={selectedSize}
           onColorChange={setSelectedColor}
@@ -59,10 +64,10 @@ export default function ProductVariantSection({
         selectionHint={!disabled && !perUnitMode && variantBlocked ? hint : undefined}
         variantColors={variantColors}
         variantSizes={variantSizes}
-        onModeChange={(m) => setPerUnitMode(m === 'single')}
+        onModeChange={setPurchaseMode}
         salePrice={salePrice}
         selectedColor={selectedColor ?? undefined}
-        selectedSize={selectedSize ?? undefined}
+        selectedSize={bulkMode ? undefined : selectedSize ?? undefined}
         shopId={shopId}
         shopSlug={shopSlug}
         shopPrice={shopPrice}
