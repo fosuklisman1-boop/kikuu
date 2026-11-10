@@ -29,6 +29,9 @@ export default function ProductVariantSection({
   const [selectedColor, setSelectedColor] = useState<ProductVariantColor | null>(null)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
 
+  // Single purchases pick color/size per unit inside the add-to-cart box
+  const [perUnitMode, setPerUnitMode] = useState(false)
+
   const needsColor = variantColors.length > 0 && !selectedColor
   const needsSize = variantSizes.length > 0 && !selectedSize
   const variantBlocked = needsColor || needsSize
@@ -40,18 +43,23 @@ export default function ProductVariantSection({
 
   return (
     <>
-      <ProductVariantPicker
-        colors={variantColors}
-        sizes={variantSizes}
-        selectedColor={selectedColor}
-        selectedSize={selectedSize}
-        onColorChange={setSelectedColor}
-        onSizeChange={setSelectedSize}
-      />
+      {!perUnitMode && (
+        <ProductVariantPicker
+          colors={variantColors}
+          sizes={variantSizes}
+          selectedColor={selectedColor}
+          selectedSize={selectedSize}
+          onColorChange={setSelectedColor}
+          onSizeChange={setSelectedSize}
+        />
+      )}
       <AddToCartButton
         product={product}
         disabled={disabled}
-        selectionHint={!disabled && variantBlocked ? hint : undefined}
+        selectionHint={!disabled && !perUnitMode && variantBlocked ? hint : undefined}
+        variantColors={variantColors}
+        variantSizes={variantSizes}
+        onModeChange={(m) => setPerUnitMode(m === 'single')}
         salePrice={salePrice}
         selectedColor={selectedColor ?? undefined}
         selectedSize={selectedSize ?? undefined}

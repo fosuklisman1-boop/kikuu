@@ -3,15 +3,19 @@
 import { useCart } from '@/lib/cart'
 import { belowMinSurcharge, productTopup, minQtyForMode, type PurchaseMode } from '@/lib/below-min'
 import { formatGHS } from '@/lib/utils'
-import type { Product } from '@/lib/supabase/types'
+import type { Product, ProductVariantColor } from '@/lib/supabase/types'
+import ProductVariantPicker from '@/components/store/ProductVariantPicker'
 import { ShoppingCart, Check, Clock, Minus, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function AddToCartButton({
   product,
   disabled,
-  selectionHint,
+  selectionHint: externalHint,
+  variantColors,
+  variantSizes,
+  onModeChange,
   salePrice,
   selectedColor,
   selectedSize,
@@ -22,6 +26,9 @@ export default function AddToCartButton({
   product: Product
   disabled?: boolean
   selectionHint?: string
+  variantColors?: ProductVariantColor[]
+  variantSizes?: string[]
+  onModeChange?: (mode: PurchaseMode | undefined) => void
   salePrice?: number
   selectedColor?: { name: string; hex: string }
   selectedSize?: string
@@ -50,16 +57,59 @@ export default function AddToCartButton({
   const surcharge = belowMinSurcharge({ isPreorder, minQty: product.min_order_qty, topup, qty, mode: activeMode })
   const unitPrice = basePrice + surcharge
 
+  // In Single mode each unit can be a different color/size.
+  type UnitChoice = { color: ProductVariantColor | null; size: string | null }
+  const [units, setUnits] = useState<UnitChoice[]>([])
+  const needsColor = (variantColors?.length ?? 0) > 0
+  const needsSize = (variantSizes?.length ?? 0) > 0
+  const perUnit = hasModes && mode === 'single' && (needsColor || needsSize)
+  const getUnit = (i: number): UnitChoice => units[i] ?? { color: null, size: null }
+  function setUnit(i: number, patch: Partial<UnitChoice>) {
+    setUnits((prev) => {
+      const next = Array.from({ length: Math.max(prev.length, i + 1) }, (_, k) => prev[k] ?? { color: null, size: null })
+      next[i] = { ...next[i], ...patch }
+      return next
+    })
+  }
+  const unitsIncomplete = perUnit && Array.from({ length: qty }).some((_, i) => {
+    const u = getUnit(i)
+    return (needsColor && !u.color) || (needsSize && !u.size)
+  })
+  const selectionHint = externalHint ?? (unitsIncomplete ? 'Choose options for each unit' : undefined)
+
+  useEffect(() => {
+    onModeChange?.(hasModes ? mode : undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function chooseMode(next: PurchaseMode) {
     setMode(next)
     setQty(next === 'bulk' ? minQty : 1)
+    onModeChange?.(next)
   }
 
   function handleAdd() {
     const overridePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : undefined)
     const itemToAdd = overridePrice !== undefined ? { ...product, price: overridePrice } : product
     const shopContext = shopId && shopSlug ? { shopId, shopSlug } : undefined
-    const result = addItem(itemToAdd, qty, selectedColor, selectedSize, shopContext, activeMode)
+    let result: { error?: string } = {}
+    if (perUnit) {
+      // Group identical choices so each distinct variant becomes one cart line
+      const groups = new Map<string, { color: ProductVariantColor | null; size: string | null; count: number }>()
+      for (let i = 0; i < qty; i++) {
+        const u = getUnit(i)
+        const key = (u.color?.name ?? '') + '__' + (u.size ?? '')
+        const g = groups.get(key)
+        if (g) g.count += 1
+        else groups.set(key, { ...u, count: 1 })
+      }
+      for (const g of groups.values()) {
+        result = addItem(itemToAdd, g.count, g.color ?? undefined, g.size ?? undefined, shopContext, 'single')
+        if (result?.error) break
+      }
+    } else {
+      result = addItem(itemToAdd, qty, selectedColor, selectedSize, shopContext, activeMode)
+    }
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 5000)
@@ -68,6 +118,7 @@ export default function AddToCartButton({
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
     setQty(hasModes && mode === 'bulk' ? minQty : hasModes ? 1 : minQty)
+    setUnits([])
   }
 
   return (
@@ -118,6 +169,26 @@ export default function AddToCartButton({
               <Plus size={13} />
             </button>
           </div>
+        </div>
+      )}
+
+      {!disabled && perUnit && (
+        <div className="space-y-3">
+          {Array.from({ length: qty }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-gray-200 p-3">
+              <p className="text-xs font-semibold text-gray-500 mb-2">Unit {i + 1} of {qty}</p>
+              <div className="[&>div]:mb-0">
+                <ProductVariantPicker
+                  colors={variantColors ?? []}
+                  sizes={variantSizes ?? []}
+                  selectedColor={getUnit(i).color}
+                  selectedSize={getUnit(i).size}
+                  onColorChange={(c) => setUnit(i, { color: c })}
+                  onSizeChange={(sz) => setUnit(i, { size: sz })}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
