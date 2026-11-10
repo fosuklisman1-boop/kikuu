@@ -29,6 +29,18 @@ describe('computeOrderEarnings', () => {
     ])).toBe(25) // 10 + 15
   })
 
+  it('computes commission as a percent of price times quantity', () => {
+    expect(computeOrderEarnings([item({ price: 100, base_price: null, commission_rate: 10, quantity: 2 })])).toBe(20)
+  })
+
+  it('prefers commission_rate over legacy markup when both are present', () => {
+    expect(computeOrderEarnings([item({ price: 60, base_price: 50, commission_rate: 5, quantity: 1 })])).toBe(3)
+  })
+
+  it('rounds commission to 2 decimals', () => {
+    expect(computeOrderEarnings([item({ price: 33.33, base_price: null, commission_rate: 7.5, quantity: 1 })])).toBe(2.5)
+  })
+
   it('contributes 0 for items with base_price null (non-shop items)', () => {
     expect(computeOrderEarnings([item({ price: 60, base_price: null, quantity: 1 })])).toBe(0)
   })

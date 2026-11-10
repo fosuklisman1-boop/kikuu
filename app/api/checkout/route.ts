@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // If this order came from a shop, validate it and build a shop price map
     const shopPriceMap = new Map<string, number>()
-    const shopBasePriceMap = new Map<string, number>()
+    const shopCommissionMap = new Map<string, number>()
     if (shop_id) {
       const { data: shopRow } = await admin.from('shops').select('id, active').eq('id', shop_id).single()
       if (!shopRow || !shopRow.active) {
@@ -97,12 +97,12 @@ export async function POST(req: NextRequest) {
       }
       const { data: shopProducts } = await admin
         .from('shop_products_priced')
-        .select('product_id, shop_price, base_price')
+        .select('product_id, shop_price, commission_percent')
         .eq('shop_id', shop_id)
         .in('product_id', productIds)
       for (const sp of shopProducts ?? []) {
         shopPriceMap.set(sp.product_id, sp.shop_price)
-        shopBasePriceMap.set(sp.product_id, sp.base_price)
+        shopCommissionMap.set(sp.product_id, sp.commission_percent)
       }
     }
 
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Pre-orders bought below their minimum carry a flat per-unit category
-      // top-up. Shop prices are seller-set, so they are exempt.
+      // top-up. Shop orders are exempt so commission stays on the listed price.
       const topup = shop_id ? 0 : belowMinSurcharge({
         isPreorder: product.status === 'pre_order',
         minQty: product.min_order_qty,
@@ -171,7 +171,8 @@ export async function POST(req: NextRequest) {
         product_name: product.name,
         product_image: product.images[0] ?? '',
         price: (shop_id ? shopPriceMap.get(product.id)! : (flashPrices.get(product.id) ?? product.price)) + topup,
-        base_price: shop_id ? shopBasePriceMap.get(product.id)! : null,
+        base_price: null,
+        commission_rate: shop_id ? Number(shopCommissionMap.get(product.id) ?? 0) : null,
         quantity: raw.quantity,
         is_preorder: product.status === 'pre_order',
         preorder_ship_date: itemPreorderShipDate,

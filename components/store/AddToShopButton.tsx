@@ -4,16 +4,13 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { Store } from 'lucide-react'
 import { addShopProducts } from '@/lib/actions/shop-products'
-import MarkupForm from '@/components/seller/MarkupForm'
 
 const POPOVER_WIDTH = 256 // w-64
-const POPOVER_HEIGHT_ESTIMATE = 160 // heading + MarkupForm row + Add button + padding, generous estimate
+const POPOVER_HEIGHT_ESTIMATE = 110 // heading + Add button + padding, generous estimate
 
-export default function AddToShopButton({ productId, basePrice }: { productId: string; basePrice: number }) {
+export default function AddToShopButton({ productId }: { productId: string }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
-  const [markupType, setMarkupType] = useState<'flat' | 'percentage'>('flat')
-  const [markupValue, setMarkupValue] = useState(0)
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -54,7 +51,7 @@ export default function AddToShopButton({ productId, basePrice }: { productId: s
     e.stopPropagation()
     setMessage('')
     startTransition(async () => {
-      const result = await addShopProducts({ productIds: [productId], markupType, markupValue })
+      const result = await addShopProducts({ productIds: [productId] })
       if (result.error) {
         setMessage(result.error)
       } else {
@@ -92,12 +89,6 @@ export default function AddToShopButton({ productId, basePrice }: { productId: s
           className="bg-white rounded-xl shadow-xl border border-gray-200 p-3 z-[100]"
         >
           <p className="text-xs font-semibold text-gray-700 mb-2">Add to my shop</p>
-          <MarkupForm
-            basePrice={basePrice}
-            initialMarkupType={markupType}
-            initialMarkupValue={markupValue}
-            onChange={(type, value) => { setMarkupType(type); setMarkupValue(value) }}
-          />
           <button
             onClick={handleAdd}
             disabled={pending}

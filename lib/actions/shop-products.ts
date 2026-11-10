@@ -3,63 +3,30 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireShopOwner } from '@/lib/auth/require-shop-owner'
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
 import type { ShopProductPriced, Product } from '@/lib/supabase/types'
-
-const MarkupSchema = z.object({
-  markupType: z.enum(['flat', 'percentage']),
-  markupValue: z.coerce.number().min(0),
-})
 
 export async function addShopProducts(input: {
   productIds: string[]
-  markupType: 'flat' | 'percentage'
-  markupValue: number
 }): Promise<{ error?: string }> {
   const { shopId } = await requireShopOwner()
 
-  const parsed = MarkupSchema.safeParse({ markupType: input.markupType, markupValue: input.markupValue })
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid markup.' }
   if (input.productIds.length === 0) return { error: 'Select at least one product.' }
 
   const admin = createAdminClient()
   const rows = input.productIds.map((productId) => ({
     shop_id: shopId,
     product_id: productId,
-    markup_type: parsed.data.markupType,
-    markup_value: parsed.data.markupValue,
   }))
 
+  // ignoreDuplicates so re-adding a product never rewrites legacy markup columns
   const { error } = await admin
     .from('shop_products')
-    .upsert(rows, { onConflict: 'shop_id,product_id' })
+    .upsert(rows, { onConflict: 'shop_id,product_id', ignoreDuplicates: true })
 
   if (error) return { error: error.message }
 
   revalidatePath('/seller/products')
-  return {}
-}
-
-export async function updateShopProductMarkup(
-  shopProductId: string,
-  markupType: 'flat' | 'percentage',
-  markupValue: number
-): Promise<{ error?: string }> {
-  const { shopId } = await requireShopOwner()
-
-  const parsed = MarkupSchema.safeParse({ markupType, markupValue })
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid markup.' }
-
-  const admin = createAdminClient()
-  const { error } = await admin
-    .from('shop_products')
-    .update({ markup_type: parsed.data.markupType, markup_value: parsed.data.markupValue })
-    .eq('id', shopProductId)
-    .eq('shop_id', shopId)
-
-  if (error) return { error: error.message }
-
-  revalidatePath('/seller/products')
+  revalidatePath('/seller/links')
   return {}
 }
 
@@ -76,6 +43,7 @@ export async function removeShopProduct(shopProductId: string): Promise<{ error?
   if (error) return { error: error.message }
 
   revalidatePath('/seller/products')
+  revalidatePath('/seller/links')
   return {}
 }
 

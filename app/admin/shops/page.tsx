@@ -1,15 +1,19 @@
 export const dynamic = 'force-dynamic'
 import { getAllShops } from '@/lib/actions/shops-admin'
 import ShopActiveToggle from '@/components/admin/ShopActiveToggle'
+import CommissionSettingsForm from '@/components/admin/CommissionSettingsForm'
+import { getDefaultCommissionPercent } from '@/lib/actions/commission'
 import Link from 'next/link'
 import { formatGHS } from '@/lib/utils'
 
 export default async function AdminShopsPage() {
-  const shops = await getAllShops()
+  const [shops, defaultPercent] = await Promise.all([getAllShops(), getDefaultCommissionPercent()])
 
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900 mb-6">Shops ({shops.length})</h1>
+
+      <CommissionSettingsForm initialPercent={defaultPercent} />
 
       {shops.length === 0 ? (
         <p className="text-sm text-gray-400">No shops yet.</p>

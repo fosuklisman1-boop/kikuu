@@ -12,6 +12,13 @@ export function shopUrl(slug: string): string {
   return `https://${slug}.${ROOT_DOMAIN}`
 }
 
+// Shareable link to one product in a shop. Path-based fallback is relative;
+// callers that copy it to the clipboard must prefix the current origin.
+export function shopProductUrl(shopSlug: string, productSlug: string): string {
+  if (!ROOT_DOMAIN) return `/shop/${shopSlug}/${productSlug}`
+  return `https://${shopSlug}.${ROOT_DOMAIN}/${productSlug}`
+}
+
 // Relative link to a product WITHIN a shop's own storefront pages. Pass
 // `onSubdomain: true` when rendering on the shop's own subdomain (produces
 // clean `/product-slug`); `false` when rendering under the path-based

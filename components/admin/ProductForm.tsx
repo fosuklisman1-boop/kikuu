@@ -585,6 +585,25 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         </div>
       )}
 
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Seller commission % <span className="text-gray-400">(optional)</span>
+        </label>
+        <input
+          name="commission_percent"
+          type="number"
+          min="0"
+          max="100"
+          step="0.01"
+          defaultValue={product?.commission_percent ?? ''}
+          placeholder="Use default"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+        />
+        <p className="text-xs text-gray-400 mt-1">
+          Percent of each sale a seller earns on this product. Leave blank to use the default set on the Shops page.
+        </p>
+      </div>
+
       <button
         type="submit"
         className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"

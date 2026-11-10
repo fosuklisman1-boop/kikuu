@@ -25,6 +25,7 @@ const ProductSchema = z.object({
   min_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
   max_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
   attributes: z.string().optional(),
+  commission_percent: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
 }).refine(
   (data) => data.status !== 'pre_order' || !!data.preorder_days,
   { message: 'Days until delivery is required for pre-order products', path: ['preorder_days'] }
@@ -41,7 +42,7 @@ export async function createProduct(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, commission_percent, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -56,6 +57,7 @@ export async function createProduct(formData: FormData) {
   const { data, error } = await admin.from('products').insert({
     ...rest,
     compare_at_price: compare_at_price || null,
+    commission_percent: commission_percent === '' || commission_percent === undefined ? null : Number(commission_percent),
     preorder_days: rest.status === 'pre_order' ? (Number(preorder_days) || null) : null,
     preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
     min_order_qty: rest.status === 'pre_order' ? (Number(min_order_qty) || null) : null,
@@ -84,7 +86,7 @@ export async function updateProduct(id: string, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, commission_percent, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -98,6 +100,7 @@ export async function updateProduct(id: string, formData: FormData) {
   const { error } = await admin.from('products').update({
     ...rest,
     compare_at_price: compare_at_price || null,
+    commission_percent: commission_percent === '' || commission_percent === undefined ? null : Number(commission_percent),
     preorder_days: rest.status === 'pre_order' ? (Number(preorder_days) || null) : null,
     preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
     min_order_qty: rest.status === 'pre_order' ? (Number(min_order_qty) || null) : null,

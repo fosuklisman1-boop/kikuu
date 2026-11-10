@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, LogOut, ExternalLink, Menu, X, Wallet } from 'lucide-react'
+import { LayoutDashboard, Package, LogOut, ExternalLink, Menu, X, Wallet, Link2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
@@ -11,6 +11,7 @@ import { shopUrl } from '@/lib/shop-url'
 const NAV = [
   { href: '/seller/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/seller/products', label: 'Products', icon: Package },
+  { href: '/seller/links', label: 'Links & Sales', icon: Link2 },
   { href: '/seller/wallet', label: 'Wallet', icon: Wallet },
 ]
 

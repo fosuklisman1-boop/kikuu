@@ -4,12 +4,9 @@ import { useState, useTransition } from 'react'
 import { formatGHS } from '@/lib/utils'
 import type { Product } from '@/lib/supabase/types'
 import { addShopProducts } from '@/lib/actions/shop-products'
-import MarkupForm from './MarkupForm'
 
 export default function ShopProductPicker({ products }: { products: Product[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [markupType, setMarkupType] = useState<'flat' | 'percentage'>('flat')
-  const [markupValue, setMarkupValue] = useState(0)
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
 
@@ -26,11 +23,7 @@ export default function ShopProductPicker({ products }: { products: Product[] })
     setMessage('')
     const count = selected.size
     startTransition(async () => {
-      const result = await addShopProducts({
-        productIds: Array.from(selected),
-        markupType,
-        markupValue,
-      })
+      const result = await addShopProducts({ productIds: Array.from(selected) })
       if (result.error) {
         setMessage(result.error)
       } else {
@@ -39,10 +32,6 @@ export default function ShopProductPicker({ products }: { products: Product[] })
       }
     })
   }
-
-  const avgBasePrice = selected.size
-    ? products.filter((p) => selected.has(p.id)).reduce((s, p) => s + p.price, 0) / selected.size
-    : 0
 
   if (products.length === 0) {
     return <p className="text-sm text-gray-400 py-8 text-center">No more products to add — you&apos;ve curated the whole catalog.</p>
@@ -83,18 +72,12 @@ export default function ShopProductPicker({ products }: { products: Product[] })
       {selected.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 lg:left-60 bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] p-4 flex flex-wrap items-center gap-3 z-30">
           <span className="text-sm font-medium text-gray-700">{selected.size} selected</span>
-          <MarkupForm
-            basePrice={avgBasePrice}
-            initialMarkupType={markupType}
-            initialMarkupValue={markupValue}
-            onChange={(type, value) => { setMarkupType(type); setMarkupValue(value) }}
-          />
           <button
             onClick={handleApply}
             disabled={pending}
             className="ml-auto bg-green-600 hover:bg-green-500 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
           >
-            {pending ? 'Applying…' : `Apply to ${selected.size} product${selected.size === 1 ? '' : 's'}`}
+            {pending ? 'Adding…' : `Add ${selected.size} product${selected.size === 1 ? '' : 's'} to my shop`}
           </button>
         </div>
       )}

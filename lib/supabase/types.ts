@@ -34,6 +34,7 @@ export interface Database {
           preorder_note: string | null
           min_order_qty: number | null
           max_order_qty: number | null
+          commission_percent: number | null
           featured: boolean
           brand_id: string | null
           attributes: Json
@@ -227,7 +228,10 @@ export interface Database {
           markup_value: number
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['shop_products']['Row'], 'id' | 'created_at'>
+        Insert: Omit<Database['public']['Tables']['shop_products']['Row'], 'id' | 'created_at' | 'markup_type' | 'markup_value'> & {
+          markup_type?: 'flat' | 'percentage'
+          markup_value?: number
+        }
         Update: Partial<Database['public']['Tables']['shop_products']['Insert']>
       }
       wallet_transactions: {
@@ -243,6 +247,11 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['wallet_transactions']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['wallet_transactions']['Insert']>
+      }
+      commission_settings: {
+        Row: { id: boolean; default_percent: number; updated_at: string }
+        Insert: Omit<Database['public']['Tables']['commission_settings']['Row'], 'updated_at'>
+        Update: Partial<Database['public']['Tables']['commission_settings']['Insert']>
       }
       withdrawal_settings: {
         Row: { id: boolean; min_amount: number; updated_at: string }
@@ -306,6 +315,7 @@ export interface ShopProductPriced {
   markup_value: number
   base_price: number
   shop_price: number
+  commission_percent: number
   created_at: string
   product: Product
 }
@@ -333,6 +343,8 @@ export interface OrderItem {
   product_image: string
   price: number
   base_price: number | null
+  // Seller commission percent locked in at order time (shop orders only).
+  commission_rate?: number | null
   quantity: number
   is_preorder: boolean
   preorder_ship_date: string | null
