@@ -316,7 +316,7 @@ export async function fetchProductsPage(
   const status = filters.tab === 'preorder' ? 'pre_order' : 'active'
   let q = supabase
     .from('products')
-    .select('*', { count: 'exact' })
+    .select('*, categories(below_min_topup)', { count: 'exact' })
     .eq('status', status)
     .order('created_at', { ascending: false })
   if (filters.query) q = q.textSearch('search_vector', filters.query)

@@ -52,7 +52,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   function buildQuery(status: string, count?: boolean) {
     let q = supabase
       .from('products')
-      .select('*', { count: 'exact' })
+      .select('*, categories(below_min_topup)', { count: 'exact' })
       .eq('status', status)
       .order('created_at', { ascending: false })
     if (query) q = q.textSearch('search_vector', query)

@@ -46,3 +46,24 @@ export async function deleteCategory(id: string) {
   revalidatePath('/admin/categories')
   revalidatePath('/')
 }
+
+// Flat GHS per-unit top-up charged when a pre-order in this category is
+// bought below its minimum order quantity. Blank clears it (no surcharge).
+export async function updateCategoryTopup(id: string, value: string) {
+  await requireAdmin()
+  const trimmed = value.trim()
+  let topup: number | null = null
+  if (trimmed !== '') {
+    topup = Number(trimmed)
+    if (!Number.isFinite(topup) || topup < 0 || topup > 100000) {
+      return { error: 'Enter a valid amount in GHS (0 or more).' }
+    }
+    topup = Math.round(topup * 100) / 100
+  }
+  const admin = createAdminClient()
+  const { error } = await admin.from('categories').update({ below_min_topup: topup }).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/admin/categories')
+  revalidatePath('/products')
+  return { success: true }
+}

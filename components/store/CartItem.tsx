@@ -1,12 +1,14 @@
 'use client'
 
-import { useCart, type CartItem } from '@/lib/cart'
+import { useCart, cartUnitPrice, type CartItem } from '@/lib/cart'
 import { formatGHS } from '@/lib/utils'
 import { Minus, Plus, Trash2, Clock, RotateCcw } from 'lucide-react'
 
 export default function CartItemRow({ item }: { item: CartItem }) {
   const { updateQty, removeItem } = useCart()
   const removed = item.quantity === 0
+  const unitPrice = cartUnitPrice(item)
+  const topupApplied = unitPrice - item.price
 
   if (removed) {
     return (
@@ -73,7 +75,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
         )}
 
         <p className="text-[#b45309] font-semibold text-sm mb-3 flex items-center gap-1.5 flex-wrap">
-          {formatGHS(item.price)}
+          {formatGHS(unitPrice)}
           {item.is_preorder && !!item.min_order_qty && item.min_order_qty > 1 && (
             <>
               <span className="text-xs font-normal text-gray-400">/unit</span>
@@ -83,13 +85,18 @@ export default function CartItemRow({ item }: { item: CartItem }) {
             </>
           )}
         </p>
+        {topupApplied > 0 && (
+          <p className="text-[11px] text-gray-400 -mt-2 mb-3">
+            Includes {formatGHS(topupApplied)}/unit below-minimum top-up. Order {item.min_order_qty}+ to remove it.
+          </p>
+        )}
 
         <div className="flex items-center gap-2">
           {/* Qty controls */}
           <div className="flex items-center gap-0 border border-[#e8e5e0] rounded-xl overflow-hidden">
             <button
               onClick={() => updateQty(item.id, item.quantity - 1)}
-              disabled={item.quantity <= (item.min_order_qty ?? 1)}
+              disabled={item.quantity <= 1}
               className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Minus size={12} />
@@ -118,9 +125,9 @@ export default function CartItemRow({ item }: { item: CartItem }) {
 
       {/* Line total */}
       <div className="shrink-0 text-right">
-        <p className="font-bold text-gray-950 text-sm">{formatGHS(item.price * item.quantity)}</p>
+        <p className="font-bold text-gray-950 text-sm">{formatGHS(unitPrice * item.quantity)}</p>
         {item.quantity > 1 && (
-          <p className="text-[11px] text-gray-400 mt-0.5">{item.quantity} × {formatGHS(item.price)}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">{item.quantity} × {formatGHS(unitPrice)}</p>
         )}
       </div>
     </div>

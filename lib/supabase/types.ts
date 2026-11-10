@@ -11,9 +11,10 @@ export interface Database {
           parent_id: string | null
           image_url: string | null
           sort_order: number
+          below_min_topup: number | null
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id' | 'created_at'>
+        Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id' | 'created_at' | 'below_min_topup'> & { below_min_topup?: number | null }
         Update: Partial<Database['public']['Tables']['categories']['Insert']>
       }
       products: {

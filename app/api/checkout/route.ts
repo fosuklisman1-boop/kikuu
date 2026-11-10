@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { initializePayment, generateReference } from '@/lib/paystack'
 import { initiatePayment, generateTransactionId } from '@/lib/theteller'
 import { getPaymentGatewaySettings } from '@/lib/actions/payment-settings'
+import { belowMinSurcharge, productTopup } from '@/lib/below-min'
 import type { OrderItem } from '@/lib/supabase/types'
 import { SHIPPING_FEES } from '@/lib/utils'
 import { z } from 'zod'
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
     const [{ data: products, error: productsError }, { data: activeSale }] = await Promise.all([
       admin
         .from('products')
-        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note, min_order_qty, max_order_qty')
+        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note, min_order_qty, max_order_qty, categories(below_min_topup)')
         .in('id', productIds)
         .in('status', ['active', 'pre_order']),
       admin
@@ -131,12 +132,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
       }
       if (product.status === 'pre_order') {
-        if (product.min_order_qty && raw.quantity < product.min_order_qty) {
-          return NextResponse.json(
-            { error: `Minimum order quantity for ${product.name} is ${product.min_order_qty}` },
-            { status: 400 }
-          )
-        }
         if (product.max_order_qty && raw.quantity > product.max_order_qty) {
           return NextResponse.json(
             { error: `Maximum order quantity for ${product.name} is ${product.max_order_qty}` },
@@ -153,11 +148,20 @@ export async function POST(req: NextRequest) {
         itemPreorderShipDate = d.toISOString().split('T')[0]
       }
 
+      // Pre-orders bought below their minimum carry a flat per-unit category
+      // top-up. Shop prices are seller-set, so they are exempt.
+      const topup = shop_id ? 0 : belowMinSurcharge({
+        isPreorder: product.status === 'pre_order',
+        minQty: product.min_order_qty,
+        topup: productTopup(product),
+        qty: raw.quantity,
+      })
+
       orderItems.push({
         product_id: product.id,
         product_name: product.name,
         product_image: product.images[0] ?? '',
-        price: shop_id ? shopPriceMap.get(product.id)! : (flashPrices.get(product.id) ?? product.price),
+        price: (shop_id ? shopPriceMap.get(product.id)! : (flashPrices.get(product.id) ?? product.price)) + topup,
         base_price: shop_id ? shopBasePriceMap.get(product.id)! : null,
         quantity: raw.quantity,
         is_preorder: product.status === 'pre_order',

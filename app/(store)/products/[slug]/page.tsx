@@ -4,6 +4,7 @@ import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import { getMyShop } from '@/lib/actions/shops'
 import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
+import { productTopup } from '@/lib/below-min'
 import ProductImages from '@/components/store/ProductImages'
 import ProductVariantSection from '@/components/store/ProductVariantSection'
 import AddToShopButton from '@/components/store/AddToShopButton'
@@ -36,7 +37,7 @@ export default async function ProductPage({ params }: Props) {
 
   const { data: product } = await supabase
     .from('products')
-    .select('*, categories(name, slug)')
+    .select('*, categories(name, slug, below_min_topup)')
     .eq('slug', slug)
     .in('status', ['active', 'pre_order'])
     .single() as { data: any; error: any }
@@ -139,6 +140,12 @@ export default async function ProductPage({ params }: Props) {
                     {product.min_order_qty && `Minimum order: ${product.min_order_qty}`}
                     {product.min_order_qty && product.max_order_qty && ' · '}
                     {product.max_order_qty && `Maximum order: ${product.max_order_qty}`}
+                  </p>
+                )}
+                {!!product.min_order_qty && product.min_order_qty > 1 && productTopup(product) > 0 && (
+                  <p className="text-xs text-orange-700 font-medium mt-1">
+                    Buy {product.min_order_qty > 2 ? `1–${product.min_order_qty - 1}` : '1'} at {formatGHS(displayPrice + productTopup(product))}/unit
+                    {' '}(includes {formatGHS(productTopup(product))} below-minimum top-up). Order {product.min_order_qty}+ for {formatGHS(displayPrice)}/unit.
                   </p>
                 )}
               </div>

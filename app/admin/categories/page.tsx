@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { Metadata } from 'next'
 import DeleteCategoryButton from '@/components/admin/DeleteCategoryButton'
 import CategoryForm from '@/components/admin/CategoryForm'
+import CategoryTopupForm from '@/components/admin/CategoryTopupForm'
 
 export const metadata: Metadata = { title: 'Categories' }
 
@@ -31,6 +32,7 @@ export default async function AdminCategoriesPage() {
         <div className="bg-white rounded-xl border overflow-hidden">
           <div className="p-4 border-b">
             <h2 className="font-semibold text-gray-900">All Categories ({categories?.length ?? 0})</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Box = GHS per-unit top-up when a pre-order is bought below its minimum quantity (blank = none).</p>
           </div>
           <div className="divide-y max-h-[500px] overflow-y-auto">
             {parents.map((parent) => (
@@ -40,7 +42,10 @@ export default async function AdminCategoriesPage() {
                     <p className="font-medium text-gray-900 text-sm">{parent.name}</p>
                     <p className="text-xs text-gray-400">/{parent.slug}</p>
                   </div>
-                  <DeleteCategoryButton id={parent.id} name={parent.name} />
+                  <div className="flex items-center gap-3">
+                    <CategoryTopupForm id={parent.id} initial={parent.below_min_topup} />
+                    <DeleteCategoryButton id={parent.id} name={parent.name} />
+                  </div>
                 </div>
                 {children
                   .filter((c) => c.parent_id === parent.id)
@@ -50,7 +55,10 @@ export default async function AdminCategoriesPage() {
                         <p className="text-sm text-gray-700">↳ {child.name}</p>
                         <p className="text-xs text-gray-400">/{child.slug}</p>
                       </div>
-                      <DeleteCategoryButton id={child.id} name={child.name} />
+                      <div className="flex items-center gap-3">
+                        <CategoryTopupForm id={child.id} initial={child.below_min_topup} />
+                        <DeleteCategoryButton id={child.id} name={child.name} />
+                      </div>
                     </div>
                   ))}
               </div>

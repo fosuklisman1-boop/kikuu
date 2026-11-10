@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { formatGHS } from '@/lib/utils'
+import { productTopup } from '@/lib/below-min'
 import type { Product, ProductAttributes } from '@/lib/supabase/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Clock } from 'lucide-react'
@@ -153,6 +154,12 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
                 </span>
               )}
             </div>
+
+            {isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && productTopup(product) > 0 && (
+              <p className="text-[10px] text-[#6b6360] -mt-1.5 mb-2">
+                Buy {product.min_order_qty > 2 ? `1–${product.min_order_qty - 1}` : '1'} at {formatGHS(displayPrice + productTopup(product))}/unit
+              </p>
+            )}
 
             {product.stock_qty > 0 && product.stock_qty <= 5 && (
               <p className="text-[10px] text-[#b45309] font-semibold mb-2 flex items-center gap-1">

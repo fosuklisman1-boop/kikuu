@@ -1,6 +1,6 @@
 'use client'
 
-import { useCart } from '@/lib/cart'
+import { useCart, cartUnitPrice } from '@/lib/cart'
 import { formatGHS, GHANA_REGIONS, SHIPPING_FEES, isValidGhanaPhone } from '@/lib/utils'
 import { validateCoupon } from '@/lib/actions/coupons'
 import { getCurrentPrices } from '@/lib/actions/prices'
@@ -116,7 +116,7 @@ export default function CheckoutForm() {
   // only knows about base/flash-sale pricing, which doesn't apply to shop purchases, so skip
   // the live-price override entirely for shop carts and trust the cart's own total instead.
   const liveSubtotal = (livePrices && !shopId)
-    ? items.reduce((sum, i) => sum + (livePrices[i.product_id ?? i.id] ?? i.price) * i.quantity, 0)
+    ? items.reduce((sum, i) => sum + cartUnitPrice(i, livePrices[i.product_id ?? i.id] ?? i.price) * i.quantity, 0)
     : total
 
   const feesLoaded = deliveryFees !== null
@@ -483,7 +483,7 @@ export default function CheckoutForm() {
                   <p className="text-gray-800 line-clamp-1 font-medium">{item.name}</p>
                   <p className="text-gray-400 text-xs">×{item.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold shrink-0">{formatGHS(((!shopId ? livePrices?.[item.product_id ?? item.id] : undefined) ?? item.price) * item.quantity)}</p>
+                <p className="text-sm font-semibold shrink-0">{formatGHS(cartUnitPrice(item, (!shopId ? livePrices?.[item.product_id ?? item.id] : undefined) ?? item.price) * item.quantity)}</p>
               </div>
             ))}
           </div>

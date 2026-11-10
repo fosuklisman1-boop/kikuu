@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Product } from '@/lib/supabase/types'
+import { belowMinSurcharge, productTopup } from '@/lib/below-min'
 
 export interface CartItem {
   id: string           // composite key: productId__colorName__sizeName (or just productId if no variants)
@@ -17,15 +18,27 @@ export interface CartItem {
   preorder_note: string | null
   min_order_qty: number | null
   max_order_qty: number | null
+  below_min_topup: number | null
   selected_color?: { name: string; hex: string }
   selected_size?: string
+}
+
+// Unit price actually charged for this line at its current quantity: the
+// base price, plus the category top-up when a pre-order is below its minimum.
+export function cartUnitPrice(item: CartItem, basePrice: number = item.price, qty: number = item.quantity): number {
+  return basePrice + belowMinSurcharge({
+    isPreorder: item.is_preorder,
+    minQty: item.min_order_qty,
+    topup: item.below_min_topup,
+    qty,
+  })
 }
 
 function deriveCart(items: CartItem[]) {
   // qty=0 items are "pending removal" — excluded from totals/counts
   const active = items.filter((i) => i.quantity > 0)
   return {
-    total: active.reduce((sum, i) => sum + i.price * i.quantity, 0),
+    total: active.reduce((sum, i) => sum + cartUnitPrice(i) * i.quantity, 0),
     count: active.reduce((sum, i) => sum + i.quantity, 0),
     hasPreorderItems: active.some((i) => i.is_preorder),
   }
@@ -121,6 +134,8 @@ export const useCart = create<CartStore>()(
               preorder_note: product.preorder_note ?? null,
               min_order_qty: product.min_order_qty ?? null,
               max_order_qty: product.max_order_qty ?? null,
+              // Shop prices are seller-set, so the category top-up never applies to them
+              below_min_topup: shopContext ? null : (productTopup(product) || null),
               selected_color: selectedColor,
               selected_size: selectedSize,
             },

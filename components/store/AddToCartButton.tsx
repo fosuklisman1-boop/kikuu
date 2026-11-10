@@ -1,6 +1,8 @@
 'use client'
 
 import { useCart } from '@/lib/cart'
+import { belowMinSurcharge, productTopup } from '@/lib/below-min'
+import { formatGHS } from '@/lib/utils'
 import type { Product } from '@/lib/supabase/types'
 import { ShoppingCart, Check, Clock, Minus, Plus } from 'lucide-react'
 import { useState } from 'react'
@@ -32,9 +34,15 @@ export default function AddToCartButton({
   const [cartError, setCartError] = useState('')
   const isPreorder = product.status === 'pre_order'
 
+  // Shoppers may buy below the minimum (with a per-unit top-up), so the
+  // stepper floor is 1; the minimum is only the default starting quantity.
   const minQty = product.min_order_qty ?? 1
+  const basePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : product.price)
+  const topup = shopId ? 0 : productTopup(product)
   const maxQty = product.max_order_qty ? Math.min(product.stock_qty, product.max_order_qty) : product.stock_qty
   const [qty, setQty] = useState(minQty)
+  const surcharge = belowMinSurcharge({ isPreorder, minQty: product.min_order_qty, topup, qty })
+  const unitPrice = basePrice + surcharge
 
   function handleAdd() {
     const overridePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : undefined)
@@ -53,14 +61,14 @@ export default function AddToCartButton({
 
   return (
     <div className="space-y-2">
-      {!disabled && maxQty >= minQty && (
+      {!disabled && maxQty >= 1 && (
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium text-gray-600">Quantity</span>
           <div className="flex items-center gap-0 border border-gray-200 rounded-xl overflow-hidden">
             <button
               type="button"
-              onClick={() => setQty((q) => Math.max(minQty, q - 1))}
-              disabled={qty <= minQty}
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              disabled={qty <= 1}
               className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Minus size={13} />
@@ -78,6 +86,13 @@ export default function AddToCartButton({
             </button>
           </div>
         </div>
+      )}
+
+      {!disabled && isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && topup > 0 && (
+        <p className="text-xs text-gray-500 text-right">
+          {formatGHS(unitPrice)}/unit
+          {surcharge > 0 ? ` (incl. ${formatGHS(surcharge)} below-minimum top-up — order ${product.min_order_qty}+ to avoid it)` : ` — total ${formatGHS(unitPrice * qty)}`}
+        </p>
       )}
 
       {cartError && (
