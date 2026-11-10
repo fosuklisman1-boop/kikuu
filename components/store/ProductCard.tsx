@@ -40,7 +40,15 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     if (outOfStock) return
-    const result = addItem(onSale ? { ...product, price: salePrice! } : product, product.min_order_qty ?? 1)
+    const bulk = isPreorder && !!product.min_order_qty && product.min_order_qty > 1
+    const result = addItem(
+      onSale ? { ...product, price: salePrice! } : product,
+      product.min_order_qty ?? 1,
+      undefined,
+      undefined,
+      undefined,
+      bulk ? 'bulk' : undefined
+    )
     if (result?.error) {
       setCartError(result.error)
       setTimeout(() => setCartError(''), 4000)
@@ -157,7 +165,7 @@ export default function ProductCard({ product, salePrice, hasShop = false }: { p
 
             {isPreorder && !!product.min_order_qty && product.min_order_qty > 1 && productTopup(product) > 0 && (
               <p className="text-[10px] text-[#6b6360] -mt-1.5 mb-2">
-                Buy {product.min_order_qty > 2 ? `1–${product.min_order_qty - 1}` : '1'} at {formatGHS(displayPrice + productTopup(product))}/unit
+                Single purchase: {formatGHS(displayPrice + productTopup(product))}/unit · Bulk {product.min_order_qty}+: {formatGHS(displayPrice)}/unit
               </p>
             )}
 

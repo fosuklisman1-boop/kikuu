@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { belowMinSurcharge, productTopup } from './below-min'
+import { belowMinSurcharge, productTopup, minQtyForMode } from './below-min'
 
 const base = { isPreorder: true, minQty: 5, topup: 5 }
 
@@ -29,5 +29,21 @@ describe('productTopup', () => {
     expect(productTopup({})).toBe(0)
     expect(productTopup(null)).toBe(0)
     expect(productTopup({ categories: null })).toBe(0)
+  })
+})
+
+describe('purchase modes', () => {
+  it('single mode charges the top-up at any quantity', () => {
+    expect(belowMinSurcharge({ ...base, mode: 'single', qty: 1 })).toBe(5)
+    expect(belowMinSurcharge({ ...base, mode: 'single', qty: 50 })).toBe(5)
+  })
+  it('bulk mode never charges the top-up', () => {
+    expect(belowMinSurcharge({ ...base, mode: 'bulk', qty: 5 })).toBe(0)
+  })
+  it('bulk lines floor at the minimum, singles at 1', () => {
+    expect(minQtyForMode(5, 'bulk')).toBe(5)
+    expect(minQtyForMode(5, 'single')).toBe(1)
+    expect(minQtyForMode(5, undefined)).toBe(1)
+    expect(minQtyForMode(null, 'bulk')).toBe(1)
   })
 })

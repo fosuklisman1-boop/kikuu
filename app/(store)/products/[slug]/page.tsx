@@ -144,8 +144,8 @@ export default async function ProductPage({ params }: Props) {
                 )}
                 {!!product.min_order_qty && product.min_order_qty > 1 && productTopup(product) > 0 && (
                   <p className="text-xs text-orange-700 font-medium mt-1">
-                    Buy {product.min_order_qty > 2 ? `1–${product.min_order_qty - 1}` : '1'} at {formatGHS(displayPrice + productTopup(product))}/unit
-                    {' '}(includes {formatGHS(productTopup(product))} below-minimum top-up). Order {product.min_order_qty}+ for {formatGHS(displayPrice)}/unit.
+                    Single purchase (any quantity): {formatGHS(displayPrice + productTopup(product))}/unit, which includes a {formatGHS(productTopup(product))} top-up.
+                    {' '}Bulk purchase ({product.min_order_qty}+ units): {formatGHS(displayPrice)}/unit.
                   </p>
                 )}
               </div>

@@ -194,6 +194,7 @@ export default function CheckoutForm() {
             quantity: i.quantity,
             selected_color: i.selected_color,
             selected_size: i.selected_size,
+            purchase_mode: i.purchase_mode,
           })),
         }),
       })

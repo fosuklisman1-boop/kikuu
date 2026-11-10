@@ -34,6 +34,7 @@ const CheckoutSchema = z.object({
         hex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
       }).optional(),
       selected_size: z.string().max(20).optional(),
+      purchase_mode: z.enum(['single', 'bulk']).optional(),
     })
   ).min(1),
 })
@@ -132,6 +133,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
       }
       if (product.status === 'pre_order') {
+        // Bulk purchases must reach the minimum; singles may be any quantity.
+        if (!shop_id && raw.purchase_mode === 'bulk' && product.min_order_qty && raw.quantity < product.min_order_qty) {
+          return NextResponse.json(
+            { error: `Bulk orders of ${product.name} need at least ${product.min_order_qty} units. Choose Single purchase for fewer.` },
+            { status: 400 }
+          )
+        }
         if (product.max_order_qty && raw.quantity > product.max_order_qty) {
           return NextResponse.json(
             { error: `Maximum order quantity for ${product.name} is ${product.max_order_qty}` },
@@ -155,6 +163,7 @@ export async function POST(req: NextRequest) {
         minQty: product.min_order_qty,
         topup: productTopup(product),
         qty: raw.quantity,
+        mode: raw.purchase_mode,
       })
 
       orderItems.push({

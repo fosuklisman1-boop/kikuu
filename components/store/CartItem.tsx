@@ -1,6 +1,7 @@
 'use client'
 
 import { useCart, cartUnitPrice, type CartItem } from '@/lib/cart'
+import { minQtyForMode } from '@/lib/below-min'
 import { formatGHS } from '@/lib/utils'
 import { Minus, Plus, Trash2, Clock, RotateCcw } from 'lucide-react'
 
@@ -80,14 +81,14 @@ export default function CartItemRow({ item }: { item: CartItem }) {
             <>
               <span className="text-xs font-normal text-gray-400">/unit</span>
               <span className="text-[9px] font-bold text-white bg-[#b45309] px-1.5 py-0.5 rounded-md tracking-wide">
-                Min {item.min_order_qty}
+                {item.purchase_mode === 'single' ? 'Single' : item.purchase_mode === 'bulk' ? 'Bulk' : 'Min'} {item.purchase_mode === 'single' ? '' : item.min_order_qty}
               </span>
             </>
           )}
         </p>
         {topupApplied > 0 && (
           <p className="text-[11px] text-gray-400 -mt-2 mb-3">
-            Includes {formatGHS(topupApplied)}/unit below-minimum top-up. Order {item.min_order_qty}+ to remove it.
+            {item.purchase_mode === 'single' ? 'Single purchase' : 'Below minimum'}: includes {formatGHS(topupApplied)}/unit top-up. Bulk ({item.min_order_qty}+ units) is cheaper.
           </p>
         )}
 
@@ -96,7 +97,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           <div className="flex items-center gap-0 border border-[#e8e5e0] rounded-xl overflow-hidden">
             <button
               onClick={() => updateQty(item.id, item.quantity - 1)}
-              disabled={item.quantity <= 1}
+              disabled={item.quantity <= minQtyForMode(item.min_order_qty, item.purchase_mode)}
               className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Minus size={12} />

@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Product } from '@/lib/supabase/types'
-import { belowMinSurcharge, productTopup } from '@/lib/below-min'
+import { belowMinSurcharge, productTopup, type PurchaseMode } from '@/lib/below-min'
 
 export interface CartItem {
   id: string           // composite key: productId__colorName__sizeName (or just productId if no variants)
@@ -19,6 +19,7 @@ export interface CartItem {
   min_order_qty: number | null
   max_order_qty: number | null
   below_min_topup: number | null
+  purchase_mode?: PurchaseMode
   selected_color?: { name: string; hex: string }
   selected_size?: string
 }
@@ -31,6 +32,7 @@ export function cartUnitPrice(item: CartItem, basePrice: number = item.price, qt
     minQty: item.min_order_qty,
     topup: item.below_min_topup,
     qty,
+    mode: item.purchase_mode,
   })
 }
 
@@ -59,6 +61,7 @@ interface CartStore {
     selectedColor?: { name: string; hex: string },
     selectedSize?: string,
     shopContext?: { shopId: string; shopSlug: string },
+    purchaseMode?: PurchaseMode,
   ) => { error?: string }
   removeItem: (id: string) => void
   updateQty: (id: string, qty: number) => void
@@ -78,7 +81,7 @@ export const useCart = create<CartStore>()(
       _hasHydrated: false,
       setHasHydrated(v) { set({ _hasHydrated: v }) },
 
-      addItem(product, qty = 1, selectedColor, selectedSize, shopContext) {
+      addItem(product, qty = 1, selectedColor, selectedSize, shopContext, purchaseMode) {
         const state = get()
         const isPreorder = product.status === 'pre_order'
 
@@ -101,10 +104,11 @@ export const useCart = create<CartStore>()(
           }
         }
 
-        // Composite ID keeps different variants as separate cart lines
-        const variantId = (selectedColor || selectedSize)
+        // Composite ID keeps different variants (and single vs bulk) as separate cart lines
+        const baseId = (selectedColor || selectedSize)
           ? `${product.id}__${selectedColor?.name ?? ''}__${selectedSize ?? ''}`
           : product.id
+        const variantId = purchaseMode ? `${baseId}__${purchaseMode}` : baseId
 
         // Stock is always the hard ceiling; max_order_qty (pre-order only)
         // can tighten it further, never loosen it.
@@ -137,6 +141,7 @@ export const useCart = create<CartStore>()(
               max_order_qty: product.max_order_qty ?? null,
               // Shop prices are seller-set, so the category top-up never applies to them
               below_min_topup: shopContext ? null : (productTopup(product) || null),
+              purchase_mode: purchaseMode,
               selected_color: selectedColor,
               selected_size: selectedSize,
             },
