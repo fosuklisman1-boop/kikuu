@@ -10,7 +10,7 @@ import type { ProductsPageFilters } from '@/lib/actions/products'
 import { Suspense } from 'react'
 
 interface Props {
-  searchParams: Promise<{ q?: string; category?: string; tab?: string; brand?: string }>
+  searchParams: Promise<{ q?: string; category?: string; tab?: string; brand?: string; featured?: string }>
 }
 
 const PAGE_SIZE = 20
@@ -21,6 +21,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   const categorySlug = params.category ?? ''
   const tab = params.tab === 'preorder' ? 'preorder' : 'available'
   const brandSlug = params.brand ?? ''
+  const featuredOnly = params.featured === 'true'
 
   const supabase = await createClient()
 
@@ -58,6 +59,7 @@ export default async function ProductsPage({ searchParams }: Props) {
     if (query) q = q.textSearch('search_vector', query)
     if (categoryId) q = q.eq('category_id', categoryId)
     if (brandId) q = q.eq('brand_id', brandId)
+    if (featuredOnly) q = q.eq('featured', true)
     return q
   }
 
@@ -80,7 +82,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   const hasShop = !!shop
 
   const hasMore = (tabCount ?? 0) > (products?.length ?? 0)
-  const filters: ProductsPageFilters = { tab, query, categorySlug, brandSlug }
+  const filters: ProductsPageFilters = { tab, query, categorySlug, brandSlug, featuredOnly }
 
   const salePrices = await getFlashSalePriceMap((products ?? []).map((p) => p.id))
 
@@ -115,7 +117,7 @@ export default async function ProductsPage({ searchParams }: Props) {
 
           {products && products.length > 0 ? (
             <ProductsInfiniteGrid
-              key={`${tab}-${query}-${categorySlug}-${brandSlug}`}
+              key={`${tab}-${query}-${categorySlug}-${brandSlug}-${featuredOnly}`}
               initialProducts={products}
               initialSalePrices={salePrices}
               initialHasMore={hasMore}

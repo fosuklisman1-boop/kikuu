@@ -26,15 +26,14 @@ export default async function HomePage() {
       supabase
         .from('products')
         .select('*')
-        .eq('status', 'active')
+        .in('status', ['active', 'pre_order'])
         .eq('featured', true)
-        .not('compare_at_price', 'is', null)
         .order('created_at', { ascending: false })
         .limit(8),
       supabase
         .from('products')
         .select('*')
-        .eq('status', 'active')
+        .in('status', ['active', 'pre_order'])
         .order('created_at', { ascending: false })
         .limit(8),
       supabase

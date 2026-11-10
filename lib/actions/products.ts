@@ -280,6 +280,7 @@ export interface ProductsPageFilters {
   query?: string
   categorySlug?: string
   brandSlug?: string
+  featuredOnly?: boolean
 }
 
 // Public read — mirrors app/(store)/products/page.tsx's server-rendered
@@ -322,6 +323,7 @@ export async function fetchProductsPage(
   if (filters.query) q = q.textSearch('search_vector', filters.query)
   if (categoryId) q = q.eq('category_id', categoryId)
   if (brandId) q = q.eq('brand_id', brandId)
+  if (filters.featuredOnly) q = q.eq('featured', true)
 
   const { data: products, count } = await q.range(from, from + PRODUCTS_PAGE_SIZE - 1)
   const salePrices = await getFlashSalePriceMap((products ?? []).map((p) => p.id))

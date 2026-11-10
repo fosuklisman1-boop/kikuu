@@ -17,7 +17,7 @@ export default function DealsOfTheDay({ products }: { products: Product[] }) {
             <h2 className="text-3xl font-extrabold text-[#0a0a0a]">Deals of the Day</h2>
           </div>
           <Link
-            href="/products?featured=true"
+            href="/products?tab=preorder&featured=true"
             className="hidden sm:flex items-center gap-1.5 text-[#b45309] hover:text-[#92400e] font-semibold text-sm transition-all hover:gap-2.5 group"
           >
             View all <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
