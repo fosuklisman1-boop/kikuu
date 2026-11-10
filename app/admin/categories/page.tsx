@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { Metadata } from 'next'
 import DeleteCategoryButton from '@/components/admin/DeleteCategoryButton'
 import CategoryForm from '@/components/admin/CategoryForm'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 import CategoryTopupForm from '@/components/admin/CategoryTopupForm'
 
 export const metadata: Metadata = { title: 'Categories' }
@@ -34,9 +35,10 @@ export default async function AdminCategoriesPage() {
             <h2 className="font-semibold text-gray-900">All Categories ({categories?.length ?? 0})</h2>
             <p className="text-xs text-gray-400 mt-0.5">Box = GHS per-unit top-up when a pre-order is bought below its minimum quantity (blank = none).</p>
           </div>
+          <SearchScope placeholder="Search categories…" barClassName="mb-0 px-4 py-3">
           <div className="divide-y max-h-[500px] overflow-y-auto">
             {parents.map((parent) => (
-              <div key={parent.id}>
+              <SearchItem key={parent.id} text={`${parent.name} ${parent.slug} ${children.filter((c) => c.parent_id === parent.id).map((c) => c.name).join(' ')}`}>
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <p className="font-medium text-gray-900 text-sm">{parent.name}</p>
@@ -61,12 +63,13 @@ export default async function AdminCategoriesPage() {
                       </div>
                     </div>
                   ))}
-              </div>
+              </SearchItem>
             ))}
             {!categories?.length && (
               <p className="text-center text-gray-400 py-8 text-sm">No categories yet.</p>
             )}
           </div>
+          </SearchScope>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import DeleteButton from '@/components/admin/DeleteButton'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'Brands' }
 
@@ -32,9 +33,10 @@ export default async function BrandsPage() {
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {brands && brands.length > 0 ? (
+          <SearchScope placeholder="Search brands…" barClassName="mb-0 px-4 py-3">
           <div className="divide-y divide-gray-50">
             {brands.map((b) => (
-              <div key={b.id} className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50">
+              <SearchItem key={b.id} text={`${b.name} ${b.slug}`} className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50">
                 <img src={b.logo_url} alt={b.name} className="w-12 h-12 object-contain rounded-lg bg-gray-100 p-1 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm">{b.name}</p>
@@ -50,9 +52,10 @@ export default async function BrandsPage() {
                     confirmMessage="Delete brand?"
                   />
                 </div>
-              </div>
+              </SearchItem>
             ))}
           </div>
+          </SearchScope>
         ) : (
           <div className="py-16 text-center text-gray-400">
             <div className="text-4xl mb-3">🏢</div>

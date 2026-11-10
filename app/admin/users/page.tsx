@@ -4,6 +4,7 @@ import { formatGHS } from '@/lib/utils'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import UserActionsMenu from '@/components/admin/UserActionsMenu'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'Users' }
 
@@ -78,7 +79,8 @@ export default async function AdminUsersPage() {
 
         {users.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <SearchScope placeholder="Search users by name, email, phone…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3 text-left">Customer</th>
@@ -100,7 +102,7 @@ export default async function AdminUsersPage() {
                   const banned = isBanned(user.banned_until)
 
                   return (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <SearchItem as="tr" key={user.id} text={`${user.email ?? ''} ${name} ${phone}`} className="hover:bg-gray-50 transition-colors">
                       {/* Customer */}
                       <td className="px-4 py-3">
                         <Link href={`/admin/users/${user.id}`} className="flex items-center gap-3 group">
@@ -166,11 +168,12 @@ export default async function AdminUsersPage() {
                       <td className="px-4 py-3 text-center">
                         <UserActionsMenu userId={user.id} isBanned={banned} userName={name || user.email || user.id} />
                       </td>
-                    </tr>
+                    </SearchItem>
                   )
                 })}
               </tbody>
             </table>
+</SearchScope>
           </div>
         ) : (
           <div className="py-16 text-center text-gray-400">

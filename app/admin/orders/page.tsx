@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'Orders' }
 
@@ -99,7 +100,8 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <SearchScope placeholder="Search this page by order #, name, phone, status…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
               <th className="px-4 py-3 text-left">Order</th>
@@ -114,7 +116,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
           </thead>
           <tbody className="divide-y">
             {orders?.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
+              <SearchItem as="tr" key={order.id} text={`${order.order_number} ${order.buyer_name} ${order.buyer_phone} ${(order as any).buyer_email ?? ''} ${order.status}`} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-mono text-xs text-blue-600">
                   <Link href={`/admin/orders/${order.id}`} className="hover:underline">
                     {order.order_number}
@@ -154,10 +156,11 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
                     View
                   </Link>
                 </td>
-              </tr>
+              </SearchItem>
             ))}
           </tbody>
         </table>
+</SearchScope>
         </div>
         {!orders?.length && (
           <p className="text-center text-gray-400 py-12">No orders found.</p>

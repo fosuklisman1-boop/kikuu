@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Package, ArrowRight, ChevronRight } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { OrderItem } from '@/lib/supabase/types'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'My Orders' }
 
@@ -49,13 +50,14 @@ export default async function MyOrdersPage() {
       </div>
 
       {orders && orders.length > 0 ? (
+        <SearchScope placeholder="Search your orders by number or product…">
         <div className="space-y-3">
           {orders.map((order) => {
             const items = order.items as OrderItem[]
             const firstItem = items?.[0]
             return (
+              <SearchItem key={order.id} text={`${order.order_number} ${order.status} ${(items ?? []).map((i) => i.product_name).join(' ')}`}>
               <Link
-                key={order.id}
                 href={`/orders/${order.id}`}
                 className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all block group"
               >
@@ -110,9 +112,11 @@ export default async function MyOrdersPage() {
                   </div>
                 </div>
               </Link>
+              </SearchItem>
             )
           })}
         </div>
+        </SearchScope>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
           <div className="text-5xl mb-4">📦</div>

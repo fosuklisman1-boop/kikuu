@@ -3,6 +3,7 @@ import { getWalletBalance, getWalletTransactions, getWithdrawableBalance, getWit
 import { getMyShop } from '@/lib/actions/shops'
 import { formatGHS } from '@/lib/utils'
 import WithdrawalPanel from '@/components/seller/WithdrawalPanel'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export default async function SellerWalletPage() {
   const [balance, transactions, withdrawableBalance, settings, myRequests, shop] = await Promise.all([
@@ -40,7 +41,8 @@ export default async function SellerWalletPage() {
       {transactions.length === 0 ? (
         <p className="text-sm text-gray-400 py-8 text-center">No transactions yet.</p>
       ) : (
-        <table className="w-full text-sm mb-10">
+        <SearchScope placeholder="Search transactions…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm mb-10">
           <thead>
             <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
               <th className="py-2 pr-4">Date</th>
@@ -50,7 +52,7 @@ export default async function SellerWalletPage() {
           </thead>
           <tbody>
             {transactions.map((tx) => (
-              <tr key={tx.id} className="border-b border-gray-100">
+              <SearchItem as="tr" key={tx.id} text={`${(tx as any).type ?? ""} ${(tx as any).description ?? ""} ${(tx as any).reference ?? ""} ${(tx as any).status ?? ""} ${tx.amount}`} className="border-b border-gray-100">
                 <td className="py-3 pr-4 text-gray-500">
                   {new Date(tx.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </td>
@@ -58,10 +60,11 @@ export default async function SellerWalletPage() {
                 <td className={`py-3 font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-500'}`}>
                   {tx.type === 'credit' ? '+' : '−'}{formatGHS(tx.amount)}
                 </td>
-              </tr>
+              </SearchItem>
             ))}
           </tbody>
         </table>
+</SearchScope>
       )}
 
       {myRequests.length > 0 && (

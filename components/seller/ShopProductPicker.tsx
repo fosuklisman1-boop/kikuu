@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { formatGHS } from '@/lib/utils'
 import type { Product } from '@/lib/supabase/types'
 import { addShopProducts } from '@/lib/actions/shop-products'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export default function ShopProductPicker({ products }: { products: Product[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -39,10 +40,11 @@ export default function ShopProductPicker({ products }: { products: Product[] })
 
   return (
     <div className="space-y-4 pb-24">
+      <SearchScope placeholder="Search products to add…">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {products.map((product) => (
+          <SearchItem key={product.id} text={`${product.name} ${product.slug}`}>
           <label
-            key={product.id}
             className={`relative border rounded-xl p-3 cursor-pointer transition-colors ${
               selected.has(product.id) ? 'border-green-600 bg-green-50' : 'border-gray-200'
             }`}
@@ -66,8 +68,10 @@ export default function ShopProductPicker({ products }: { products: Product[] })
             <p className="text-xs font-medium text-gray-800 line-clamp-2">{product.name}</p>
             <p className="text-xs text-gray-500 mt-0.5">{formatGHS(product.price)}</p>
           </label>
+          </SearchItem>
         ))}
       </div>
+      </SearchScope>
 
       {selected.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 lg:left-60 bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] p-4 flex flex-wrap items-center gap-3 z-30">

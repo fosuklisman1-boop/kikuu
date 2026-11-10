@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { formatGHS } from '@/lib/utils'
 import type { ShopProductPriced } from '@/lib/supabase/types'
 import { removeShopProduct } from '@/lib/actions/shop-products'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export default function ShopProductsTable({ items }: { items: ShopProductPriced[] }) {
   const [pending, startTransition] = useTransition()
@@ -19,6 +20,7 @@ export default function ShopProductsTable({ items }: { items: ShopProductPriced[
   }
 
   return (
+    <SearchScope placeholder="Search your shop products…">
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
@@ -31,7 +33,7 @@ export default function ShopProductsTable({ items }: { items: ShopProductPriced[
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item.id} className="border-b border-gray-100">
+          <SearchItem as="tr" key={item.id} text={`${item.product.name} ${item.product.slug}`} className="border-b border-gray-100">
             <td className="py-3 pr-4 font-medium text-gray-800">{item.product.name}</td>
             <td className="py-3 pr-4 text-gray-500">{formatGHS(item.shop_price)}</td>
             <td className="py-3 pr-4 text-gray-500">{item.commission_percent}%</td>
@@ -47,9 +49,10 @@ export default function ShopProductsTable({ items }: { items: ShopProductPriced[
                 Remove
               </button>
             </td>
-          </tr>
+          </SearchItem>
         ))}
       </tbody>
     </table>
+    </SearchScope>
   )
 }

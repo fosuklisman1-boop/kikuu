@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { formatGHS } from '@/lib/utils'
 import CouponRowActions from '@/components/admin/CouponRowActions'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'Coupons' }
 
@@ -40,7 +41,8 @@ export default async function CouponsPage() {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {coupons && coupons.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <SearchScope placeholder="Search coupons by code…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-400">
                 <tr>
                   <th className="px-4 py-3 text-left">Code</th>
@@ -56,7 +58,7 @@ export default async function CouponsPage() {
                 {coupons.map((c) => {
                   const status = couponStatus(c)
                   return (
-                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                    <SearchItem as="tr" key={c.id} text={`${c.code} ${c.type} ${status}`} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <span className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-lg text-xs">
                           {c.code}
@@ -84,11 +86,12 @@ export default async function CouponsPage() {
                       <td className="px-4 py-3 text-center">
                         <CouponRowActions id={c.id} active={c.active} />
                       </td>
-                    </tr>
+                    </SearchItem>
                   )
                 })}
               </tbody>
             </table>
+</SearchScope>
           </div>
         ) : (
           <div className="py-16 text-center text-gray-400">

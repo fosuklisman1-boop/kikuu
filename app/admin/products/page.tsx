@@ -4,6 +4,7 @@ import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
 import DeleteProductButton from '@/components/admin/DeleteProductButton'
 import type { Metadata } from 'next'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'Products' }
 
@@ -28,7 +29,8 @@ export default async function AdminProductsPage() {
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <SearchScope placeholder="Search products by name, slug, category…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
               <th className="px-4 py-3 text-left">Product</th>
@@ -41,7 +43,7 @@ export default async function AdminProductsPage() {
           </thead>
           <tbody className="divide-y">
             {products?.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50">
+              <SearchItem as="tr" key={product.id} text={`${product.name} ${product.slug} ${(product as any).categories?.name ?? ''} ${product.status}`} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {product.images[0] && (
@@ -87,10 +89,11 @@ export default async function AdminProductsPage() {
                     <DeleteProductButton id={product.id} name={product.name} />
                   </div>
                 </td>
-              </tr>
+              </SearchItem>
             ))}
           </tbody>
         </table>
+</SearchScope>
         </div>
         {!products?.length && (
           <p className="text-center text-gray-400 py-12">No products yet.</p>

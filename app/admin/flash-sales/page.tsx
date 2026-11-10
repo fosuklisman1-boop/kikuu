@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import DeleteButton from '@/components/admin/DeleteButton'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export const metadata: Metadata = { title: 'Flash Sales' }
 
@@ -44,7 +45,8 @@ export default async function FlashSalesPage() {
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {sales && sales.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <SearchScope placeholder="Search flash sales by title…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-400">
                 <tr>
                   <th className="px-4 py-3 text-left">Title</th>
@@ -60,7 +62,7 @@ export default async function FlashSalesPage() {
                   const status = saleStatus(s)
                   const itemCount = (s.flash_sale_items as unknown as { count: number }[])?.[0]?.count ?? 0
                   return (
-                    <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                    <SearchItem as="tr" key={s.id} text={`${s.title} ${status}`} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-semibold text-gray-900">{s.title}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
                         {new Date(s.starts_at).toLocaleString('en-GH', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -84,11 +86,12 @@ export default async function FlashSalesPage() {
                           />
                         </div>
                       </td>
-                    </tr>
+                    </SearchItem>
                   )
                 })}
               </tbody>
             </table>
+</SearchScope>
           </div>
         ) : (
           <div className="py-16 text-center text-gray-400">

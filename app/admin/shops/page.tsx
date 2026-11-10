@@ -5,6 +5,7 @@ import CommissionSettingsForm from '@/components/admin/CommissionSettingsForm'
 import { getDefaultCommissionPercent } from '@/lib/actions/commission'
 import Link from 'next/link'
 import { formatGHS } from '@/lib/utils'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export default async function AdminShopsPage() {
   const [shops, defaultPercent] = await Promise.all([getAllShops(), getDefaultCommissionPercent()])
@@ -18,7 +19,8 @@ export default async function AdminShopsPage() {
       {shops.length === 0 ? (
         <p className="text-sm text-gray-400">No shops yet.</p>
       ) : (
-        <table className="w-full text-sm">
+        <SearchScope placeholder="Search shops by name, slug, owner…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
               <th className="py-2 pr-4">Shop</th>
@@ -31,7 +33,7 @@ export default async function AdminShopsPage() {
           </thead>
           <tbody>
             {shops.map((s) => (
-              <tr key={s.id} className="border-b border-gray-100">
+              <SearchItem as="tr" key={s.id} text={`${s.name} ${s.slug} ${s.owner_email ?? ''}`} className="border-b border-gray-100">
                 <td className="py-3 pr-4">
                   <Link href={`/shop/${s.slug}`} target="_blank" className="font-medium text-gray-800 hover:text-green-600">
                     {s.name}
@@ -45,10 +47,11 @@ export default async function AdminShopsPage() {
                 </td>
                 <td className="py-3 pr-4 font-medium">{formatGHS(s.wallet_balance)}</td>
                 <td className="py-3"><ShopActiveToggle shopId={s.id} active={s.active} /></td>
-              </tr>
+              </SearchItem>
             ))}
           </tbody>
         </table>
+</SearchScope>
       )}
     </div>
   )

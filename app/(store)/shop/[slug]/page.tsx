@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ShopProductCard from '@/components/store/ShopProductCard'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 import type { Metadata } from 'next'
 import type { Product } from '@/lib/supabase/types'
 import { headers } from 'next/headers'
@@ -59,11 +60,15 @@ export default async function ShopPage({ params }: Props) {
       <p className="text-sm text-gray-400 mb-6">{items.length} product{items.length === 1 ? '' : 's'}</p>
 
       {items.length > 0 ? (
+        <SearchScope placeholder={`Search ${shop.name}…`}>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {items.map((item) => (
-            <ShopProductCard key={item.id} shopId={shop.id} shopSlug={shop.slug} item={item} onSubdomain={onSubdomain} />
+            <SearchItem key={item.id} text={`${item.product.name} ${item.product.slug}`}>
+              <ShopProductCard shopId={shop.id} shopSlug={shop.slug} item={item} onSubdomain={onSubdomain} />
+            </SearchItem>
           ))}
         </div>
+        </SearchScope>
       ) : (
         <div className="text-center py-28 text-gray-400">
           <p className="text-4xl mb-4">🛍️</p>

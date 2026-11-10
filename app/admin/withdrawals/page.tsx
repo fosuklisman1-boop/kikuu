@@ -5,6 +5,7 @@ import { formatGHS } from '@/lib/utils'
 import WithdrawalActions from '@/components/admin/WithdrawalActions'
 import ManualAdjustmentForm from '@/components/admin/ManualAdjustmentForm'
 import MinAmountForm from '@/components/admin/MinAmountForm'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
 export default async function AdminWithdrawalsPage() {
   const [pending, history, settings] = await Promise.all([
@@ -25,7 +26,8 @@ export default async function AdminWithdrawalsPage() {
         {pending.length === 0 ? (
           <p className="text-sm text-gray-400">No pending requests.</p>
         ) : (
-          <table className="w-full text-sm">
+          <SearchScope placeholder="Search by shop, MoMo name or number…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
                 <th className="py-2 pr-4">Shop</th>
@@ -37,7 +39,7 @@ export default async function AdminWithdrawalsPage() {
             </thead>
             <tbody>
               {pending.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100">
+                <SearchItem as="tr" key={r.id} text={`${r.shop.name} ${(r as any).momo_name ?? ''} ${(r as any).momo_number ?? ''} ${(r as any).status ?? ''} ${(r as any).admin_note ?? ''}`} className="border-b border-gray-100">
                   <td className="py-3 pr-4 font-medium text-gray-800">{r.shop.name}</td>
                   <td className="py-3 pr-4">{formatGHS(r.amount)}</td>
                   <td className="py-3 pr-4 text-gray-500">{r.momo_name} — {r.momo_number}</td>
@@ -45,10 +47,11 @@ export default async function AdminWithdrawalsPage() {
                     {new Date(r.requested_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="py-3"><WithdrawalActions requestId={r.id} /></td>
-                </tr>
+                </SearchItem>
               ))}
             </tbody>
           </table>
+</SearchScope>
         )}
       </div>
 
@@ -59,7 +62,8 @@ export default async function AdminWithdrawalsPage() {
         {history.length === 0 ? (
           <p className="text-sm text-gray-400">No processed requests yet.</p>
         ) : (
-          <table className="w-full text-sm">
+          <SearchScope placeholder="Search by shop, MoMo name or number…" barClassName="mb-0 px-4 pt-3 pb-2">
+<table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
                 <th className="py-2 pr-4">Shop</th>
@@ -71,7 +75,7 @@ export default async function AdminWithdrawalsPage() {
             </thead>
             <tbody>
               {history.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100">
+                <SearchItem as="tr" key={r.id} text={`${r.shop.name} ${(r as any).momo_name ?? ''} ${(r as any).momo_number ?? ''} ${(r as any).status ?? ''} ${(r as any).admin_note ?? ''}`} className="border-b border-gray-100">
                   <td className="py-3 pr-4 font-medium text-gray-800">{r.shop.name}</td>
                   <td className="py-3 pr-4">{formatGHS(r.amount)}</td>
                   <td className="py-3 pr-4">
@@ -83,10 +87,11 @@ export default async function AdminWithdrawalsPage() {
                     {r.processed_at ? new Date(r.processed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                   </td>
                   <td className="py-3 text-gray-500">{r.admin_note ?? '—'}</td>
-                </tr>
+                </SearchItem>
               ))}
             </tbody>
           </table>
+</SearchScope>
         )}
       </div>
     </div>

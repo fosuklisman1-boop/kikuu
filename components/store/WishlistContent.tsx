@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import ProductCard from '@/components/store/ProductCard'
 import type { Product } from '@/lib/supabase/types'
 import { Heart, ArrowRight } from 'lucide-react'
+import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 import Link from 'next/link'
 
 export default function WishlistContent() {
@@ -52,11 +53,15 @@ export default function WishlistContent() {
       </div>
 
       {products.length > 0 ? (
+        <SearchScope placeholder="Search your wishlist…">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <SearchItem key={p.id} text={`${p.name} ${p.slug}`}>
+              <ProductCard product={p} />
+            </SearchItem>
           ))}
         </div>
+        </SearchScope>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
           <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
