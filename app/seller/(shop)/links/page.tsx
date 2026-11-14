@@ -47,7 +47,7 @@ export default async function SellerLinksPage() {
             <p className="text-xs text-gray-400 uppercase tracking-wide">Pending Commission</p>
           </div>
           <p className="text-2xl font-bold text-gray-900">{formatGHS(summary.pending)}</p>
-          <p className="text-xs text-gray-400 mt-1">Pre-orders pay out once delivered.</p>
+          <p className="text-xs text-gray-400 mt-1">Commission awaiting payment confirmation.</p>
         </div>
       </div>
 

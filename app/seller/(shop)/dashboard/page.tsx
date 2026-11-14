@@ -62,7 +62,7 @@ export default async function SellerDashboardPage() {
       </div>
 
       <p className="text-xs text-gray-400 mb-8">
-        Pre-order earnings are added to your wallet once the order is marked delivered.
+        Commission, including on pre-orders, is added to your wallet as soon as the customer's payment is confirmed.
       </p>
 
       <div className="flex gap-3">
