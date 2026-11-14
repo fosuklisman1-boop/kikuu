@@ -4,6 +4,7 @@ import ShopActiveToggle from '@/components/admin/ShopActiveToggle'
 import CommissionSettingsForm from '@/components/admin/CommissionSettingsForm'
 import { getDefaultCommissionPercent } from '@/lib/actions/commission'
 import Link from 'next/link'
+import { shopUrl } from '@/lib/shop-url'
 import { formatGHS } from '@/lib/utils'
 import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 import { PageHeader, Panel, EmptyState, TH, THR, TD, ROW, THEAD, TBODY } from '@/components/admin/ui'
@@ -40,10 +41,10 @@ export default async function AdminShopsPage() {
                   {shops.map((s) => (
                     <SearchItem as="tr" key={s.id} text={`${s.name} ${s.slug} ${s.owner_email ?? ''}`} className={ROW}>
                       <td className={TD}>
-                        <Link href={`/shop/${s.slug}`} target="_blank" className="font-medium text-slate-900 hover:text-emerald-800">
+                        <Link href={shopUrl(s.slug)} target="_blank" className="font-medium text-slate-900 hover:text-emerald-800">
                           {s.name}
                         </Link>
-                        <p className="text-xs text-slate-400">/shop/{s.slug}</p>
+                        <p className="text-xs text-slate-400">{shopUrl(s.slug).replace(/^https:\/\//, '')}</p>
                       </td>
                       <td className={`${TD} text-slate-500`}>{s.owner_email ?? '—'}</td>
                       <td className={`${TD} text-right tabular-nums text-slate-600`}>{s.product_count}</td>
