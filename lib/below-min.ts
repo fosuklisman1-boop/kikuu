@@ -27,9 +27,15 @@ export function minQtyForMode(minQty: number | null | undefined, mode?: Purchase
   return mode === 'bulk' && minQty ? minQty : 1
 }
 
-// Reads the top-up off a product row that was fetched with its category
-// joined in (`categories(below_min_topup)`); 0 when absent.
+// The top-up for a product row: its own override when set (0 means "no
+// top-up"), otherwise the category's (fetched via `categories(below_min_topup)`).
+// 0 when neither is present.
 export function productTopup(product: unknown): number {
-  const p = product as { categories?: { below_min_topup?: number | null } | null } | null
+  const p = product as {
+    below_min_topup?: number | string | null
+    categories?: { below_min_topup?: number | string | null } | null
+  } | null
+  const own = p?.below_min_topup
+  if (own !== null && own !== undefined && own !== '') return Number(own) || 0
   return Number(p?.categories?.below_min_topup ?? 0) || 0
 }

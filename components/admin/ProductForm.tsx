@@ -582,6 +582,23 @@ export default function ProductForm({ product, categories, allColors, allSizes }
           <p className="text-xs text-gray-400 -mt-2">
             Limits how many units a customer can order at once. Leave blank for no limit.
           </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Single-purchase top-up (GHS per unit) <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              name="below_min_topup"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={product?.below_min_topup ?? ''}
+              placeholder="Blank = use the category top-up"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Added per unit when a customer buys below the minimum. Overrides the category top-up for this product; enter 0 for no top-up.
+            </p>
+          </div>
         </div>
       )}
 

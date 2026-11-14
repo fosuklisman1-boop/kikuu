@@ -18,6 +18,7 @@ const baseProduct: Product = {
   preorder_note: null,
   min_order_qty: null,
   max_order_qty: null,
+  below_min_topup: null,
   commission_percent: null,
   featured: false,
   brand_id: null,

@@ -34,6 +34,7 @@ export interface Database {
           preorder_note: string | null
           min_order_qty: number | null
           max_order_qty: number | null
+          below_min_topup: number | null
           commission_percent: number | null
           featured: boolean
           brand_id: string | null

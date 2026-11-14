@@ -24,6 +24,7 @@ const ProductSchema = z.object({
   preorder_note: z.string().max(150).optional(),
   min_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
   max_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
+  below_min_topup: z.coerce.number().min(0).optional().or(z.literal('')),
   attributes: z.string().optional(),
   commission_percent: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
 }).refine(
@@ -42,7 +43,7 @@ export async function createProduct(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, commission_percent, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, below_min_topup, commission_percent, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -62,6 +63,7 @@ export async function createProduct(formData: FormData) {
     preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
     min_order_qty: rest.status === 'pre_order' ? (Number(min_order_qty) || null) : null,
     max_order_qty: rest.status === 'pre_order' ? (Number(max_order_qty) || null) : null,
+    below_min_topup: rest.status === 'pre_order' && below_min_topup !== '' && below_min_topup !== undefined ? Number(below_min_topup) : null,
     images,
     videos,
     slug: slugify(rest.name),
@@ -86,7 +88,7 @@ export async function updateProduct(id: string, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, commission_percent, attributes: attributesJson, ...rest } = parsed.data
+  const { compare_at_price, preorder_days, preorder_note, min_order_qty, max_order_qty, below_min_topup, commission_percent, attributes: attributesJson, ...rest } = parsed.data
   let attributes: Record<string, unknown> = {}
   if (attributesJson) {
     try { attributes = JSON.parse(attributesJson) } catch {
@@ -105,6 +107,7 @@ export async function updateProduct(id: string, formData: FormData) {
     preorder_note: rest.status === 'pre_order' ? (preorder_note || null) : null,
     min_order_qty: rest.status === 'pre_order' ? (Number(min_order_qty) || null) : null,
     max_order_qty: rest.status === 'pre_order' ? (Number(max_order_qty) || null) : null,
+    below_min_topup: rest.status === 'pre_order' && below_min_topup !== '' && below_min_topup !== undefined ? Number(below_min_topup) : null,
     images,
     videos,
     slug: slugify(rest.name),

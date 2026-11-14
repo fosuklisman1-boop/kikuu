@@ -27,6 +27,9 @@ describe('productTopup', () => {
   })
   it('defaults to 0', () => {
     expect(productTopup({})).toBe(0)
+    expect(productTopup({ below_min_topup: 2, categories: { below_min_topup: 7.5 } })).toBe(2)
+    expect(productTopup({ below_min_topup: '0.00', categories: { below_min_topup: 7.5 } })).toBe(0)
+    expect(productTopup({ below_min_topup: null, categories: { below_min_topup: 7.5 } })).toBe(7.5)
     expect(productTopup(null)).toBe(0)
     expect(productTopup({ categories: null })).toBe(0)
   })

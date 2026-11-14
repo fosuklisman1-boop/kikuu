@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { productTopup } from '@/lib/below-min'
 
 export async function getCurrentPrices(
   productIds: string[]
@@ -56,14 +57,14 @@ export async function getPreorderRules(
   const admin = createAdminClient()
   const { data } = await admin
     .from('products')
-    .select('id, min_order_qty, max_order_qty, categories(below_min_topup)')
+    .select('id, min_order_qty, max_order_qty, below_min_topup, categories(below_min_topup)')
     .in('id', productIds)
   const out: Record<string, PreorderRules> = {}
   for (const p of (data ?? []) as any[]) {
     out[p.id] = {
       min_order_qty: p.min_order_qty ?? null,
       max_order_qty: p.max_order_qty ?? null,
-      below_min_topup: Number(p.categories?.below_min_topup ?? 0) || null,
+      below_min_topup: productTopup(p) || null,
     }
   }
   return out

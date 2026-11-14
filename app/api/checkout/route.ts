@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     const [{ data: products, error: productsError }, { data: activeSale }] = await Promise.all([
       admin
         .from('products')
-        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note, min_order_qty, max_order_qty, categories(below_min_topup)')
+        .select('id, name, price, images, stock_qty, status, preorder_days, preorder_note, min_order_qty, max_order_qty, below_min_topup, categories(below_min_topup)')
         .in('id', productIds)
         .in('status', ['active', 'pre_order']),
       admin
