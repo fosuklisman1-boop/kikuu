@@ -28,9 +28,12 @@ export default function ShopProductCard({
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     if (outOfStock) return
+    // Pre-orders with a minimum quick-add as a bulk purchase; the product page
+    // offers the single/bulk choice.
+    const bulk = isPreorder && !!product.min_order_qty && product.min_order_qty > 1
     const result = addItem(
       { ...product, price: item.shop_price }, product.min_order_qty ?? 1, undefined, undefined,
-      { shopId, shopSlug }
+      { shopId, shopSlug }, bulk ? 'bulk' : undefined
     )
     if (result?.error) {
       setCartError(result.error)

@@ -8,9 +8,11 @@ import type { Product, ShopProductPriced } from '@/lib/supabase/types'
 export default function SellerProductsClient({
   availableProducts,
   curatedItems,
+  categories,
 }: {
   availableProducts: Product[]
   curatedItems: ShopProductPriced[]
+  categories: { id: string; name: string }[]
 }) {
   const [tab, setTab] = useState<'browse' | 'manage'>('manage')
 
@@ -34,7 +36,7 @@ export default function SellerProductsClient({
           Browse Catalog ({availableProducts.length})
         </button>
       </div>
-      {tab === 'manage' ? <ShopProductsTable items={curatedItems} /> : <ShopProductPicker products={availableProducts} />}
+      {tab === 'manage' ? <ShopProductsTable items={curatedItems} categories={categories} /> : <ShopProductPicker products={availableProducts} categories={categories} />}
     </div>
   )
 }

@@ -139,8 +139,7 @@ export const useCart = create<CartStore>()(
               preorder_note: product.preorder_note ?? null,
               min_order_qty: product.min_order_qty ?? null,
               max_order_qty: product.max_order_qty ?? null,
-              // Shop prices are seller-set, so the category top-up never applies to them
-              below_min_topup: shopContext ? null : (productTopup(product) || null),
+              below_min_topup: productTopup(product) || null,
               purchase_mode: purchaseMode,
               selected_color: selectedColor,
               selected_size: selectedSize,
@@ -174,11 +173,10 @@ export const useCart = create<CartStore>()(
       },
 
       applyPreorderRules(rules) {
-        const { shopId } = get()
         const items = get().items.map((i) => {
           const r = rules[i.product_id]
           if (!r || !i.is_preorder) return i
-          return { ...i, min_order_qty: r.min_order_qty, max_order_qty: r.max_order_qty, below_min_topup: shopId ? null : r.below_min_topup }
+          return { ...i, min_order_qty: r.min_order_qty, max_order_qty: r.max_order_qty, below_min_topup: r.below_min_topup }
         })
         set({ items, ...deriveCart(items) })
       },

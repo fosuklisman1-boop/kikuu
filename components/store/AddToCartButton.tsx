@@ -43,12 +43,12 @@ export default function AddToCartButton({
 
   const minQty = product.min_order_qty ?? 1
   const basePrice = shopPrice ?? (salePrice !== undefined && salePrice < product.price ? salePrice : product.price)
-  const topup = shopId ? 0 : productTopup(product)
+  const topup = productTopup(product)
   const maxQty = product.max_order_qty ? Math.min(product.stock_qty, product.max_order_qty) : product.stock_qty
 
   // Pre-orders with a minimum can be bought in bulk (at least the minimum,
   // base price) or as singles (any quantity, base price + category top-up).
-  const hasModes = isPreorder && minQty > 1 && !shopId
+  const hasModes = isPreorder && minQty > 1
   const bulkAvailable = maxQty >= minQty
   const [mode, setMode] = useState<PurchaseMode>(bulkAvailable ? 'bulk' : 'single')
   const activeMode: PurchaseMode | undefined = hasModes ? mode : undefined

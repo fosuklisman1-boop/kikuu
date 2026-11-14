@@ -38,7 +38,7 @@ export default async function ShopProductPage({ params }: Props) {
 
   const { data: product } = await supabase
     .from('products')
-    .select('*, categories(name, slug)')
+    .select('*, categories(name, slug, below_min_topup)')
     .eq('slug', productSlug)
     .in('status', ['active', 'pre_order'])
     .single() as { data: any }

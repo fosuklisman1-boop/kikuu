@@ -9,9 +9,10 @@ export default async function SellerProductsPage() {
   if (!shop) return null // layout already redirects if there's no shop
 
   const supabase = await createClient()
-  const [{ data: products }, curated] = await Promise.all([
+  const [{ data: products }, curated, { data: categories }] = await Promise.all([
     supabase.from('products').select('*').in('status', ['active', 'pre_order']).order('name'),
     getShopProductsPriced(),
+    supabase.from('categories').select('id, name').order('name'),
   ])
 
   const curatedIds = new Set(curated.map((c) => c.product_id))
@@ -20,7 +21,7 @@ export default async function SellerProductsPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900 mb-6">Your Products</h1>
-      <SellerProductsClient availableProducts={availableToAdd} curatedItems={curated} />
+      <SellerProductsClient availableProducts={availableToAdd} curatedItems={curated} categories={categories ?? []} />
     </div>
   )
 }

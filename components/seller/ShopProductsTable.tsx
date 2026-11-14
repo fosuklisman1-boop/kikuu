@@ -6,7 +6,8 @@ import type { ShopProductPriced } from '@/lib/supabase/types'
 import { removeShopProduct } from '@/lib/actions/shop-products'
 import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
-export default function ShopProductsTable({ items }: { items: ShopProductPriced[] }) {
+export default function ShopProductsTable({ items, categories = [] }: { items: ShopProductPriced[]; categories?: { id: string; name: string }[] }) {
+  const usedIds = new Set(items.map((i) => i.product.category_id))
   const [pending, startTransition] = useTransition()
 
   function handleRemove(id: string) {
@@ -20,7 +21,7 @@ export default function ShopProductsTable({ items }: { items: ShopProductPriced[
   }
 
   return (
-    <SearchScope placeholder="Search your shop products…">
+    <SearchScope placeholder="Search your shop products…" categories={categories.filter((c) => usedIds.has(c.id))}>
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
@@ -33,7 +34,7 @@ export default function ShopProductsTable({ items }: { items: ShopProductPriced[
       </thead>
       <tbody>
         {items.map((item) => (
-          <SearchItem as="tr" key={item.id} text={`${item.product.name} ${item.product.slug}`} className="border-b border-gray-100">
+          <SearchItem as="tr" key={item.id} text={`${item.product.name} ${item.product.slug}`} categoryId={item.product.category_id} className="border-b border-gray-100">
             <td className="py-3 pr-4 font-medium text-gray-800">{item.product.name}</td>
             <td className="py-3 pr-4 text-gray-500">{formatGHS(item.shop_price)}</td>
             <td className="py-3 pr-4 text-gray-500">{item.commission_percent}%</td>

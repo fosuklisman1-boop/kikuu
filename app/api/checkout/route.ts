@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
       }
       if (product.status === 'pre_order') {
         // Bulk purchases must reach the minimum; singles may be any quantity.
-        if (!shop_id && raw.purchase_mode === 'bulk' && product.min_order_qty && raw.quantity < product.min_order_qty) {
+        if (raw.purchase_mode === 'bulk' && product.min_order_qty && raw.quantity < product.min_order_qty) {
           return NextResponse.json(
             { error: `Bulk orders of ${product.name} need at least ${product.min_order_qty} units. Choose Single purchase for fewer.` },
             { status: 400 }
@@ -156,9 +156,9 @@ export async function POST(req: NextRequest) {
         itemPreorderShipDate = d.toISOString().split('T')[0]
       }
 
-      // Pre-orders bought below their minimum carry a flat per-unit category
-      // top-up. Shop orders are exempt so commission stays on the listed price.
-      const topup = shop_id ? 0 : belowMinSurcharge({
+      // Single purchases of pre-orders with a minimum carry a flat per-unit
+      // category top-up, in shops too (commission is earned on the full price).
+      const topup = belowMinSurcharge({
         isPreorder: product.status === 'pre_order',
         minQty: product.min_order_qty,
         topup: productTopup(product),

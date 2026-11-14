@@ -6,7 +6,8 @@ import type { Product } from '@/lib/supabase/types'
 import { addShopProducts } from '@/lib/actions/shop-products'
 import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 
-export default function ShopProductPicker({ products }: { products: Product[] }) {
+export default function ShopProductPicker({ products, categories = [] }: { products: Product[]; categories?: { id: string; name: string }[] }) {
+  const usedIds = new Set(products.map((p) => p.category_id))
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
@@ -40,10 +41,10 @@ export default function ShopProductPicker({ products }: { products: Product[] })
 
   return (
     <div className="space-y-4 pb-24">
-      <SearchScope placeholder="Search products to add…">
+      <SearchScope placeholder="Search products to add…" categories={categories.filter((c) => usedIds.has(c.id))}>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {products.map((product) => (
-          <SearchItem key={product.id} text={`${product.name} ${product.slug}`}>
+          <SearchItem key={product.id} text={`${product.name} ${product.slug}`} categoryId={product.category_id}>
           <label
             className={`relative border rounded-xl p-3 cursor-pointer transition-colors ${
               selected.has(product.id) ? 'border-green-600 bg-green-50' : 'border-gray-200'

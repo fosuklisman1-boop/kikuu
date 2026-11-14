@@ -43,7 +43,7 @@ export default async function ShopPage({ params }: Props) {
 
   const productIds = (priced ?? []).map((p) => p.product_id)
   const { data: products } = productIds.length
-    ? await supabase.from('products').select('*').in('id', productIds).in('status', ['active', 'pre_order'])
+    ? await supabase.from('products').select('*, categories(below_min_topup)').in('id', productIds).in('status', ['active', 'pre_order'])
     : { data: [] as Product[] }
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]))
@@ -54,16 +54,21 @@ export default async function ShopPage({ params }: Props) {
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
 
+  const usedCategoryIds = [...new Set(items.map((i) => i.product.category_id))]
+  const { data: cats } = usedCategoryIds.length
+    ? await supabase.from('categories').select('id, name').in('id', usedCategoryIds).order('name')
+    : { data: [] as { id: string; name: string }[] }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{shop.name}</h1>
       <p className="text-sm text-gray-400 mb-6">{items.length} product{items.length === 1 ? '' : 's'}</p>
 
       {items.length > 0 ? (
-        <SearchScope placeholder={`Search ${shop.name}…`}>
+        <SearchScope placeholder={`Search ${shop.name}…`} categories={cats ?? []}>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {items.map((item) => (
-            <SearchItem key={item.id} text={`${item.product.name} ${item.product.slug}`}>
+            <SearchItem key={item.id} text={`${item.product.name} ${item.product.slug}`} categoryId={item.product.category_id}>
               <ShopProductCard shopId={shop.id} shopSlug={shop.slug} item={item} onSubdomain={onSubdomain} />
             </SearchItem>
           ))}
