@@ -34,6 +34,8 @@ export default function CheckoutForm() {
   const [paystackEnabled, setPaystackEnabled] = useState(true)
   const [tellerEnabled, setTellerEnabled] = useState(false)
   const [paymentType, setPaymentType] = useState<'paystack' | 'theteller'>('paystack')
+  const [momoNetwork, setMomoNetwork] = useState<'MTN' | 'VDF' | 'ATL' | 'TGO'>('MTN')
+  const [momoNumber, setMomoNumber] = useState('')
 
   const [form, setForm] = useState({
     email: '',
@@ -172,6 +174,10 @@ export default function CheckoutForm() {
       setPhoneError('Enter a valid Ghana phone number (e.g. 024 123 4567).')
       return
     }
+    if (paymentType === 'theteller' && !isValidGhanaPhone(momoNumber || form.phone)) {
+      setError('Enter a valid mobile money number (e.g. 024 123 4567).')
+      return
+    }
     setLoading(true)
 
     try {
@@ -188,6 +194,7 @@ export default function CheckoutForm() {
           },
           coupon_code: couponApplied || undefined,
           payment_type: paymentType,
+          momo: paymentType === 'theteller' ? { network: momoNetwork, number: momoNumber || form.phone } : undefined,
           shop_id: shopId || undefined,
           items: items.map((i) => ({
             product_id: i.product_id ?? i.id,
@@ -220,7 +227,9 @@ export default function CheckoutForm() {
       }
 
       if (paymentType === 'theteller') {
-        window.location.href = data.checkout_url
+        // Direct mobile money charge: the customer approves on their phone and
+        // the order page waits for the result.
+        window.location.href = `/orders/${data.order_id}?awaiting=1`
         return
       }
 
@@ -598,6 +607,32 @@ export default function CheckoutForm() {
           </div>
         )}
 
+        {paymentType === 'theteller' && (
+          <div className="mb-4 space-y-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <p className="text-sm font-semibold text-gray-800">Mobile Money details</p>
+            <select
+              value={momoNetwork}
+              onChange={(e) => setMomoNetwork(e.target.value as typeof momoNetwork)}
+              className={inputCls}
+              aria-label="Mobile money network"
+            >
+              <option value="MTN">MTN MoMo</option>
+              <option value="VDF">Vodafone Cash</option>
+              <option value="ATL">AirtelTigo Money (Airtel)</option>
+              <option value="TGO">AirtelTigo Money (Tigo)</option>
+            </select>
+            <input
+              type="tel"
+              value={momoNumber}
+              onChange={(e) => setMomoNumber(e.target.value)}
+              placeholder={form.phone ? `Wallet number (default ${form.phone})` : 'Wallet number, e.g. 024 123 4567'}
+              className={inputCls}
+              aria-label="Mobile money number"
+            />
+            <p className="text-xs text-gray-500">You&apos;ll get an approval prompt on this number. Approve it with your PIN to complete payment.</p>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -612,7 +647,7 @@ export default function CheckoutForm() {
 
         <p className="text-xs text-center text-gray-400">
           {paymentType === 'theteller'
-            ? 'Secure checkout by TheTeller. Pay with MTN MoMo, Vodafone Cash, or AirtelTigo Money.'
+            ? 'Secure mobile money payment by TheTeller. MTN MoMo, Vodafone Cash, or AirtelTigo Money.'
             : 'Secure checkout by Paystack. Pay with MTN MoMo, Vodafone Cash, Card, or Bank Transfer.'}
         </p>
       </div>

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
 import ClearCartOnSuccess from '@/components/store/ClearCartOnSuccess'
+import AwaitingMomoApproval from '@/components/store/AwaitingMomoApproval'
 import type { OrderItem, GhanaAddress } from '@/lib/supabase/types'
 import type { Metadata } from 'next'
 
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: 'Order Details' }
 
 interface Props {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ success?: string }>
+  searchParams: Promise<{ success?: string; awaiting?: string }>
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default async function OrderPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { success } = await searchParams
+  const { success, awaiting } = await searchParams
 
   // Try authenticated user first
   const supabase = await createClient()
@@ -84,6 +85,10 @@ export default async function OrderPage({ params, searchParams }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+
+      {awaiting === '1' && order.status === 'pending' && order.payment_type === 'theteller' && (
+        <AwaitingMomoApproval orderId={order.id} />
+      )}
 
       {/* Payment success banner */}
       {success === '1' && (

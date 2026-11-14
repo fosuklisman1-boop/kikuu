@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { initializePayment, generateReference } from '@/lib/paystack'
-import { initiatePayment, generateTransactionId } from '@/lib/theteller'
+import { chargeMobileMoney, generateTransactionId } from '@/lib/theteller'
 import { getPaymentGatewaySettings } from '@/lib/actions/payment-settings'
 import { belowMinSurcharge, productTopup } from '@/lib/below-min'
 import type { OrderItem } from '@/lib/supabase/types'
@@ -24,6 +24,10 @@ const CheckoutSchema = z.object({
   address: AddressSchema,
   coupon_code: z.string().optional(),
   payment_type: z.enum(['paystack', 'theteller']).default('paystack'),
+  momo: z.object({
+    network: z.enum(['MTN', 'VDF', 'ATL', 'TGO']),
+    number: z.string().min(9),
+  }).optional(),
   shop_id: z.string().uuid().optional(),
   items: z.array(
     z.object({
@@ -47,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { email, address, items: rawItems, coupon_code, shop_id, payment_type } = parsed.data
+    const { email, address, items: rawItems, coupon_code, shop_id, payment_type, momo } = parsed.data
 
     const gatewaySettings = await getPaymentGatewaySettings()
     if (payment_type === 'theteller' && !gatewaySettings.tellerEnabled) {
@@ -291,25 +295,17 @@ export async function POST(req: NextRequest) {
     })
 
     if (payment_type === 'theteller') {
-      const transactionId = generateTransactionId()
-      let tellerPayment
-      try {
-        tellerPayment = await initiatePayment({
-          email,
-          amount: total,
-          transactionId,
-          desc: `Order ${order.order_number}`,
-          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/theteller-verify?order_id=${order.id}`,
-        })
-      } catch (tellerErr: any) {
-        console.error('TheTeller init error:', tellerErr)
+      // Direct mobile money charge (no redirect to TheTeller's checkout page):
+      // the customer approves a prompt on their phone, and the order page
+      // polls for the result.
+      if (!momo) {
         await admin.from('orders').delete().eq('id', order.id)
-        return NextResponse.json(
-          { error: tellerErr?.message ?? 'Payment provider error. Please try again.' },
-          { status: 502 }
-        )
+        return NextResponse.json({ error: 'Enter your mobile money number and network.' }, { status: 400 })
       }
+      const transactionId = generateTransactionId()
 
+      // Save the reference before charging so a charge that goes out can
+      // always be reconciled against its order.
       const { error: tellerRefError } = await admin
         .from('orders')
         .update({ theteller_transaction_id: transactionId })
@@ -321,10 +317,27 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to save payment reference. Please try again.' }, { status: 500 })
       }
 
+      try {
+        await chargeMobileMoney({
+          transactionId,
+          amount: total,
+          desc: `Order ${order.order_number}`,
+          network: momo.network,
+          phone: momo.number,
+        })
+      } catch (tellerErr: any) {
+        console.error('TheTeller charge error:', tellerErr)
+        await admin.from('orders').delete().eq('id', order.id)
+        return NextResponse.json(
+          { error: tellerErr?.message ?? 'Payment provider error. Please try again.' },
+          { status: 502 }
+        )
+      }
+
       return NextResponse.json({
         order_id: order.id,
         order_number: order.order_number,
-        checkout_url: tellerPayment.checkoutUrl,
+        awaiting_approval: true,
         total,
       })
     }
