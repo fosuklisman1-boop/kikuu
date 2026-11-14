@@ -6,7 +6,7 @@ export const SHOP_SLUG_HEADER = 'x-shop-slug'
 // shared, host-agnostic infrastructure (checkout, the API, account/admin/
 // seller areas). The marketplace catalog (/products) is deliberately NOT here:
 // a shop subdomain must not be an on-ramp to the wider marketplace.
-const PASSTHROUGH_PREFIXES = ['/api', '/cart', '/checkout', '/orders', '/account', '/admin', '/seller']
+const PASSTHROUGH_PREFIXES = ['/api', '/cart', '/checkout', '/orders', '/account', '/admin', '/seller', '/track']
 
 // Marketplace-only paths. On a shop subdomain these are bounced to the shop's
 // own home instead of served.

@@ -44,7 +44,7 @@ describe('resolveShopSubdomainRewrite', () => {
     expect(resolveShopSubdomainRewrite('theirshop', '/some-product')).toBe('/shop/theirshop/some-product')
   })
 
-  it.each(['/checkout', '/cart', '/orders', '/api/checkout', '/account/login', '/admin', '/seller/dashboard'])(
+  it.each(['/checkout', '/cart', '/orders', '/api/checkout', '/account/login', '/admin', '/seller/dashboard', '/track'])(
     'passes %s through unrewritten',
     (pathname) => {
       expect(resolveShopSubdomainRewrite('theirshop', pathname)).toBeNull()

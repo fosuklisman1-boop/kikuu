@@ -1,39 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, ShoppingCart, Package, User } from 'lucide-react'
+import { Home, ShoppingCart, PackageSearch } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
-// Mobile tab bar for a single shop: only shop home + shared checkout/account
-// areas. No catalog, pre-order or wishlist tabs (those are marketplace-wide).
+// Mobile tab bar for a single shop: shop home, cart and guest order tracking.
+// No catalog, pre-order, wishlist or account tabs (marketplace-wide).
 export default function ShopBottomTabBar({ home }: { home: string }) {
   const pathname = usePathname()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setIsLoggedIn(!!session?.user)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
   const tabs = [
     { label: 'Shop', icon: Home, href: home, active: pathname === home || (home !== '/' && pathname.startsWith(`${home}/`)) },
     { label: 'Cart', icon: ShoppingCart, href: '/cart', active: pathname.startsWith('/cart') },
-    {
-      label: 'Orders', icon: Package,
-      href: isLoggedIn ? '/account/orders' : '/account/login?redirect=/account/orders',
-      active: pathname.startsWith('/account/orders') || pathname.startsWith('/orders'),
-    },
-    {
-      label: 'Account', icon: User,
-      href: isLoggedIn ? '/account' : '/account/login',
-      active: pathname === '/account' || pathname.startsWith('/account/login') || pathname.startsWith('/account/profile'),
-    },
+    { label: 'Track Order', icon: PackageSearch, href: '/track', active: pathname.startsWith('/track') || pathname.startsWith('/orders') },
   ]
 
   return (
