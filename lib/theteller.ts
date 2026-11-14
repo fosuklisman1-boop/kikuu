@@ -2,6 +2,23 @@ const THETELLER_BASE = process.env.THETELLER_LIVE === 'true'
   ? 'https://checkout.theteller.net'
   : 'https://checkout-test.theteller.net'
 
+// /status is served from the API host, which (unlike checkout.theteller.net)
+// isn't behind Cloudflare's bot challenge and returns JSON to server calls.
+const THETELLER_API_BASE = process.env.THETELLER_LIVE === 'true'
+  ? 'https://prod.theteller.net'
+  : 'https://checkout-test.theteller.net'
+
+// Parse a gateway response, turning a Cloudflare/HTML challenge page into a
+// readable error instead of "Unexpected token '<' ... is not valid JSON".
+async function readJson(res: Response): Promise<any> {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(`TheTeller returned a non-JSON response (HTTP ${res.status}). The gateway is blocking or failing server requests.`)
+  }
+}
+
 const MERCHANT_ID = process.env.THETELLER_MERCHANT_ID!
 const API_USER = process.env.THETELLER_API_USER!
 const API_KEY = process.env.THETELLER_API_KEY!
@@ -44,7 +61,7 @@ export async function initiatePayment(params: InitiatePaymentParams): Promise<In
       apiuser: API_USER,
     }),
   })
-  const json = await res.json()
+  const json = await readJson(res)
   if (json.status !== 'success') {
     // TheTeller's `reason` is usually a string, but a validation-style
     // rejection (e.g. a malformed redirect_url) returns it as an object
@@ -72,7 +89,7 @@ export interface TransactionStatusResult {
 // verification route and the reconciliation cron.
 export async function checkTransactionStatus(transactionId: string): Promise<TransactionStatusResult> {
   const res = await fetch(
-    `${THETELLER_BASE}/v1.1/users/transactions/${encodeURIComponent(transactionId)}/status`,
+    `${THETELLER_API_BASE}/v1.1/users/transactions/${encodeURIComponent(transactionId)}/status`,
     {
       headers: {
         'Content-Type': 'application/json',
@@ -81,12 +98,13 @@ export async function checkTransactionStatus(transactionId: string): Promise<Tra
       },
     }
   )
-  const json = await res.json()
+  const json = await readJson(res)
   return {
     status: json.status,
     code: json.code,
     transactionId: json.transaction_id,
-    amount: Number(json.amount),
+    // /status doesn't return an amount; NaN signals "not provided".
+    amount: json.amount === undefined || json.amount === null ? NaN : Number(json.amount),
   }
 }
 

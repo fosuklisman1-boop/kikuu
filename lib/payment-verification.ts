@@ -51,7 +51,12 @@ export async function processVerification(
   if (result.success) {
     const expectedPesewas = Math.round(order.total * 100)
 
-    if (!Number.isFinite(result.amount) || result.amount > expectedPesewas * 10) {
+    // TheTeller's /status omits the amount (NaN here): the transaction id is
+    // server-generated and bound to this order, whose amount was fixed at
+    // initiate, so approval alone is accepted. A reported amount is still checked.
+    const amountReported = result.channel !== 'theteller' || !Number.isNaN(result.amount)
+
+    if (amountReported && (!Number.isFinite(result.amount) || result.amount > expectedPesewas * 10)) {
       await admin.from('order_events').insert({
         order_id: orderId,
         event: 'Payment Verification Error',
@@ -60,7 +65,7 @@ export async function processVerification(
       return { ok: false, error: 'Payment verification error. Please contact support.', code: 'amount_sanity_check_failed' }
     }
 
-    if (result.amount < expectedPesewas) {
+    if (amountReported && result.amount < expectedPesewas) {
       await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
       await admin.from('order_events').insert({
         order_id: orderId,
