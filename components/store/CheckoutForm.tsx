@@ -14,7 +14,9 @@ import { MapPin, User as UserIcon, Zap, LogIn, Tag, X, CreditCard, CalendarClock
 import Link from 'next/link'
 import Script from 'next/script'
 
-export default function CheckoutForm() {
+// `shopMode`: single-shop storefront — checkout is guest-only there, so the
+// "Sign in" prompt is hidden.
+export default function CheckoutForm({ shopMode = false }: { shopMode?: boolean }) {
   const { items, total, clearCart, hasPreorderItems, _hasHydrated, shopId, applyPreorderRules } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -321,7 +323,7 @@ export default function CheckoutForm() {
               <p className="text-xs text-[#b45309]">Your order will be saved to your account.</p>
             </div>
           </div>
-        ) : (
+        ) : shopMode ? null : (
           <div className="flex items-center justify-between gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <LogIn size={16} className="text-blue-500 shrink-0" />
