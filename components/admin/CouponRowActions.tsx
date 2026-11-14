@@ -26,20 +26,20 @@ export default function CouponRowActions({ id, active }: { id: string; active: b
         onClick={handleToggle}
         disabled={busy}
         title={active ? 'Deactivate' : 'Activate'}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
+        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
       >
         {active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
       </button>
       <Link
         href={`/admin/coupons/${id}`}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
       >
         <Pencil size={15} />
       </Link>
       <button
         onClick={handleDelete}
         disabled={busy}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+        className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
       >
         <Trash2 size={15} />
       </button>

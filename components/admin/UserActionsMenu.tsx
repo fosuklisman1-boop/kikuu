@@ -52,19 +52,19 @@ export default function UserActionsMenu({ userId, isBanned, userName }: Props) {
     <div className="relative inline-block" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+        className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
       >
         <MoreVertical size={16} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20">
+        <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-20">
           <Link
             href={`/admin/users/${userId}`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            <Eye size={14} className="text-gray-400" />
+            <Eye size={14} className="text-slate-400" />
             View Profile
           </Link>
 
@@ -73,7 +73,7 @@ export default function UserActionsMenu({ userId, isBanned, userName }: Props) {
             disabled={loading === 'ban'}
             className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors disabled:opacity-50 ${
               isBanned
-                ? 'text-green-700 hover:bg-green-50'
+                ? 'text-emerald-700 hover:bg-emerald-50'
                 : 'text-yellow-700 hover:bg-yellow-50'
             }`}
           >
@@ -81,7 +81,7 @@ export default function UserActionsMenu({ userId, isBanned, userName }: Props) {
             {loading === 'ban' ? 'Working...' : isBanned ? 'Unban User' : 'Ban User'}
           </button>
 
-          <div className="border-t border-gray-50" />
+          <div className="border-t border-slate-50" />
 
           <button
             onClick={handleDelete}

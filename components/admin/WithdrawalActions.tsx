@@ -33,10 +33,10 @@ export default function WithdrawalActions({ requestId }: { requestId: string }) 
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Reason"
-          className="border border-gray-300 rounded-lg px-2 py-1 text-xs w-32"
+          className="border border-slate-300 rounded-lg px-2 py-1 text-xs w-32"
         />
         <button onClick={handleReject} disabled={pending} className="text-xs font-semibold text-red-600">Confirm</button>
-        <button onClick={() => setRejecting(false)} className="text-xs text-gray-400">Cancel</button>
+        <button onClick={() => setRejecting(false)} className="text-xs text-slate-400">Cancel</button>
         {error && <span className="text-xs text-red-600">{error}</span>}
       </div>
     )
@@ -44,7 +44,7 @@ export default function WithdrawalActions({ requestId }: { requestId: string }) 
 
   return (
     <div className="flex items-center gap-3">
-      <button onClick={handleMarkPaid} disabled={pending} className="text-xs font-semibold text-green-600 hover:underline">
+      <button onClick={handleMarkPaid} disabled={pending} className="text-xs font-semibold text-emerald-600 hover:underline">
         Mark Paid
       </button>
       <button onClick={() => setRejecting(true)} disabled={pending} className="text-xs font-semibold text-red-500 hover:underline">

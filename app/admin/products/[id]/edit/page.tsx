@@ -26,7 +26,7 @@ export default async function EditProductPage({ params }: Props) {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Product</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">Edit Product</h1>
       <ProductForm categories={categories ?? []} product={product} allColors={allColors} allSizes={allSizes} />
     </div>
   )

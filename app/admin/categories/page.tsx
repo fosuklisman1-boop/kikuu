@@ -20,20 +20,20 @@ export default async function AdminCategoriesPage() {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Categories</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">Categories</h1>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Add new category */}
         <div className="bg-white rounded-xl border p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">Add Category</h2>
+          <h2 className="font-semibold text-slate-900 mb-4">Add Category</h2>
           <CategoryForm parents={parents} />
         </div>
 
         {/* Category list */}
         <div className="bg-white rounded-xl border overflow-hidden">
           <div className="p-4 border-b">
-            <h2 className="font-semibold text-gray-900">All Categories ({categories?.length ?? 0})</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Box = GHS per-unit top-up when a pre-order is bought below its minimum quantity (blank = none).</p>
+            <h2 className="font-semibold text-slate-900">All Categories ({categories?.length ?? 0})</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Box = GHS per-unit top-up when a pre-order is bought below its minimum quantity (blank = none).</p>
           </div>
           <SearchScope placeholder="Search categories…" barClassName="mb-0 px-4 py-3">
           <div className="divide-y max-h-[500px] overflow-y-auto">
@@ -41,8 +41,8 @@ export default async function AdminCategoriesPage() {
               <SearchItem key={parent.id} text={`${parent.name} ${parent.slug} ${children.filter((c) => c.parent_id === parent.id).map((c) => c.name).join(' ')}`}>
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">{parent.name}</p>
-                    <p className="text-xs text-gray-400">/{parent.slug}</p>
+                    <p className="font-medium text-slate-900 text-sm">{parent.name}</p>
+                    <p className="text-xs text-slate-400">/{parent.slug}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <CategoryTopupForm id={parent.id} initial={parent.below_min_topup} />
@@ -52,10 +52,10 @@ export default async function AdminCategoriesPage() {
                 {children
                   .filter((c) => c.parent_id === parent.id)
                   .map((child) => (
-                    <div key={child.id} className="flex items-center justify-between px-4 py-2 bg-gray-50">
+                    <div key={child.id} className="flex items-center justify-between px-4 py-2 bg-slate-50">
                       <div className="pl-4">
-                        <p className="text-sm text-gray-700">↳ {child.name}</p>
-                        <p className="text-xs text-gray-400">/{child.slug}</p>
+                        <p className="text-sm text-slate-700">↳ {child.name}</p>
+                        <p className="text-xs text-slate-400">/{child.slug}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <CategoryTopupForm id={child.id} initial={child.below_min_topup} />
@@ -66,7 +66,7 @@ export default async function AdminCategoriesPage() {
               </SearchItem>
             ))}
             {!categories?.length && (
-              <p className="text-center text-gray-400 py-8 text-sm">No categories yet.</p>
+              <p className="text-center text-slate-400 py-8 text-sm">No categories yet.</p>
             )}
           </div>
           </SearchScope>

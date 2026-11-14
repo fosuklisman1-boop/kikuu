@@ -41,7 +41,7 @@ export default function UserBanButton({ userId, isBanned, userName }: Props) {
         disabled={!!loading}
         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
           isBanned
-            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
             : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
         }`}
       >

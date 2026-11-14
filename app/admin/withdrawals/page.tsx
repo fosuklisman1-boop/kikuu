@@ -6,6 +6,7 @@ import WithdrawalActions from '@/components/admin/WithdrawalActions'
 import ManualAdjustmentForm from '@/components/admin/ManualAdjustmentForm'
 import MinAmountForm from '@/components/admin/MinAmountForm'
 import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
+import { PageHeader, Panel, PanelTitle, Badge, EmptyState, TH, THR, TD, ROW, THEAD, TBODY } from '@/components/admin/ui'
 
 export default async function AdminWithdrawalsPage() {
   const [pending, history, settings] = await Promise.all([
@@ -14,86 +15,93 @@ export default async function AdminWithdrawalsPage() {
     getWithdrawalSettings(),
   ])
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Withdrawals</h1>
-        <MinAmountForm initialAmount={settings.min_amount} />
-      </div>
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
-      <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Pending ({pending.length})</h2>
+  return (
+    <div className="max-w-5xl space-y-5">
+      <PageHeader title="Withdrawals" description="Seller payout requests." action={<MinAmountForm initialAmount={settings.min_amount} />} />
+
+      <Panel className="overflow-hidden">
+        <PanelTitle action={pending.length > 0 ? <Badge tone="amber">{pending.length} pending</Badge> : undefined}>Pending requests</PanelTitle>
         {pending.length === 0 ? (
-          <p className="text-sm text-gray-400">No pending requests.</p>
+          <EmptyState title="No pending requests" hint="New payout requests will appear here." />
         ) : (
-          <SearchScope placeholder="Search by shop, MoMo name or number…" barClassName="mb-0 px-4 pt-3 pb-2">
-<table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
-                <th className="py-2 pr-4">Shop</th>
-                <th className="py-2 pr-4">Amount</th>
-                <th className="py-2 pr-4">MoMo</th>
-                <th className="py-2 pr-4">Requested</th>
-                <th className="py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((r) => (
-                <SearchItem as="tr" key={r.id} text={`${r.shop.name} ${(r as any).momo_name ?? ''} ${(r as any).momo_number ?? ''} ${(r as any).status ?? ''} ${(r as any).admin_note ?? ''}`} className="border-b border-gray-100">
-                  <td className="py-3 pr-4 font-medium text-gray-800">{r.shop.name}</td>
-                  <td className="py-3 pr-4">{formatGHS(r.amount)}</td>
-                  <td className="py-3 pr-4 text-gray-500">{r.momo_name} — {r.momo_number}</td>
-                  <td className="py-3 pr-4 text-gray-500">
-                    {new Date(r.requested_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </td>
-                  <td className="py-3"><WithdrawalActions requestId={r.id} /></td>
-                </SearchItem>
-              ))}
-            </tbody>
-          </table>
-</SearchScope>
+          <div className="overflow-x-auto">
+            <SearchScope placeholder="Search by shop, MoMo name or number" barClassName="mb-0 px-4 pt-3 pb-2">
+              <table className="w-full text-sm">
+                <thead className={THEAD}>
+                  <tr>
+                    <th className={TH}>Shop</th>
+                    <th className={THR}>Amount</th>
+                    <th className={TH}>MoMo</th>
+                    <th className={TH}>Requested</th>
+                    <th className={THR}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody className={TBODY}>
+                  {pending.map((r) => (
+                    <SearchItem
+                      as="tr"
+                      key={r.id}
+                      text={`${r.shop.name} ${(r as any).momo_name ?? ''} ${(r as any).momo_number ?? ''} ${(r as any).status ?? ''} ${(r as any).admin_note ?? ''}`}
+                      className={ROW}
+                    >
+                      <td className={`${TD} font-medium text-slate-900`}>{r.shop.name}</td>
+                      <td className={`${TD} text-right font-semibold tabular-nums`}>{formatGHS(r.amount)}</td>
+                      <td className={`${TD} text-slate-600`}>{r.momo_name} · {r.momo_number}</td>
+                      <td className={`${TD} text-slate-500`}>{day(r.requested_at)}</td>
+                      <td className={`${TD} text-right`}><WithdrawalActions requestId={r.id} /></td>
+                    </SearchItem>
+                  ))}
+                </tbody>
+              </table>
+            </SearchScope>
+          </div>
         )}
-      </div>
+      </Panel>
 
       <ManualAdjustmentForm />
 
-      <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">History</h2>
+      <Panel className="overflow-hidden">
+        <PanelTitle>History</PanelTitle>
         {history.length === 0 ? (
-          <p className="text-sm text-gray-400">No processed requests yet.</p>
+          <EmptyState title="Nothing processed yet" />
         ) : (
-          <SearchScope placeholder="Search by shop, MoMo name or number…" barClassName="mb-0 px-4 pt-3 pb-2">
-<table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-200">
-                <th className="py-2 pr-4">Shop</th>
-                <th className="py-2 pr-4">Amount</th>
-                <th className="py-2 pr-4">Status</th>
-                <th className="py-2 pr-4">Processed</th>
-                <th className="py-2">Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((r) => (
-                <SearchItem as="tr" key={r.id} text={`${r.shop.name} ${(r as any).momo_name ?? ''} ${(r as any).momo_number ?? ''} ${(r as any).status ?? ''} ${(r as any).admin_note ?? ''}`} className="border-b border-gray-100">
-                  <td className="py-3 pr-4 font-medium text-gray-800">{r.shop.name}</td>
-                  <td className="py-3 pr-4">{formatGHS(r.amount)}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.status === 'paid' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-gray-500">
-                    {r.processed_at ? new Date(r.processed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                  </td>
-                  <td className="py-3 text-gray-500">{r.admin_note ?? '—'}</td>
-                </SearchItem>
-              ))}
-            </tbody>
-          </table>
-</SearchScope>
+          <div className="overflow-x-auto">
+            <SearchScope placeholder="Search by shop, MoMo name or number" barClassName="mb-0 px-4 pt-3 pb-2">
+              <table className="w-full text-sm">
+                <thead className={THEAD}>
+                  <tr>
+                    <th className={TH}>Shop</th>
+                    <th className={THR}>Amount</th>
+                    <th className={TH}>Result</th>
+                    <th className={TH}>Processed</th>
+                    <th className={TH}>Note</th>
+                  </tr>
+                </thead>
+                <tbody className={TBODY}>
+                  {history.map((r) => (
+                    <SearchItem
+                      as="tr"
+                      key={r.id}
+                      text={`${r.shop.name} ${(r as any).momo_name ?? ''} ${(r as any).momo_number ?? ''} ${(r as any).status ?? ''} ${(r as any).admin_note ?? ''}`}
+                      className={ROW}
+                    >
+                      <td className={`${TD} font-medium text-slate-900`}>{r.shop.name}</td>
+                      <td className={`${TD} text-right tabular-nums`}>{formatGHS(r.amount)}</td>
+                      <td className={TD}>
+                        <Badge tone={r.status === 'paid' ? 'green' : 'red'}>{r.status === 'paid' ? 'Paid' : 'Rejected'}</Badge>
+                      </td>
+                      <td className={`${TD} text-slate-500`}>{r.processed_at ? day(r.processed_at) : '—'}</td>
+                      <td className={`${TD} text-slate-500`}>{r.admin_note ?? '—'}</td>
+                    </SearchItem>
+                  ))}
+                </tbody>
+              </table>
+            </SearchScope>
+          </div>
         )}
-      </div>
+      </Panel>
     </div>
   )
 }

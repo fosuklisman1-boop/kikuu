@@ -18,9 +18,9 @@ export default function CommissionSettingsForm({ initialPercent }: { initialPerc
   }
 
   return (
-    <form onSubmit={handleSave} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 flex flex-wrap items-end gap-3">
+    <form onSubmit={handleSave} className="bg-white rounded-xl border border-slate-200 p-4 mb-6 flex flex-wrap items-end gap-3">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Default seller commission (%)</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Default seller commission (%)</label>
         <input
           type="number"
           min="0"
@@ -28,20 +28,20 @@ export default function CommissionSettingsForm({ initialPercent }: { initialPerc
           step="0.01"
           value={percent}
           onChange={(e) => setPercent(e.target.value)}
-          className="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+          className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-700"
         />
       </div>
       <button
         type="submit"
         disabled={pending}
-        className="bg-green-600 hover:bg-green-500 disabled:bg-gray-300 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+        className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
       >
         {pending ? 'Saving…' : 'Save'}
       </button>
-      <p className="text-xs text-gray-400 basis-full">
+      <p className="text-xs text-slate-400 basis-full">
         Sellers earn this percent of each sale. A product can override it in its edit form. Applies to new orders only.
       </p>
-      {message && <p className="text-xs text-gray-600 basis-full">{message}</p>}
+      {message && <p className="text-xs text-slate-600 basis-full">{message}</p>}
     </form>
   )
 }

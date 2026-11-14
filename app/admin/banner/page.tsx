@@ -19,8 +19,8 @@ export default async function BannerPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Banner Management</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Banner Management</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Manage the announcement bar, hero carousel slides, and promo cards.
         </p>
       </div>

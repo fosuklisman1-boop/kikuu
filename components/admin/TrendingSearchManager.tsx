@@ -48,18 +48,18 @@ export default function TrendingSearchManager({ initialSearches }: { initialSear
           onChange={(e) => setNewQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           placeholder="Add a search term…"
-          className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+          className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm"
         />
         <button onClick={handleAdd} disabled={adding || !newQuery.trim()}
-          className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl disabled:opacity-50">
+          className="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl disabled:opacity-50">
           {adding ? '…' : 'Add'}
         </button>
       </div>
 
       {/* List */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+      <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
         {searches.length === 0 ? (
-          <p className="text-center py-12 text-gray-400 text-sm">No trending searches yet.</p>
+          <p className="text-center py-12 text-slate-400 text-sm">No trending searches yet.</p>
         ) : (
           searches.map((s) => (
             <div key={s.id} className="flex items-center gap-3 px-4 py-3">
@@ -67,16 +67,16 @@ export default function TrendingSearchManager({ initialSearches }: { initialSear
                 type="number"
                 value={s.sort_order}
                 onChange={(e) => handleSortOrder(s.id, Number(e.target.value))}
-                className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center"
+                className="w-14 border border-slate-200 rounded-lg px-2 py-1 text-xs text-center"
               />
-              <span className={`flex-1 text-sm ${s.active ? 'text-gray-900' : 'text-gray-400 line-through'}`}>
+              <span className={`flex-1 text-sm ${s.active ? 'text-slate-900' : 'text-slate-400 line-through'}`}>
                 {s.query}
               </span>
               <button onClick={() => handleToggle(s)}
-                className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
                 {s.active ? 'Active' : 'Hidden'}
               </button>
-              <button onClick={() => handleDelete(s.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+              <button onClick={() => handleDelete(s.id)} className="text-slate-300 hover:text-red-400 transition-colors">
                 <X size={15} />
               </button>
             </div>

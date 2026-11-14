@@ -26,7 +26,7 @@ export default function UserRoleButton({ userId, currentRole }: Props) {
       <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${
         role === 'admin'
           ? 'bg-purple-100 text-purple-700 border-purple-200'
-          : 'bg-gray-100 text-gray-600 border-gray-200'
+          : 'bg-slate-100 text-slate-600 border-slate-200'
       }`}>
         {role === 'admin' ? <ShieldCheck size={12} /> : <User size={12} />}
         {role === 'admin' ? 'Admin' : 'Customer'}

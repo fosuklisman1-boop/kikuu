@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import UserActionsMenu from '@/components/admin/UserActionsMenu'
 import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
+import { PageHeader, Panel, PanelTitle, Stat, Badge, EmptyState } from '@/components/admin/ui'
 
 export const metadata: Metadata = { title: 'Users' }
 
@@ -26,7 +27,7 @@ export default async function AdminUsersPage() {
   // Fetch all users (up to 1000) and orders in parallel
   const [{ data: usersData }, { data: orders }] = await Promise.all([
     admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    admin.from('orders').select('buyer_id, total, status'),
+    admin.from('orders').select('buyer_id, total, payment_status'),
   ])
 
   const users = usersData?.users ?? []
@@ -37,7 +38,7 @@ export default async function AdminUsersPage() {
     if (!o.buyer_id) continue
     if (!ordersByUser[o.buyer_id]) ordersByUser[o.buyer_id] = { count: 0, spent: 0 }
     ordersByUser[o.buyer_id].count++
-    if (['paid', 'processing', 'shipped', 'delivered'].includes(o.status)) {
+    if (o.payment_status === 'paid') {
       ordersByUser[o.buyer_id].spent += o.total
     }
   }
@@ -47,41 +48,26 @@ export default async function AdminUsersPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{users.length} registered customer{users.length !== 1 ? 's' : ''}</p>
-        </div>
-      </div>
+      <PageHeader title="Customers" description={`${users.length} registered customer${users.length !== 1 ? 's' : ''}`} />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total Users', value: users.length, color: 'bg-blue-500' },
-          { label: 'Verified Email', value: confirmed.length, color: 'bg-green-500' },
-          { label: 'Banned', value: banned.length, color: 'bg-red-500' },
-          { label: 'With Orders', value: Object.keys(ordersByUser).length, color: 'bg-purple-500' },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className={`w-3 h-3 rounded-full ${s.color} mb-2`} />
-            <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-            <p className="text-sm text-gray-500">{s.label}</p>
-          </div>
-        ))}
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="Total customers" value={users.length} />
+        <Stat label="Verified email" value={confirmed.length} />
+        <Stat label="Banned" value={banned.length} />
+        <Stat label="With orders" value={Object.keys(ordersByUser).length} />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">All Customers</h2>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <h2 className="font-semibold text-slate-900">All Customers</h2>
         </div>
 
         {users.length > 0 ? (
           <div className="overflow-x-auto">
             <SearchScope placeholder="Search users by name, email, phone…" barClassName="mb-0 px-4 pt-3 pb-2">
 <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+              <thead className="border-b border-slate-200 text-slate-500 text-xs font-medium">
                 <tr>
                   <th className="px-4 py-3 text-left">Customer</th>
                   <th className="px-4 py-3 text-left">Phone</th>
@@ -93,7 +79,7 @@ export default async function AdminUsersPage() {
                   <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100">
                 {users.map((user) => {
                   const meta = user.user_metadata as Record<string, string> | null
                   const name = meta?.full_name ?? ''
@@ -102,34 +88,34 @@ export default async function AdminUsersPage() {
                   const banned = isBanned(user.banned_until)
 
                   return (
-                    <SearchItem as="tr" key={user.id} text={`${user.email ?? ''} ${name} ${phone}`} className="hover:bg-gray-50 transition-colors">
+                    <SearchItem as="tr" key={user.id} text={`${user.email ?? ''} ${name} ${phone}`} className="hover:bg-slate-50 transition-colors">
                       {/* Customer */}
                       <td className="px-4 py-3">
                         <Link href={`/admin/users/${user.id}`} className="flex items-center gap-3 group">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-xs font-extrabold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-semibold shrink-0">
                             {initials(name, user.email ?? '?')}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 group-hover:text-green-600 transition-colors truncate max-w-[160px]">
-                              {name || <span className="text-gray-400 italic">No name</span>}
+                            <p className="font-medium text-slate-900 group-hover:text-emerald-600 transition-colors truncate max-w-[160px]">
+                              {name || <span className="text-slate-400 italic">No name</span>}
                             </p>
-                            <p className="text-xs text-gray-400 truncate max-w-[160px]">{user.email}</p>
+                            <p className="text-xs text-slate-400 truncate max-w-[160px]">{user.email}</p>
                           </div>
                         </Link>
                       </td>
 
                       {/* Phone */}
-                      <td className="px-4 py-3 text-gray-600">{phone}</td>
+                      <td className="px-4 py-3 text-slate-600">{phone}</td>
 
                       {/* Joined */}
-                      <td className="px-4 py-3 text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-slate-400 text-xs">
                         {new Date(user.created_at).toLocaleDateString('en-GH', {
                           day: 'numeric', month: 'short', year: 'numeric',
                         })}
                       </td>
 
                       {/* Last login */}
-                      <td className="px-4 py-3 text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-slate-400 text-xs">
                         {user.last_sign_in_at
                           ? new Date(user.last_sign_in_at).toLocaleDateString('en-GH', {
                               day: 'numeric', month: 'short', year: 'numeric',
@@ -139,28 +125,22 @@ export default async function AdminUsersPage() {
 
                       {/* Orders */}
                       <td className="px-4 py-3 text-center">
-                        <span className="font-semibold text-gray-900">{stats.count}</span>
+                        <span className="font-semibold text-slate-900">{stats.count}</span>
                       </td>
 
                       {/* Spent */}
-                      <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                        {stats.spent > 0 ? formatGHS(stats.spent) : <span className="text-gray-300">—</span>}
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                        {stats.spent > 0 ? formatGHS(stats.spent) : <span className="text-slate-300">—</span>}
                       </td>
 
                       {/* Status */}
                       <td className="px-4 py-3 text-center">
                         {banned ? (
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-600 border border-red-200">
-                            Banned
-                          </span>
+                          <Badge tone="red">Banned</Badge>
                         ) : user.email_confirmed_at ? (
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
-                            Active
-                          </span>
+                          <Badge tone="green">Active</Badge>
                         ) : (
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">
-                            Unverified
-                          </span>
+                          <Badge tone="amber">Unverified</Badge>
                         )}
                       </td>
 
@@ -176,7 +156,7 @@ export default async function AdminUsersPage() {
 </SearchScope>
           </div>
         ) : (
-          <div className="py-16 text-center text-gray-400">
+          <div className="py-16 text-center text-slate-400">
             <div className="text-4xl mb-3">👥</div>
             <p className="font-medium">No users yet</p>
           </div>

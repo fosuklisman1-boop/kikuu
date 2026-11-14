@@ -10,10 +10,10 @@ import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
 export const metadata: Metadata = { title: 'Coupons' }
 
 function couponStatus(c: { active: boolean; expires_at: string | null; used_count: number; max_uses: number | null }) {
-  if (!c.active) return { label: 'Inactive', cls: 'bg-gray-100 text-gray-500' }
+  if (!c.active) return { label: 'Inactive', cls: 'bg-slate-100 text-slate-500' }
   if (c.expires_at && new Date(c.expires_at) <= new Date()) return { label: 'Expired', cls: 'bg-red-100 text-red-600' }
   if (c.max_uses && c.used_count >= c.max_uses) return { label: 'Exhausted', cls: 'bg-orange-100 text-orange-600' }
-  return { label: 'Active', cls: 'bg-green-100 text-green-700' }
+  return { label: 'Active', cls: 'bg-emerald-100 text-emerald-700' }
 }
 
 export default async function CouponsPage() {
@@ -27,23 +27,23 @@ export default async function CouponsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Coupons</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{coupons?.length ?? 0} coupon{coupons?.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Coupons</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{coupons?.length ?? 0} coupon{coupons?.length !== 1 ? 's' : ''}</p>
         </div>
         <Link
           href="/admin/coupons/new"
-          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
         >
           <Plus size={15} /> New Coupon
         </Link>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {coupons && coupons.length > 0 ? (
           <div className="overflow-x-auto">
             <SearchScope placeholder="Search coupons by code…" barClassName="mb-0 px-4 pt-3 pb-2">
 <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-400">
+              <thead className="border-b border-slate-200 text-xs font-medium text-slate-500">
                 <tr>
                   <th className="px-4 py-3 text-left">Code</th>
                   <th className="px-4 py-3 text-left">Discount</th>
@@ -54,26 +54,26 @@ export default async function CouponsPage() {
                   <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100">
                 {coupons.map((c) => {
                   const status = couponStatus(c)
                   return (
-                    <SearchItem as="tr" key={c.id} text={`${c.code} ${c.type} ${status}`} className="hover:bg-gray-50 transition-colors">
+                    <SearchItem as="tr" key={c.id} text={`${c.code} ${c.type} ${status}`} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
-                        <span className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-lg text-xs">
+                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-lg text-xs">
                           {c.code}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-900">
+                      <td className="px-4 py-3 font-semibold text-slate-900">
                         {c.type === 'percentage' ? `${c.value}%` : formatGHS(c.value)} off
                       </td>
-                      <td className="px-4 py-3 text-gray-500">
+                      <td className="px-4 py-3 text-slate-500">
                         {c.min_order_amount ? formatGHS(c.min_order_amount) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">
+                      <td className="px-4 py-3 text-slate-500">
                         {c.used_count}{c.max_uses ? ` / ${c.max_uses}` : ' uses'}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
+                      <td className="px-4 py-3 text-slate-500 text-xs">
                         {c.expires_at
                           ? new Date(c.expires_at).toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' })
                           : 'Never'}
@@ -94,10 +94,10 @@ export default async function CouponsPage() {
 </SearchScope>
           </div>
         ) : (
-          <div className="py-16 text-center text-gray-400">
+          <div className="py-16 text-center text-slate-400">
             <div className="text-4xl mb-3">🎟️</div>
             <p className="font-medium">No coupons yet</p>
-            <Link href="/admin/coupons/new" className="text-sm text-green-600 hover:underline mt-1 inline-block">
+            <Link href="/admin/coupons/new" className="text-sm text-emerald-600 hover:underline mt-1 inline-block">
               Create your first coupon
             </Link>
           </div>

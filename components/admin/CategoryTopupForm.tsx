@@ -26,7 +26,7 @@ export default function CategoryTopupForm({ id, initial }: { id: string; initial
         onChange={(e) => setValue(e.target.value)}
         placeholder="0.00"
         aria-label="Below-minimum top-up per unit (GHS)"
-        className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-green-500"
+        className="w-20 border border-slate-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-emerald-500"
       />
       <button
         type="button"
@@ -36,7 +36,7 @@ export default function CategoryTopupForm({ id, initial }: { id: string; initial
       >
         {pending ? '...' : 'Save'}
       </button>
-      {msg && <span className="text-[11px] text-gray-500">{msg}</span>}
+      {msg && <span className="text-[11px] text-slate-500">{msg}</span>}
     </div>
   )
 }

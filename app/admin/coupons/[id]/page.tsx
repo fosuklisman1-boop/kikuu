@@ -16,10 +16,10 @@ export default async function EditCouponPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="max-w-xl">
-      <Link href="/admin/coupons" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-5 transition-colors">
+      <Link href="/admin/coupons" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-5 transition-colors">
         <ArrowLeft size={15} /> Back to Coupons
       </Link>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Coupon</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">Edit Coupon</h1>
       <CouponForm coupon={coupon} />
     </div>
   )

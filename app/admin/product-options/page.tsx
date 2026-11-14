@@ -14,8 +14,8 @@ export default async function ProductOptionsPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Product Options</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Product Options</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Manage the global pool of colors and sizes available for products.
         </p>
       </div>

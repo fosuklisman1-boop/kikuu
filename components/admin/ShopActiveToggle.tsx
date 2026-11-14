@@ -17,7 +17,7 @@ export default function ShopActiveToggle({ shopId, active }: { shopId: string; a
       onClick={handleToggle}
       disabled={pending}
       className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
-        active ? 'bg-green-50 text-green-700 hover:bg-red-50 hover:text-red-700' : 'bg-red-50 text-red-700 hover:bg-green-50 hover:text-green-700'
+        active ? 'bg-emerald-50 text-emerald-700 hover:bg-red-50 hover:text-red-700' : 'bg-red-50 text-red-700 hover:bg-emerald-50 hover:text-emerald-700'
       }`}
     >
       {active ? 'Active' : 'Suspended'}

@@ -32,9 +32,9 @@ export default function DeliveryFeeForm({ region, fee: initialFee, enabled: init
   }
 
   return (
-    <div className="grid grid-cols-[1fr_120px_80px_80px] items-center px-5 py-3 hover:bg-gray-50 transition-colors">
+    <div className="grid grid-cols-[1fr_120px_80px_80px] items-center px-5 py-3 hover:bg-slate-50 transition-colors">
       <div>
-        <span className="text-sm font-medium text-gray-800">{region}</span>
+        <span className="text-sm font-medium text-slate-800">{region}</span>
         {saveError && <p className="text-xs text-red-500 mt-0.5">{saveError}</p>}
       </div>
 
@@ -44,14 +44,14 @@ export default function DeliveryFeeForm({ region, fee: initialFee, enabled: init
         step="0.50"
         value={fee}
         onChange={(e) => { setFee(e.target.value); setSaved(false) }}
-        className="w-24 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-[#b45309] focus:ring-1 focus:ring-[#b45309]/10"
+        className="w-24 border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:border-[#b45309] focus:ring-1 focus:ring-[#b45309]/10"
       />
 
       <div className="flex justify-center">
         <button
           type="button"
           onClick={() => { setEnabled((v) => !v); setSaved(false) }}
-          className={`w-10 h-5 rounded-full transition-colors relative ${enabled ? 'bg-[#b45309]' : 'bg-gray-200'}`}
+          className={`w-10 h-5 rounded-full transition-colors relative ${enabled ? 'bg-[#b45309]' : 'bg-slate-200'}`}
         >
           <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${enabled ? 'left-5' : 'left-0.5'}`} />
         </button>
@@ -64,7 +64,7 @@ export default function DeliveryFeeForm({ region, fee: initialFee, enabled: init
           className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
             saved
               ? 'bg-[#fdf6ec] text-[#b45309]'
-              : 'bg-gray-100 text-gray-700 hover:bg-[#b45309] hover:text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-[#b45309] hover:text-white'
           } disabled:opacity-50`}
         >
           {saving ? '...' : saved ? 'Saved' : 'Save'}

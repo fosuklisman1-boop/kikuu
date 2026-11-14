@@ -17,7 +17,7 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Brand</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">Edit Brand</h1>
       <BrandForm brand={brand} linkedProducts={linked ?? []} allProducts={allProducts ?? []} />
     </div>
   )

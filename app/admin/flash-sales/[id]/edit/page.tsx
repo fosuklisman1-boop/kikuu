@@ -17,7 +17,7 @@ export default async function EditFlashSalePage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Flash Sale</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">Edit Flash Sale</h1>
       <FlashSaleForm sale={sale as unknown as FlashSaleWithItems} allProducts={products ?? []} />
     </div>
   )

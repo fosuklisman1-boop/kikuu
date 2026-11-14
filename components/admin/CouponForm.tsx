@@ -62,11 +62,11 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
     router.push('/admin/coupons')
   }
 
-  const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100'
-  const labelCls = 'block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5'
+  const inputCls = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'
+  const labelCls = 'block text-sm font-medium text-slate-700 mb-1.5'
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
       {error && (
         <p className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">{error}</p>
       )}
@@ -112,7 +112,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Min Order Amount <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+          <label className={labelCls}>Min Order Amount <span className="font-normal normal-case text-slate-400">(optional)</span></label>
           <input
             type="number"
             min="0"
@@ -124,7 +124,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
           />
         </div>
         <div>
-          <label className={labelCls}>Max Uses <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+          <label className={labelCls}>Max Uses <span className="font-normal normal-case text-slate-400">(optional)</span></label>
           <input
             type="number"
             min="1"
@@ -138,7 +138,7 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
       </div>
 
       <div>
-        <label className={labelCls}>Expires At <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+        <label className={labelCls}>Expires At <span className="font-normal normal-case text-slate-400">(optional)</span></label>
         <input
           type="datetime-local"
           value={form.expires_at}
@@ -147,15 +147,15 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
         />
       </div>
 
-      <div className="flex items-center justify-between py-3 border-t border-gray-50">
+      <div className="flex items-center justify-between py-3 border-t border-slate-50">
         <div>
-          <p className="text-sm font-semibold text-gray-700">Active</p>
-          <p className="text-xs text-gray-400">Inactive coupons cannot be used at checkout</p>
+          <p className="text-sm font-semibold text-slate-700">Active</p>
+          <p className="text-xs text-slate-400">Inactive coupons cannot be used at checkout</p>
         </div>
         <button
           type="button"
           onClick={() => set('active', !form.active)}
-          className={`w-11 h-6 rounded-full transition-colors relative ${form.active ? 'bg-green-500' : 'bg-gray-200'}`}
+          className={`w-11 h-6 rounded-full transition-colors relative ${form.active ? 'bg-emerald-500' : 'bg-slate-200'}`}
         >
           <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.active ? 'left-6' : 'left-1'}`} />
         </button>
@@ -165,14 +165,14 @@ export default function CouponForm({ coupon }: { coupon?: Coupon }) {
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition-colors disabled:opacity-60 text-sm"
+          className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl transition-colors disabled:opacity-60 text-sm"
         >
           {saving ? 'Saving...' : coupon ? 'Save Changes' : 'Create Coupon'}
         </button>
         <button
           type="button"
           onClick={() => router.push('/admin/coupons')}
-          className="px-4 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm transition-colors"
+          className="px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-sm transition-colors"
         >
           Cancel
         </button>

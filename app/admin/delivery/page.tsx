@@ -28,22 +28,22 @@ export default async function DeliveryFeesPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Delivery Fees</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Delivery Fees</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Set the delivery fee per region. Disabled regions will not appear at checkout.
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <div className="min-w-[400px]">
-            <div className="grid grid-cols-[1fr_120px_80px_80px] text-xs font-semibold uppercase tracking-wider text-gray-400 px-5 py-3 bg-gray-50 border-b border-gray-100">
+            <div className="grid grid-cols-[1fr_120px_80px_80px] text-xs font-medium text-slate-500 px-5 py-3 border-b border-slate-200">
               <span>Region</span>
               <span>Fee (GHS)</span>
               <span className="text-center">Enabled</span>
               <span></span>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-slate-100">
               {rows.map((row) => (
                 <DeliveryFeeForm key={row.region} {...row} />
               ))}

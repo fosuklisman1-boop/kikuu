@@ -72,14 +72,14 @@ export default function ProductOptionsManager({
     setSizes((prev) => prev.filter((s) => s.id !== id))
   }
 
-  const inputCls = 'border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500'
-  const panelCls = 'bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4'
+  const inputCls = 'border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500'
+  const panelCls = 'bg-white rounded-xl border border-slate-200 p-5 space-y-4'
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {/* Colors */}
       <div className={panelCls}>
-        <h2 className="font-semibold text-gray-900">Colors</h2>
+        <h2 className="font-semibold text-slate-900">Colors</h2>
         {colorError && <p className="text-red-500 text-sm">{colorError}</p>}
         <div className="flex gap-2">
           <input
@@ -93,32 +93,32 @@ export default function ProductOptionsManager({
             type="color"
             value={newColorHex}
             onChange={(e) => setNewColorHex(e.target.value)}
-            className="w-10 h-9 rounded-lg border border-gray-200 cursor-pointer"
+            className="w-10 h-9 rounded-lg border border-slate-200 cursor-pointer"
             title="Pick color"
           />
           <button
             onClick={handleAddColor}
             disabled={addingColor}
-            className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
           >
             <Plus size={16} />
           </button>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-slate-100">
           {colors.length === 0 && (
-            <p className="text-sm text-gray-400 py-4 text-center">No colors yet.</p>
+            <p className="text-sm text-slate-400 py-4 text-center">No colors yet.</p>
           )}
           {colors.map((c) => (
             <div key={c.id} className="flex items-center gap-3 py-2.5">
               <span
-                className="w-5 h-5 rounded-full border border-gray-200 shrink-0"
+                className="w-5 h-5 rounded-full border border-slate-200 shrink-0"
                 style={{ background: c.hex }}
               />
-              <span className="flex-1 text-sm text-gray-800">{c.name}</span>
-              <span className="text-xs text-gray-400 font-mono">{c.hex}</span>
+              <span className="flex-1 text-sm text-slate-800">{c.name}</span>
+              <span className="text-xs text-slate-400 font-mono">{c.hex}</span>
               <button
                 onClick={() => handleDeleteColor(c.id)}
-                className="text-gray-300 hover:text-red-400 transition-colors"
+                className="text-slate-300 hover:text-red-400 transition-colors"
               >
                 <X size={15} />
               </button>
@@ -129,7 +129,7 @@ export default function ProductOptionsManager({
 
       {/* Sizes */}
       <div className={panelCls}>
-        <h2 className="font-semibold text-gray-900">Sizes</h2>
+        <h2 className="font-semibold text-slate-900">Sizes</h2>
         {sizeError && <p className="text-red-500 text-sm">{sizeError}</p>}
         <div className="flex gap-2">
           <input
@@ -142,21 +142,21 @@ export default function ProductOptionsManager({
           <button
             onClick={handleAddSize}
             disabled={addingSize}
-            className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
+            className="bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-3 py-2 rounded-lg disabled:opacity-50"
           >
             <Plus size={16} />
           </button>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-slate-100">
           {sizes.length === 0 && (
-            <p className="text-sm text-gray-400 py-4 text-center">No sizes yet.</p>
+            <p className="text-sm text-slate-400 py-4 text-center">No sizes yet.</p>
           )}
           {sizes.map((s) => (
             <div key={s.id} className="flex items-center gap-3 py-2.5">
-              <span className="flex-1 text-sm text-gray-800">{s.name}</span>
+              <span className="flex-1 text-sm text-slate-800">{s.name}</span>
               <button
                 onClick={() => handleDeleteSize(s.id)}
-                className="text-gray-300 hover:text-red-400 transition-colors"
+                className="text-slate-300 hover:text-red-400 transition-colors"
               >
                 <X size={15} />
               </button>

@@ -179,23 +179,23 @@ export default function ProductForm({ product, categories, allColors, allSizes }
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
         <input
           name="name"
           defaultValue={product?.name}
           required
           placeholder="e.g. Samsung Galaxy A55"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Category *</label>
         <select
           name="category_id"
           defaultValue={product?.category_id}
           required
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
         >
           <option value="">Select category</option>
           {parentCats.map((p) => (
@@ -211,7 +211,7 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       <div className="grid sm:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price (GHS) *</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Price (GHS) *</label>
           <input
             name="price"
             type="number"
@@ -219,11 +219,11 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             min="0"
             defaultValue={product?.price}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Compare At (GHS)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Compare At (GHS)</label>
           <input
             name="compare_at_price"
             type="number"
@@ -231,11 +231,11 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             min="0"
             defaultValue={product?.compare_at_price ?? ''}
             placeholder="Original price"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             Stock Qty *
           </label>
           <input
@@ -244,10 +244,10 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             min="0"
             defaultValue={product?.stock_qty ?? 0}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
           />
           {selectedStatus === 'pre_order' && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Total units available for this pre-order batch. Counts down as orders are paid; reaches 0 = sold out.
             </p>
           )}
@@ -255,34 +255,34 @@ export default function ProductForm({ product, categories, allColors, allSizes }
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
         <textarea
           name="description"
           defaultValue={product?.description ?? ''}
           rows={4}
           placeholder="Describe the product..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500 resize-none"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 resize-none"
         />
       </div>
 
       {/* Colors */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Colors</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Colors</label>
         {allAvailableColors.length > 0 && (
-          <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 mb-2">
-            <label className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+          <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 mb-2">
+            <label className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
               <input
                 type="checkbox"
                 checked={selectedColors.length === 0}
                 onChange={() => setSelectedColors([])}
-                className="w-4 h-4 accent-green-600 shrink-0"
+                className="w-4 h-4 accent-emerald-600 shrink-0"
               />
-              <span className="text-sm text-gray-500 italic">None</span>
+              <span className="text-sm text-slate-500 italic">None</span>
             </label>
             {allAvailableColors.map((c) => {
               const checked = selectedColors.some((s) => s.name === c.name)
               return (
-                <label key={c.id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                <label key={c.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checked}
@@ -293,10 +293,10 @@ export default function ProductForm({ product, categories, allColors, allSizes }
                           : [...prev, { name: c.name, hex: c.hex }]
                       )
                     }
-                    className="w-4 h-4 accent-green-600 shrink-0"
+                    className="w-4 h-4 accent-emerald-600 shrink-0"
                   />
-                  <span className="w-4 h-4 rounded-full border border-gray-200 shrink-0" style={{ background: c.hex }} />
-                  <span className="text-sm text-gray-800">{c.name}</span>
+                  <span className="w-4 h-4 rounded-full border border-slate-200 shrink-0" style={{ background: c.hex }} />
+                  <span className="text-sm text-slate-800">{c.name}</span>
                 </label>
               )
             })}
@@ -304,25 +304,25 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         )}
         {!showNewColor ? (
           <button type="button" onClick={() => setShowNewColor(true)}
-            className="text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
+            className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
             + Add color
           </button>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
             {colorAddError && <p className="text-red-500 text-xs">{colorAddError}</p>}
             <div className="flex gap-2">
               <input value={newColorName} onChange={(e) => setNewColorName(e.target.value)}
-                placeholder="Name (e.g. Red)" className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500" />
+                placeholder="Name (e.g. Red)" className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500" />
               <input type="color" value={newColorHex} onChange={(e) => setNewColorHex(e.target.value)}
-                className="w-9 h-8 rounded border border-gray-200 cursor-pointer" />
+                className="w-9 h-8 rounded border border-slate-200 cursor-pointer" />
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={handleAddColor} disabled={addingColor}
-                className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50">
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50">
                 {addingColor ? 'Adding…' : 'Add'}
               </button>
               <button type="button" onClick={() => { setShowNewColor(false); setColorAddError('') }}
-                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">
+                className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5">
                 Cancel
               </button>
             </div>
@@ -332,17 +332,17 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       {/* Sizes */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Sizes</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Sizes</label>
         {allAvailableSizes.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
             <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
-              selectedSizes.length === 0 ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-200 text-gray-500 hover:border-gray-400'
+              selectedSizes.length === 0 ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-500 hover:border-slate-400'
             }`}>
               <input
                 type="checkbox"
                 checked={selectedSizes.length === 0}
                 onChange={() => setSelectedSizes([])}
-                className="w-3.5 h-3.5 accent-green-600 shrink-0"
+                className="w-3.5 h-3.5 accent-emerald-600 shrink-0"
               />
               <span className="italic">None</span>
             </label>
@@ -350,7 +350,7 @@ export default function ProductForm({ product, categories, allColors, allSizes }
               const checked = selectedSizes.includes(s.name)
               return (
                 <label key={s.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
-                  checked ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                  checked ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-700 hover:border-slate-400'
                 }`}>
                   <input
                     type="checkbox"
@@ -360,7 +360,7 @@ export default function ProductForm({ product, categories, allColors, allSizes }
                         checked ? prev.filter((n) => n !== s.name) : [...prev, s.name]
                       )
                     }
-                    className="w-3.5 h-3.5 accent-green-600 shrink-0"
+                    className="w-3.5 h-3.5 accent-emerald-600 shrink-0"
                   />
                   {s.name}
                 </label>
@@ -370,23 +370,23 @@ export default function ProductForm({ product, categories, allColors, allSizes }
         )}
         {!showNewSize ? (
           <button type="button" onClick={() => setShowNewSize(true)}
-            className="text-xs text-green-600 hover:text-green-700 font-semibold flex items-center gap-1">
+            className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
             + Add size
           </button>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
             {sizeAddError && <p className="text-red-500 text-xs">{sizeAddError}</p>}
             <div className="flex gap-2">
               <input value={newSizeName} onChange={(e) => setNewSizeName(e.target.value)}
-                placeholder="e.g. XL or 42" className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-green-500" />
+                placeholder="e.g. XL or 42" className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-emerald-500" />
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={handleAddSize} disabled={addingSize}
-                className="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50">
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50">
                 {addingSize ? 'Adding…' : 'Add'}
               </button>
               <button type="button" onClick={() => { setShowNewSize(false); setSizeAddError('') }}
-                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">
+                className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5">
                 Cancel
               </button>
             </div>
@@ -396,7 +396,7 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       {/* Images */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Product Images</label>
         <div className="flex flex-wrap gap-3 mb-3">
           {images.map((url, i) => (
             <div key={i} className="relative w-20 h-20">
@@ -414,16 +414,16 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={imageProgress !== null}
-            className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-green-500 transition"
+            className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:border-emerald-500 transition"
           >
             <Upload size={16} />
             <span className="text-xs mt-1">{imageProgress !== null ? `${imageProgress}%` : 'Upload'}</span>
           </button>
         </div>
         {imageProgress !== null && (
-          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
             <div
-              className="bg-green-500 h-1.5 rounded-full transition-all duration-150"
+              className="bg-emerald-500 h-1.5 rounded-full transition-all duration-150"
               style={{ width: `${imageProgress}%` }}
             />
           </div>
@@ -440,14 +440,14 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       {/* Videos */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Product Videos</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Product Videos</label>
         <div className="flex flex-wrap gap-3 mb-3">
           {videos.map((url, i) => (
             <div key={i} className="relative w-20 h-20">
               <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                <div className="w-full h-full bg-gray-800 rounded-lg border border-gray-300 flex flex-col items-center justify-center gap-1">
-                  <Film size={20} className="text-gray-300" />
-                  <span className="text-gray-400 text-[9px]">Video</span>
+                <div className="w-full h-full bg-slate-800 rounded-lg border border-slate-300 flex flex-col items-center justify-center gap-1">
+                  <Film size={20} className="text-slate-300" />
+                  <span className="text-slate-400 text-[9px]">Video</span>
                 </div>
               </a>
               <button
@@ -463,21 +463,21 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             type="button"
             onClick={() => videoRef.current?.click()}
             disabled={videoProgress !== null}
-            className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-green-500 transition"
+            className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:border-emerald-500 transition"
           >
             <Upload size={16} />
             <span className="text-xs mt-1">{videoProgress !== null ? `${videoProgress}%` : 'Video'}</span>
           </button>
         </div>
         {videoProgress !== null && (
-          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
             <div
-              className="bg-green-500 h-1.5 rounded-full transition-all duration-150"
+              className="bg-emerald-500 h-1.5 rounded-full transition-all duration-150"
               style={{ width: `${videoProgress}%` }}
             />
           </div>
         )}
-        <p className="text-xs text-gray-400 mt-2">MP4, WebM or MOV · max 50MB each</p>
+        <p className="text-xs text-slate-400 mt-2">MP4, WebM or MOV · max 50MB each</p>
         <input
           ref={videoRef}
           type="file"
@@ -490,12 +490,12 @@ export default function ProductForm({ product, categories, allColors, allSizes }
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
           <select
             name="status"
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value as 'active' | 'draft' | 'out_of_stock' | 'pre_order')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
           >
             <option value="draft">Draft</option>
             <option value="active">Active (visible to buyers)</option>
@@ -510,9 +510,9 @@ export default function ProductForm({ product, categories, allColors, allSizes }
             id="featured"
             defaultChecked={product?.featured ?? false}
             value="true"
-            className="w-4 h-4 accent-green-600"
+            className="w-4 h-4 accent-emerald-600"
           />
-          <label htmlFor="featured" className="text-sm font-medium text-gray-700">
+          <label htmlFor="featured" className="text-sm font-medium text-slate-700">
             Featured on homepage
           </label>
         </div>
@@ -521,7 +521,7 @@ export default function ProductForm({ product, categories, allColors, allSizes }
       {selectedStatus === 'pre_order' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Days until delivery *
             </label>
             <input
@@ -531,15 +531,15 @@ export default function ProductForm({ product, categories, allColors, allSizes }
               max="365"
               defaultValue={product?.preorder_days ?? ''}
               required={selectedStatus === 'pre_order'}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Customer receives order this many days after purchase.
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Delivery note <span className="text-gray-400">(optional)</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Delivery note <span className="text-slate-400">(optional)</span>
             </label>
             <input
               name="preorder_note"
@@ -547,44 +547,44 @@ export default function ProductForm({ product, categories, allColors, allSizes }
               maxLength={150}
               defaultValue={product?.preorder_note ?? ''}
               placeholder="e.g. arrives before Christmas"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Shown to customers alongside the expected delivery date.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Min order qty <span className="text-gray-400">(optional)</span>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Min order qty <span className="text-slate-400">(optional)</span>
               </label>
               <input
                 name="min_order_qty"
                 type="number"
                 min="1"
                 defaultValue={product?.min_order_qty ?? ''}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Max order qty <span className="text-gray-400">(optional)</span>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Max order qty <span className="text-slate-400">(optional)</span>
               </label>
               <input
                 name="max_order_qty"
                 type="number"
                 min="1"
                 defaultValue={product?.max_order_qty ?? ''}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
               />
             </div>
           </div>
-          <p className="text-xs text-gray-400 -mt-2">
+          <p className="text-xs text-slate-400 -mt-2">
             Limits how many units a customer can order at once. Leave blank for no limit.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Single-purchase top-up (GHS per unit) <span className="text-gray-400">(optional)</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Single-purchase top-up (GHS per unit) <span className="text-slate-400">(optional)</span>
             </label>
             <input
               name="below_min_topup"
@@ -593,9 +593,9 @@ export default function ProductForm({ product, categories, allColors, allSizes }
               step="0.01"
               defaultValue={product?.below_min_topup ?? ''}
               placeholder="Blank = use the category top-up"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500"
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Added per unit when a customer buys below the minimum. Overrides the category top-up for this product; enter 0 for no top-up.
             </p>
           </div>
@@ -603,8 +603,8 @@ export default function ProductForm({ product, categories, allColors, allSizes }
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Seller commission % <span className="text-gray-400">(optional)</span>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Seller commission % <span className="text-slate-400">(optional)</span>
         </label>
         <input
           name="commission_percent"
@@ -614,16 +614,16 @@ export default function ProductForm({ product, categories, allColors, allSizes }
           step="0.01"
           defaultValue={product?.commission_percent ?? ''}
           placeholder="Use default"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-700"
         />
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-slate-400 mt-1">
           Percent of each sale a seller earns on this product. Leave blank to use the default set on the Shops page.
         </p>
       </div>
 
       <button
         type="submit"
-        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"
+        className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition"
       >
         {product ? 'Save Changes' : 'Create Product'}
       </button>

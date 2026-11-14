@@ -9,7 +9,7 @@ export default async function NewBrandPage() {
   const { data: products } = await admin.from('products').select('*').eq('status', 'active').order('name')
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">New Brand</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">New Brand</h1>
       <BrandForm allProducts={products ?? []} />
     </div>
   )
