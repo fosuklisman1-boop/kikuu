@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getShopSlugFromHost, getShopSlugFromPath, isMarketplaceOnlyPath, resolveShopSubdomainRewrite } from './shop-subdomain'
+import { getShopSlugFromHost, getShopSlugFromPath, getShopSubdomainRedirect, isMarketplaceOnlyPath, resolveShopSubdomainRewrite } from './shop-subdomain'
 
 describe('getShopSlugFromHost', () => {
   it('returns the slug for a shop subdomain', () => {
@@ -78,5 +78,18 @@ describe('getShopSlugFromPath', () => {
 describe('products are rewritten on a shop subdomain', () => {
   it('no longer passes /products through', () => {
     expect(resolveShopSubdomainRewrite('theirshop', '/products')).toBe('/shop/theirshop/products')
+  })
+})
+
+describe('getShopSubdomainRedirect', () => {
+  it('maps path-based shop URLs on the apex to the subdomain', () => {
+    expect(getShopSubdomainRedirect('telomall.com', 'telomall.com', '/shop/abc')).toEqual({ hostname: 'abc.telomall.com', pathname: '/' })
+    expect(getShopSubdomainRedirect('www.telomall.com', 'telomall.com', '/shop/abc/item')).toEqual({ hostname: 'abc.telomall.com', pathname: '/item' })
+  })
+  it('does nothing when off, on a subdomain/preview host, or for other paths', () => {
+    expect(getShopSubdomainRedirect('telomall.com', '', '/shop/abc')).toBeNull()
+    expect(getShopSubdomainRedirect('abc.telomall.com', 'telomall.com', '/shop/abc')).toBeNull()
+    expect(getShopSubdomainRedirect('kikuu-seven.vercel.app', 'telomall.com', '/shop/abc')).toBeNull()
+    expect(getShopSubdomainRedirect('telomall.com', 'telomall.com', '/products')).toBeNull()
   })
 })

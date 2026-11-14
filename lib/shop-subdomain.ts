@@ -54,3 +54,22 @@ export function resolveShopSubdomainRewrite(shopSlug: string, pathname: string):
   if (isPassthrough) return null
   return `/shop/${shopSlug}${pathname === '/' ? '' : pathname}`
 }
+
+// On the apex/www host, a path-based storefront URL (/shop/<slug>[/rest]) should
+// live on the shop's own subdomain instead. Returns the target hostname and
+// path, or null when no redirect applies (feature off, already on a
+// subdomain, or an unrelated host such as a *.vercel.app preview).
+export function getShopSubdomainRedirect(
+  host: string,
+  rootDomain: string,
+  pathname: string
+): { hostname: string; pathname: string } | null {
+  const root = rootDomain.trim().toLowerCase()
+  if (!root) return null
+  const hostname = host.split(':')[0].toLowerCase()
+  if (hostname !== root && hostname !== `www.${root}`) return null
+  const slug = getShopSlugFromPath(pathname)
+  if (!slug) return null
+  const rest = pathname.slice(`/shop/${slug}`.length)
+  return { hostname: `${slug}.${root}`, pathname: rest || '/' }
+}

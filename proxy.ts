@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import {
   getShopSlugFromHost,
   getShopSlugFromPath,
+  getShopSubdomainRedirect,
   isMarketplaceOnlyPath,
   resolveShopSubdomainRewrite,
   SHOP_SLUG_HEADER,
@@ -17,6 +18,15 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get('host') ?? ''
   const hostShopSlug = getShopSlugFromHost(host, ROOT_DOMAIN)
   const pathname = request.nextUrl.pathname
+
+  // Path-based shop URLs on the main domain move to the shop's subdomain.
+  const toSubdomain = getShopSubdomainRedirect(host, ROOT_DOMAIN, pathname)
+  if (toSubdomain) {
+    const url = new URL(request.url)
+    url.hostname = toSubdomain.hostname
+    url.pathname = toSubdomain.pathname
+    return NextResponse.redirect(url, 308)
+  }
 
   // A shop subdomain is a sealed storefront: the marketplace catalog is not
   // reachable from it. Bounce to the shop's own home.
