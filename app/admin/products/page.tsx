@@ -77,7 +77,14 @@ export default async function AdminProductsPage() {
                         </div>
                       </td>
                       <td className={`${TD} text-slate-500`}>{(product as any).categories?.name ?? '—'}</td>
-                      <td className={`${TD} text-right font-medium tabular-nums`}>{formatGHS(product.price)}</td>
+                      <td className={`${TD} text-right font-medium tabular-nums`}>
+                        {formatGHS(product.price)}
+                        {product.commission_percent !== null && product.commission_percent !== undefined && (
+                          <p className="mt-0.5 text-[11px] font-semibold text-amber-600">
+                            Custom commission {product.commission_percent}%
+                          </p>
+                        )}
+                      </td>
                       <td className={`${TD} text-right tabular-nums`}>
                         <span className={product.stock_qty < 5 ? 'font-semibold text-red-600' : 'text-slate-600'}>{product.stock_qty}</span>
                       </td>

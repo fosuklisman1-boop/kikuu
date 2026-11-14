@@ -12,6 +12,16 @@ import type { Product } from '@/lib/supabase/types'
 import { isDeliveryStatus, legacyForDelivery, DELIVERY_LABELS } from '@/lib/order-status'
 import { z } from 'zod'
 
+// A blank form field means "use the default" (stored as NULL downstream). Plain
+// z.coerce.number() would turn '' into 0 — a real override — so blank/missing is
+// mapped to '' *before* the numeric schema runs.
+function blankOrNumber(schema: z.ZodType<number>) {
+  return z.preprocess(
+    (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v),
+    z.union([z.literal(''), schema]),
+  ) as z.ZodType<number | ''>
+}
+
 const ProductSchema = z.object({
   name: z.string().min(3).max(200),
   description: z.string().optional(),
@@ -25,9 +35,9 @@ const ProductSchema = z.object({
   preorder_note: z.string().max(150).optional(),
   min_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
   max_order_qty: z.coerce.number().int().min(1).optional().or(z.literal('')),
-  below_min_topup: z.coerce.number().min(0).optional().or(z.literal('')),
+  below_min_topup: blankOrNumber(z.coerce.number().min(0)),
   attributes: z.string().optional(),
-  commission_percent: z.coerce.number().min(0).max(100).optional().or(z.literal('')),
+  commission_percent: blankOrNumber(z.coerce.number().min(0).max(100)),
 }).refine(
   (data) => data.status !== 'pre_order' || !!data.preorder_days,
   { message: 'Days until delivery is required for pre-order products', path: ['preorder_days'] }
