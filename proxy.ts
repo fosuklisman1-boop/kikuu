@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getShopSlugFromHost, resolveShopSubdomainRewrite } from '@/lib/shop-subdomain'
+import {
+  getShopSlugFromHost,
+  getShopSlugFromPath,
+  isMarketplaceOnlyPath,
+  resolveShopSubdomainRewrite,
+  SHOP_SLUG_HEADER,
+} from '@/lib/shop-subdomain'
 import { getCookieDomain } from '@/lib/cookie-domain'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? ''
@@ -9,13 +15,33 @@ export async function proxy(request: NextRequest) {
   // Shop subdomain routing — inert until NEXT_PUBLIC_ROOT_DOMAIN is configured.
   // Runs first and skips Supabase entirely: shop storefronts are public.
   const host = request.headers.get('host') ?? ''
-  const shopSlug = getShopSlugFromHost(host, ROOT_DOMAIN)
-  if (shopSlug) {
-    const rewritePath = resolveShopSubdomainRewrite(shopSlug, request.nextUrl.pathname)
+  const hostShopSlug = getShopSlugFromHost(host, ROOT_DOMAIN)
+  const pathname = request.nextUrl.pathname
+
+  // A shop subdomain is a sealed storefront: the marketplace catalog is not
+  // reachable from it. Bounce to the shop's own home.
+  if (hostShopSlug && isMarketplaceOnlyPath(pathname)) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // Tell the rendering layer which shop (if any) this request is scoped to so
+  // the store layout can swap the marketplace chrome (navbar, bottom tabs,
+  // sidebars, footer) for shop-only chrome. Always overwritten, never trusted
+  // from the client — a spoofed header must not be able to change the chrome.
+  const shopSlug = hostShopSlug ?? getShopSlugFromPath(pathname)
+  const forwardedHeaders = () => {
+    const h = new Headers(request.headers)
+    if (shopSlug) h.set(SHOP_SLUG_HEADER, shopSlug)
+    else h.delete(SHOP_SLUG_HEADER)
+    return h
+  }
+
+  if (hostShopSlug) {
+    const rewritePath = resolveShopSubdomainRewrite(hostShopSlug, pathname)
     if (rewritePath) {
       const url = request.nextUrl.clone()
       url.pathname = rewritePath
-      return NextResponse.rewrite(url)
+      return NextResponse.rewrite(url, { request: { headers: forwardedHeaders() } })
     }
   }
 
@@ -26,16 +52,15 @@ export async function proxy(request: NextRequest) {
   // Exact-or-slash-boundary checks: the broad matcher above means a bare
   // startsWith would also capture /admin-guide, /accounts-payable, /sellers,
   // etc. The old narrow matcher gave this boundary for free; now it's explicit.
-  const pathname = request.nextUrl.pathname
   const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/')
   const isAccountPath = pathname === '/account' || pathname.startsWith('/account/')
   const isSellerPath = pathname === '/seller' || pathname.startsWith('/seller/')
   const needsAuthCheck = isAdminPath || isAccountPath || isSellerPath
   if (!needsAuthCheck) {
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers: forwardedHeaders() } })
   }
 
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({ request: { headers: forwardedHeaders() } })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,7 +73,7 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = NextResponse.next({ request: { headers: forwardedHeaders() } })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )

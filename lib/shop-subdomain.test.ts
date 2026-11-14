@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getShopSlugFromHost, resolveShopSubdomainRewrite } from './shop-subdomain'
+import { getShopSlugFromHost, getShopSlugFromPath, isMarketplaceOnlyPath, resolveShopSubdomainRewrite } from './shop-subdomain'
 
 describe('getShopSlugFromHost', () => {
   it('returns the slug for a shop subdomain', () => {
@@ -44,7 +44,7 @@ describe('resolveShopSubdomainRewrite', () => {
     expect(resolveShopSubdomainRewrite('theirshop', '/some-product')).toBe('/shop/theirshop/some-product')
   })
 
-  it.each(['/checkout', '/cart', '/orders', '/api/checkout', '/account/login', '/admin', '/seller/dashboard', '/products'])(
+  it.each(['/checkout', '/cart', '/orders', '/api/checkout', '/account/login', '/admin', '/seller/dashboard'])(
     'passes %s through unrewritten',
     (pathname) => {
       expect(resolveShopSubdomainRewrite('theirshop', pathname)).toBeNull()
@@ -53,5 +53,30 @@ describe('resolveShopSubdomainRewrite', () => {
 
   it('does not false-positive on a path that merely starts with a passthrough word', () => {
     expect(resolveShopSubdomainRewrite('theirshop', '/carts-and-things')).toBe('/shop/theirshop/carts-and-things')
+  })
+})
+
+describe('isMarketplaceOnlyPath', () => {
+  it.each(['/products', '/products/some-slug'])('flags %s', (p) => expect(isMarketplaceOnlyPath(p)).toBe(true))
+  it('does not flag a shop product that merely starts with the word', () => {
+    expect(isMarketplaceOnlyPath('/products-bundle')).toBe(false)
+    expect(isMarketplaceOnlyPath('/')).toBe(false)
+  })
+})
+
+describe('getShopSlugFromPath', () => {
+  it('extracts the slug from shop paths', () => {
+    expect(getShopSlugFromPath('/shop/theirshop')).toBe('theirshop')
+    expect(getShopSlugFromPath('/shop/theirshop/some-product')).toBe('theirshop')
+  })
+  it('returns null otherwise', () => {
+    expect(getShopSlugFromPath('/shops/theirshop')).toBeNull()
+    expect(getShopSlugFromPath('/products/x')).toBeNull()
+  })
+})
+
+describe('products are rewritten on a shop subdomain', () => {
+  it('no longer passes /products through', () => {
+    expect(resolveShopSubdomainRewrite('theirshop', '/products')).toBe('/shop/theirshop/products')
   })
 })

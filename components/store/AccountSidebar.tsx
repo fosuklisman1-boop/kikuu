@@ -20,9 +20,11 @@ interface Props {
   initials: string
   shopHref: string
   shopLabel: string
+  /** Single-shop storefront: hide marketplace-wide entries (wishlist, seller links). */
+  shopMode?: boolean
 }
 
-export default function AccountSidebar({ displayName, email, initials, shopHref, shopLabel }: Props) {
+export default function AccountSidebar({ displayName, email, initials, shopHref, shopLabel, shopMode = false }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const { count: wishlistCount, clear: clearWishlist } = useWishlist()
@@ -61,7 +63,7 @@ export default function AccountSidebar({ displayName, email, initials, shopHref,
 
       {/* Nav */}
       <nav className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        {NAV.map(({ href, label, icon: Icon, exact }) => {
+        {NAV.filter(({ label }) => !(shopMode && label === 'Wishlist')).map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           const badge = label === 'Wishlist' && wishlistCount > 0 ? wishlistCount : null
           return (
@@ -85,13 +87,13 @@ export default function AccountSidebar({ displayName, email, initials, shopHref,
           )
         })}
 
-        <Link
+        {!shopMode && <Link
           href={shopHref}
           className="flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-[#b45309] hover:bg-[#fdf6ec] transition-all border-b border-gray-50"
         >
           <Store size={17} className="text-[#b45309]" />
           {shopLabel}
-        </Link>
+        </Link>}
 
         <button
           onClick={handleSignOut}

@@ -1,9 +1,27 @@
+// Set by proxy.ts on every request scoped to a single shop (a shop subdomain
+// or a /shop/<slug> path); always overwritten there, never client-trusted.
+export const SHOP_SLUG_HEADER = 'x-shop-slug'
 
 // Passthrough paths are never rewritten even on a shop subdomain — they're
 // shared, host-agnostic infrastructure (checkout, the API, account/admin/
-// seller areas, and the main product catalog as an escape hatch back to
-// marketplace-wide browsing).
-const PASSTHROUGH_PREFIXES = ['/api', '/cart', '/checkout', '/orders', '/account', '/admin', '/seller', '/products']
+// seller areas). The marketplace catalog (/products) is deliberately NOT here:
+// a shop subdomain must not be an on-ramp to the wider marketplace.
+const PASSTHROUGH_PREFIXES = ['/api', '/cart', '/checkout', '/orders', '/account', '/admin', '/seller']
+
+// Marketplace-only paths. On a shop subdomain these are bounced to the shop's
+// own home instead of served.
+const MARKETPLACE_ONLY_PREFIXES = ['/products']
+
+export function isMarketplaceOnlyPath(pathname: string): boolean {
+  return MARKETPLACE_ONLY_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+// Shop slug from a path-based storefront URL (/shop/<slug>[/...]) — the
+// fallback used before a root domain is configured. Null for any other path.
+export function getShopSlugFromPath(pathname: string): string | null {
+  const m = /^\/shop\/([a-z0-9-]{3,40})(?:\/|$)/.exec(pathname)
+  return m ? m[1] : null
+}
 
 // Given a request's Host header and the configured root domain, returns the
 // shop slug if this is a shop subdomain request, or null otherwise (main

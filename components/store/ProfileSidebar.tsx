@@ -16,6 +16,8 @@ const NAV = [
 ]
 
 interface ProfileSidebarProps {
+  /** Single-shop storefront: hide marketplace-wide entries (wishlist, seller links). */
+  shopMode?: boolean
   displayName: string
   email: string
   initials: string
@@ -27,6 +29,7 @@ interface ProfileSidebarProps {
 }
 
 export default function ProfileSidebar({
+  shopMode = false,
   displayName,
   email,
   initials,
@@ -93,7 +96,7 @@ export default function ProfileSidebar({
             </div>
 
             <nav className="flex-1 overflow-y-auto">
-              {NAV.map(({ href, label, icon: Icon }) => {
+              {NAV.filter(({ label }) => !(shopMode && label === 'Wishlist')).map(({ href, label, icon: Icon }) => {
                 const badge = label === 'Wishlist' && wishlistCount > 0 ? wishlistCount : null
                 return (
                   <Link
@@ -112,14 +115,14 @@ export default function ProfileSidebar({
                   </Link>
                 )
               })}
-              <Link
+              {!shopMode && <Link
                 href={shopHref}
                 onClick={onClose}
                 className="flex items-center gap-3 px-5 py-3.5 text-sm font-medium text-[#b45309] hover:bg-[#fdf6ec] transition-colors border-b border-[#f5f0e8]"
               >
                 <Store size={17} className="text-[#b45309]" />
                 {shopLabel}
-              </Link>
+              </Link>}
             </nav>
 
             <div className="p-3 border-t border-[#ede8df] shrink-0">
