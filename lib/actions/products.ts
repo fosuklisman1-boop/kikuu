@@ -145,9 +145,16 @@ export async function updateOrderStatus(orderId: string, status: string) {
   // Fetch order to check payment/reversal state before updating
   const { data: order } = await admin
     .from('orders')
-    .select('shop_id, payment_status')
+    .select('shop_id, payment_status, payment_type')
     .eq('id', orderId)
     .single()
+
+  // A shop order only earns its seller commission once payment is confirmed, so
+  // delivering an unpaid one would silently skip the credit. Cash-on-delivery is
+  // exempt: it is confirmed (and credited) afterwards via confirmCodPayment.
+  if (status === 'delivered' && order?.shop_id && order.payment_status !== 'paid' && order.payment_type !== 'cod') {
+    return { error: 'This shop order has no confirmed payment, so the seller would not be credited. Confirm payment before marking it delivered.' }
+  }
 
   const { error } = await admin.from('orders').update({ status }).eq('id', orderId)
   if (error) return { error: error.message }
