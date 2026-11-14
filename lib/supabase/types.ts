@@ -61,7 +61,8 @@ export interface Database {
           total: number
           status: 'pending' | 'confirmed' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
           payment_type: 'paystack' | 'cod' | 'theteller'
-          payment_status: 'pending' | 'paid' | 'awaiting_cod'
+          payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
+          delivery_status: 'processing' | 'shipped' | 'delivered' | null
           is_preorder: boolean
           pre_order_ship_date: string | null
           payment_method: string | null

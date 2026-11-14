@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateWebhookSignature } from '@/lib/paystack'
 import { creditShopEarnings } from '@/lib/wallet-ledger'
+import { PAID_UPDATE, FAILED_UPDATE } from '@/lib/order-status'
 
 export async function POST(req: NextRequest) {
   const signature = req.headers.get('x-paystack-signature') ?? ''
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     const expectedPesewas = Math.round(order.total * 100)
     if (event.data.amount < expectedPesewas) {
       console.warn('[webhook] amount mismatch for order', order.id, '- expected', expectedPesewas, 'got', event.data.amount)
-      await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id).eq('status', 'pending')
+      await admin.from('orders').update(FAILED_UPDATE).eq('id', order.id).eq('status', 'pending')
       await admin.from('order_events').insert({
         order_id: order.id,
         event: 'Payment Mismatch',
@@ -54,8 +55,7 @@ export async function POST(req: NextRequest) {
     const { data: updated } = await admin
       .from('orders')
       .update({
-        status: 'paid',
-        payment_status: 'paid',
+        ...PAID_UPDATE,
         payment_method: event.data.channel,
         payment_reference: reference,
       })

@@ -1,10 +1,14 @@
 export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import { formatGHS } from '@/lib/utils'
 import type { OrderItem, GhanaAddress } from '@/lib/supabase/types'
-import UpdateOrderStatusForm from '@/components/admin/UpdateOrderStatusForm'
-import ConfirmCodButton from '@/components/admin/ConfirmCodButton'
+import type { DeliveryStatus } from '@/lib/order-status'
+import DeliveryStepper from '@/components/admin/DeliveryStepper'
+import RefundButton from '@/components/admin/RefundButton'
+import { PaymentPill } from '@/components/admin/StatusPills'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Order Details' }
@@ -12,6 +16,8 @@ export const metadata: Metadata = { title: 'Order Details' }
 interface Props {
   params: Promise<{ id: string }>
 }
+
+const GATEWAY: Record<string, string> = { paystack: 'Paystack', theteller: 'Mobile Money (TheTeller)', cod: 'Cash on delivery' }
 
 export default async function AdminOrderDetailPage({ params }: Props) {
   const { id } = await params
@@ -23,188 +29,165 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     .eq('id', id)
     .single()
 
-  if (!order) notFound()
+  // Admin only works with paid orders (refunded ones stay visible for the record).
+  if (!order || (order.payment_status !== 'paid' && order.payment_status !== 'refunded')) notFound()
 
   const items = order.items as OrderItem[]
   const address = order.shipping_address as GhanaAddress
-  const isCod = (order as any).payment_type === 'cod'
-  const isPreorder = (order as any).is_preorder
-  const preorderShipDate = (order as any).pre_order_ship_date as string | null
-  const paymentStatus = (order as any).payment_status as string
+  const preorderShipDate = order.pre_order_ship_date as string | null
+  const reference = order.payment_reference ?? order.theteller_transaction_id ?? order.paystack_reference
+  const refunded = order.payment_status === 'refunded'
+  const events = [...((order.order_events as any[]) ?? [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-5xl">
+      <Link href="/admin/orders" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+        <ChevronLeft size={16} /> Orders
+      </Link>
+
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold text-gray-900">{order.order_number}</h1>
-            {isPreorder && (
-              <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
-                PRE-ORDER
-              </span>
-            )}
-            {isCod && (
-              <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
-                CASH ON DELIVERY
-              </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-mono text-2xl font-semibold tracking-tight text-slate-900">{order.order_number}</h1>
+            <PaymentPill status={order.payment_status} />
+            {order.is_preorder && (
+              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Pre-order</span>
             )}
           </div>
-          <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleString('en-GH')}</p>
+          <p className="mt-1 text-sm text-slate-500">Placed {new Date(order.created_at).toLocaleString('en-GH')}</p>
         </div>
-        <UpdateOrderStatusForm orderId={order.id} currentStatus={order.status} />
+        <p className="text-2xl font-semibold tabular-nums text-slate-900">{formatGHS(order.total)}</p>
       </div>
 
-      {/* Pre-order info banner */}
-      {isPreorder && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-4">
-          <p className="text-sm font-semibold text-orange-800">Pre-order</p>
-          {preorderShipDate && (
-            <p className="text-xs text-orange-600 mt-0.5">
-              Expected ship date: {new Date(preorderShipDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          )}
-          <p className="text-xs text-orange-500 mt-0.5">Stock will be decremented when order is fulfilled.</p>
-        </div>
-      )}
-
-      {/* COD payment status */}
-      {isCod && (
-        <div className={`rounded-xl px-4 py-3 mb-4 border ${
-          paymentStatus === 'paid'
-            ? 'bg-green-50 border-green-200'
-            : 'bg-purple-50 border-purple-200'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm font-semibold ${paymentStatus === 'paid' ? 'text-green-800' : 'text-purple-800'}`}>
-                {paymentStatus === 'paid' ? 'Cash Collected' : 'Awaiting Cash on Delivery'}
-              </p>
-              <p className={`text-xs mt-0.5 ${paymentStatus === 'paid' ? 'text-green-600' : 'text-purple-600'}`}>
-                {paymentStatus === 'paid'
-                  ? 'Payment has been confirmed.'
-                  : `Collect ${formatGHS(order.total)} on delivery.`}
-              </p>
-            </div>
-            {paymentStatus !== 'paid' && (
-              <ConfirmCodButton orderId={order.id} />
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
-        {/* Customer */}
-        <div className="bg-white rounded-xl border p-4">
-          <h2 className="font-semibold text-gray-900 mb-2">Customer</h2>
-          <p className="text-sm text-gray-700">{order.buyer_name}</p>
-          <p className="text-sm text-gray-500">{order.buyer_email}</p>
-          <p className="text-sm text-gray-500">{order.buyer_phone}</p>
-        </div>
-
-        {/* Address */}
-        <div className="bg-white rounded-xl border p-4">
-          <h2 className="font-semibold text-gray-900 mb-2">Delivery Address</h2>
-          <p className="text-sm text-gray-700">{address.recipient_name}</p>
-          <p className="text-sm text-gray-500">{address.city}, {address.district}</p>
-          <p className="text-sm text-gray-500">{address.region}</p>
-          {address.landmark && <p className="text-sm text-gray-500">Near: {address.landmark}</p>}
-          {address.digital_address && <p className="text-sm text-gray-400">{address.digital_address}</p>}
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="bg-white rounded-xl border mb-4">
-        <div className="p-4 border-b">
-          <h2 className="font-semibold text-gray-900">Items</h2>
-        </div>
-        <div className="divide-y">
-          {items.map((item, i) => (
-            <div key={i} className="flex gap-4 p-4">
-              {item.product_image && (
-                <img src={item.product_image} alt={item.product_name} className="w-14 h-14 object-cover rounded" />
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-5 min-w-0">
+          {order.is_preorder && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-medium text-amber-900">Pre-order</p>
+              {preorderShipDate && (
+                <p className="mt-0.5 text-xs text-amber-800">
+                  Expected ship date:{' '}
+                  {new Date(preorderShipDate).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
               )}
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-900">{item.product_name}</p>
-                  {item.is_preorder && (
-                    <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">PRE</span>
-                  )}
-                </div>
-                {(item.selected_color || item.selected_size) && (
-                  <p className="text-xs text-gray-400 flex items-center gap-1.5 mb-0.5">
-                    {item.selected_color && (
-                      <>
-                        <span
-                          className="w-2.5 h-2.5 rounded-full border border-gray-200 inline-block shrink-0"
-                          style={{ background: item.selected_color.hex }}
-                        />
-                        <span>{item.selected_color.name}</span>
-                      </>
-                    )}
-                    {item.selected_color && item.selected_size && <span>·</span>}
-                    {item.selected_size && <span>{item.selected_size}</span>}
-                  </p>
-                )}
-                <p className="text-sm text-gray-500">Qty: {item.quantity} × {formatGHS(item.price)}</p>
-                {item.is_preorder && item.preorder_ship_date && (
-                  <p className="text-xs text-orange-500">
-                    Delivers by {new Date(item.preorder_ship_date).toLocaleDateString('en-GH')}
-                    {item.preorder_note && ` · ${item.preorder_note}`}
-                  </p>
-                )}
-              </div>
-              <p className="font-semibold">{formatGHS(item.price * item.quantity)}</p>
-            </div>
-          ))}
-        </div>
-        <div className="p-4 border-t space-y-1 text-sm">
-          <div className="flex justify-between text-gray-500">
-            <span>Subtotal</span><span>{formatGHS(order.subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-gray-500">
-            <span>Shipping</span><span>{formatGHS(order.shipping_fee)}</span>
-          </div>
-          {order.discount_amount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Discount</span><span>-{formatGHS(order.discount_amount)}</span>
             </div>
           )}
-          <div className="flex justify-between font-bold text-gray-900 pt-2 border-t">
-            <span>Total</span><span>{formatGHS(order.total)}</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Payment */}
-      <div className="bg-white rounded-xl border p-4 mb-4">
-        <h2 className="font-semibold text-gray-900 mb-2">Payment</h2>
-        <p className="text-sm text-gray-500">
-          Type: {isCod ? 'Cash on Delivery' : 'Paystack'}
-        </p>
-        {!isCod && (
-          <>
-            <p className="text-sm text-gray-500">Channel: {order.payment_method ?? '—'}</p>
-            <p className="text-sm text-gray-500 font-mono">Ref: {order.paystack_reference ?? '—'}</p>
-          </>
-        )}
-      </div>
+          <section className="rounded-xl border border-slate-200 bg-white">
+            <h2 className="border-b border-slate-100 px-5 py-3.5 text-sm font-semibold text-slate-900">
+              Items ({items.reduce((n, i) => n + i.quantity, 0)})
+            </h2>
+            <ul className="divide-y divide-slate-100">
+              {items.map((item, i) => (
+                <li key={i} className="flex gap-4 px-5 py-4">
+                  {item.product_image ? (
+                    <img src={item.product_image} alt="" className="h-14 w-14 rounded-lg border border-slate-100 object-cover" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-lg bg-slate-100" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-slate-900">{item.product_name}</p>
+                    {(item.selected_color || item.selected_size) && (
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                        {item.selected_color && (
+                          <>
+                            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-slate-200" style={{ background: item.selected_color.hex }} />
+                            <span>{item.selected_color.name}</span>
+                          </>
+                        )}
+                        {item.selected_color && item.selected_size && <span>·</span>}
+                        {item.selected_size && <span>{item.selected_size}</span>}
+                      </p>
+                    )}
+                    <p className="mt-0.5 text-sm text-slate-500 tabular-nums">
+                      {item.quantity} × {formatGHS(item.price)}
+                    </p>
+                    {item.is_preorder && item.preorder_ship_date && (
+                      <p className="text-xs text-amber-700">
+                        Delivers by {new Date(item.preorder_ship_date).toLocaleDateString('en-GH')}
+                        {item.preorder_note && ` · ${item.preorder_note}`}
+                      </p>
+                    )}
+                  </div>
+                  <p className="font-semibold tabular-nums text-slate-900">{formatGHS(item.price * item.quantity)}</p>
+                </li>
+              ))}
+            </ul>
+            <dl className="space-y-1.5 border-t border-slate-100 px-5 py-4 text-sm tabular-nums">
+              <div className="flex justify-between text-slate-500"><dt>Subtotal</dt><dd>{formatGHS(order.subtotal)}</dd></div>
+              <div className="flex justify-between text-slate-500"><dt>Delivery</dt><dd>{formatGHS(order.shipping_fee)}</dd></div>
+              {order.discount_amount > 0 && (
+                <div className="flex justify-between text-emerald-700"><dt>Discount</dt><dd>-{formatGHS(order.discount_amount)}</dd></div>
+              )}
+              <div className="flex justify-between border-t border-slate-100 pt-2 font-semibold text-slate-900"><dt>Total</dt><dd>{formatGHS(order.total)}</dd></div>
+            </dl>
+          </section>
 
-      {/* Events */}
-      {order.order_events && (order.order_events as any[]).length > 0 && (
-        <div className="bg-white rounded-xl border p-4">
-          <h2 className="font-semibold text-gray-900 mb-4">Timeline</h2>
-          <ol className="relative border-l border-gray-200 space-y-4 ml-3">
-            {(order.order_events as any[]).map((evt) => (
-              <li key={evt.id} className="ml-4">
-                <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-[#b45309]" />
-                <p className="text-sm font-medium text-gray-900">{evt.event}</p>
-                {evt.description && <p className="text-xs text-gray-500">{evt.description}</p>}
-                <p className="text-xs text-gray-400">{new Date(evt.created_at).toLocaleString('en-GH')}</p>
-              </li>
-            ))}
-          </ol>
+          {events.length > 0 && (
+            <section className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+              <h2 className="mb-4 text-sm font-semibold text-slate-900">Activity</h2>
+              <ol className="relative ml-1.5 space-y-4 border-l border-slate-200">
+                {events.map((evt) => (
+                  <li key={evt.id} className="ml-4">
+                    <span className="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full bg-emerald-600 ring-4 ring-white" />
+                    <p className="text-sm font-medium text-slate-900">{evt.event}</p>
+                    {evt.description && <p className="text-xs text-slate-500">{evt.description}</p>}
+                    <p className="text-xs text-slate-400">{new Date(evt.created_at).toLocaleString('en-GH')}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
         </div>
-      )}
+
+        <aside className="space-y-5">
+          <section className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+            <h2 className="mb-4 text-sm font-semibold text-slate-900">Delivery</h2>
+            {refunded ? (
+              <p className="text-sm text-slate-500">This order was refunded, so delivery is closed.</p>
+            ) : (
+              <DeliveryStepper orderId={order.id} current={order.delivery_status as DeliveryStatus | null} />
+            )}
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Payment</h2>
+              <PaymentPill status={order.payment_status} />
+            </div>
+            <dl className="space-y-1.5 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Method</dt><dd className="text-right text-slate-900">{GATEWAY[order.payment_type] ?? order.payment_type}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Channel</dt><dd className="text-right text-slate-900">{order.payment_method ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Reference</dt><dd className="break-all text-right font-mono text-xs text-slate-900">{reference ?? '—'}</dd></div>
+            </dl>
+            {order.payment_status === 'paid' && (
+              <div className="mt-4 border-t border-slate-100 pt-3">
+                <RefundButton orderId={order.id} total={formatGHS(order.total)} />
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">Customer</h2>
+            <p className="text-sm font-medium text-slate-900">{order.buyer_name}</p>
+            <p className="text-sm text-slate-500">{order.buyer_email}</p>
+            <a href={`tel:${order.buyer_phone}`} className="text-sm text-emerald-800 hover:underline">{order.buyer_phone}</a>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white px-5 py-4">
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">Deliver to</h2>
+            <address className="text-sm not-italic text-slate-600 space-y-0.5">
+              <p className="font-medium text-slate-900">{address.recipient_name}</p>
+              <p>{[address.city, address.district].filter(Boolean).join(', ')}</p>
+              <p>{address.region}</p>
+              {address.landmark && <p>Near {address.landmark}</p>}
+              {address.digital_address && <p className="text-slate-400">{address.digital_address}</p>}
+            </address>
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }

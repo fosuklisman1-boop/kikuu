@@ -9,6 +9,7 @@ import { slugify } from '@/lib/utils'
 import { creditShopEarnings, reverseShopEarnings } from '@/lib/wallet-ledger'
 import { getFlashSalePriceMap } from '@/lib/actions/flash-sales'
 import type { Product } from '@/lib/supabase/types'
+import { isDeliveryStatus, legacyForDelivery, DELIVERY_LABELS } from '@/lib/order-status'
 import { z } from 'zod'
 
 const ProductSchema = z.object({
@@ -129,106 +130,76 @@ export async function deleteProduct(id: string) {
   revalidatePath('/')
 }
 
-// Single source of truth for the order_events label written on a status
-// transition. The pre-order earnings guard below matches on these exact
-// strings, so the writer and the reader must derive them from here — a
-// reword of the label would otherwise silently break the money guard.
-const statusEventLabel = (s: string) => `Status updated to ${s}`
-
-export async function updateOrderStatus(orderId: string, status: string) {
+// Admin moves a PAID order through delivery. Payment status is never edited
+// here — gateways set it, and refundOrder reverses it.
+export async function updateDeliveryStatus(orderId: string, status: string) {
   await requireAdmin()
-  const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
-  if (!validStatuses.includes(status)) return { error: 'Invalid status' }
+  if (!isDeliveryStatus(status)) return { error: 'Invalid delivery status' }
 
   const admin = createAdminClient()
-
-  // Fetch order to check payment/reversal state before updating
   const { data: order } = await admin
     .from('orders')
-    .select('shop_id, payment_status, payment_type')
+    .select('payment_status, delivery_status')
     .eq('id', orderId)
     .single()
 
-  // A shop order only earns its seller commission once payment is confirmed, so
-  // delivering an unpaid one would silently skip the credit. Cash-on-delivery is
-  // exempt: it is confirmed (and credited) afterwards via confirmCodPayment.
-  if (status === 'delivered' && order?.shop_id && order.payment_status !== 'paid' && order.payment_type !== 'cod') {
-    return { error: 'This shop order has no confirmed payment, so the seller would not be credited. Confirm payment before marking it delivered.' }
-  }
+  if (!order) return { error: 'Order not found' }
+  if (order.payment_status !== 'paid') return { error: 'Only paid orders can be updated.' }
+  if (order.delivery_status === status) return { success: true }
 
-  const { error } = await admin.from('orders').update({ status }).eq('id', orderId)
-  if (error) return { error: error.message }
-
-  if ((status === 'cancelled' || status === 'refunded') && order?.shop_id && order?.payment_status === 'paid') {
-    await reverseShopEarnings(orderId)
-  }
-
-  // A pre-order order is credited on delivery, not at payment — so an order that
-  // was cancelled/refunded before delivery has an empty ledger, and the
-  // unique(order_id, type) constraint cannot stop a wrongful credit here.
-  // Checking the order's current/previous status is not enough (an intermediate
-  // status overwrites it), so check order_events for the full history: was this
-  // order EVER cancelled or refunded? Those rows are written below on every
-  // transition, and updateOrderStatus is the only writer of 'refunded' — and the
-  // only writer of 'cancelled' for an order whose payment_status is 'paid'. (The
-  // Paystack verify/webhook routes also cancel, but only orders still 'pending',
-  // and they never set payment_status, so creditShopEarnings' own
-  // payment_status !== 'paid' check already blocks those.)
-  // On a read error we skip crediting rather than risk a wrongful payout: a
-  // missed credit is recoverable later, a credit on a refunded order is not.
-  if (status === 'delivered' && order?.shop_id) {
-    const { data: priorReversal, error: reversalError } = await admin
-      .from('order_events')
-      .select('id')
-      .eq('order_id', orderId)
-      .in('event', [statusEventLabel('cancelled'), statusEventLabel('refunded')])
-      .limit(1)
-      .maybeSingle()
-    if (!reversalError && !priorReversal) {
-      await creditShopEarnings(orderId)
-    }
-  }
-
-  const { error: eventError } = await admin.from('order_events').insert({
-    order_id: orderId,
-    event: statusEventLabel(status),
-    description: `Admin updated order status to "${status}".`,
-  })
-
-  // The guard above depends on cancelled/refunded transitions having left a
-  // history row. If that write fails we must surface it rather than swallow it
-  // — a missing row would let a later 'delivered' transition wrongly credit a
-  // reversed order. Other statuses aren't load-bearing, so they don't block.
-  if (eventError && (status === 'cancelled' || status === 'refunded')) {
-    return { error: `Order status updated, but recording the ${status} history failed: ${eventError.message}. Please retry.` }
-  }
-
-  revalidatePath(`/admin/orders/${orderId}`)
-  revalidatePath('/admin/orders')
-  return { success: true }
-}
-
-export async function confirmCodPayment(orderId: string) {
-  await requireAdmin()
-  const admin = createAdminClient()
   const { error } = await admin
     .from('orders')
-    .update({ payment_status: 'paid', status: 'delivered' })
+    .update({ delivery_status: status, status: legacyForDelivery(status) })
     .eq('id', orderId)
-    .eq('payment_type', 'cod')
-
   if (error) return { error: error.message }
+
+  // Shop earnings are credited on delivery (re-verified as paid inside).
+  if (status === 'delivered') await creditShopEarnings(orderId)
 
   await admin.from('order_events').insert({
     order_id: orderId,
-    event: 'Payment Collected',
-    description: 'Cash on delivery payment confirmed by admin.',
+    event: `Delivery updated to ${DELIVERY_LABELS[status]}`,
+    description: `Admin set delivery status to "${DELIVERY_LABELS[status]}".`,
   })
-
-  await creditShopEarnings(orderId)
 
   revalidatePath(`/admin/orders/${orderId}`)
   revalidatePath('/admin/orders')
+  revalidatePath('/admin')
+  return { success: true }
+}
+
+// Admin-only: reverse a paid order. Payment becomes 'refunded' and any seller
+// earnings already credited for it are reversed.
+export async function refundOrder(orderId: string) {
+  await requireAdmin()
+  const admin = createAdminClient()
+  const { data: order } = await admin
+    .from('orders')
+    .select('shop_id, payment_status')
+    .eq('id', orderId)
+    .single()
+
+  if (!order) return { error: 'Order not found' }
+  if (order.payment_status !== 'paid') return { error: 'Only paid orders can be refunded.' }
+
+  const { error } = await admin
+    .from('orders')
+    .update({ payment_status: 'refunded', status: 'refunded' })
+    .eq('id', orderId)
+    .eq('payment_status', 'paid')
+  if (error) return { error: error.message }
+
+  if (order.shop_id) await reverseShopEarnings(orderId)
+
+  await admin.from('order_events').insert({
+    order_id: orderId,
+    event: 'Refunded',
+    description: 'Admin refunded this order.',
+  })
+
+  revalidatePath(`/admin/orders/${orderId}`)
+  revalidatePath('/admin/orders')
+  revalidatePath('/admin')
   return { success: true }
 }
 
@@ -343,4 +314,21 @@ export async function fetchProductsPage(
   const hasMore = (count ?? 0) > from + (products?.length ?? 0)
 
   return { products: products ?? [], salePrices, hasMore }
+}
+
+// Move several paid orders to one delivery step. Each order is checked
+// individually (unpaid ones are skipped and reported).
+export async function bulkUpdateDeliveryStatus(orderIds: string[], status: string) {
+  await requireAdmin()
+  if (!isDeliveryStatus(status)) return { error: 'Invalid delivery status' }
+  if (!orderIds.length || orderIds.length > 100) return { error: 'Select between 1 and 100 orders.' }
+
+  let updated = 0
+  const failed: string[] = []
+  for (const id of orderIds) {
+    const res = await updateDeliveryStatus(id, status)
+    if (res && 'error' in res && res.error) failed.push(id)
+    else updated++
+  }
+  return { updated, failed: failed.length }
 }

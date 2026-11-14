@@ -17,10 +17,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: profile } = await admin.from('users').select('role').eq('id', user!.id).single()
   if (profile?.role !== 'admin') redirect('/')
 
+  // Paid orders waiting to ship, shown as a badge on the Orders link.
+  const { count: toShip } = await admin
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('payment_status', 'paid')
+    .eq('delivery_status', 'processing')
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <AdminSidebar />
-      <main className="flex-1 min-w-0 overflow-auto p-4 lg:p-6 pt-16 lg:pt-6">{children}</main>
+    <div className="flex h-screen bg-[#f4f6f3]">
+      <AdminSidebar toShip={toShip ?? 0} />
+      <main className="flex-1 min-w-0 overflow-auto px-4 pb-8 pt-20 lg:px-8">{children}</main>
     </div>
   )
 }

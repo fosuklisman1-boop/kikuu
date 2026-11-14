@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyTransaction } from '@/lib/paystack'
 import { checkTransactionStatus } from '@/lib/theteller'
 import { creditShopEarnings } from '@/lib/wallet-ledger'
+import { PAID_UPDATE, FAILED_UPDATE } from '@/lib/order-status'
 
 type SupabaseAdmin = ReturnType<typeof createAdminClient>
 
@@ -66,7 +67,7 @@ export async function processVerification(
     }
 
     if (amountReported && result.amount < expectedPesewas) {
-      await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
+      await admin.from('orders').update(FAILED_UPDATE).eq('id', orderId).eq('status', 'pending')
       await admin.from('order_events').insert({
         order_id: orderId,
         event: 'Payment Mismatch',
@@ -81,8 +82,7 @@ export async function processVerification(
     const { data: updated } = await admin
       .from('orders')
       .update({
-        status: 'paid',
-        payment_status: 'paid',
+        ...PAID_UPDATE,
         payment_method: result.channel,
         payment_reference: reference,
       })
@@ -116,7 +116,7 @@ export async function processVerification(
     if (!autoCancel) {
       return { ok: false, error: `Payment ${result.statusLabel}.`, code: 'payment_not_confirmed' }
     }
-    await admin.from('orders').update({ status: 'cancelled' }).eq('id', orderId).eq('status', 'pending')
+    await admin.from('orders').update(FAILED_UPDATE).eq('id', orderId).eq('status', 'pending')
     await admin.from('order_events').insert({
       order_id: orderId,
       event: 'Payment Failed',

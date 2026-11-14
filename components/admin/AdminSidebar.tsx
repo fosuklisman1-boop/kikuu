@@ -1,32 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, LogOut, ExternalLink, Zap, Building2, TrendingUp, Palette, Menu, X, Store, Banknote, CreditCard } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { usePathname, useRouter } from 'next/navigation'
+import { LogOut, ExternalLink, Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { NAV_GROUPS, NAV_ITEMS } from '@/components/admin/nav'
+import QuickJump from '@/components/admin/QuickJump'
 
-const NAV = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-  { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/shops', label: 'Shops', icon: Store },
-  { href: '/admin/categories', label: 'Categories', icon: Tag },
-  { href: '/admin/delivery', label: 'Delivery Fees', icon: Truck },
-  { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
-  { href: '/admin/banner', label: 'Banner', icon: Megaphone },
-  { href: '/admin/flash-sales', label: 'Flash Sales', icon: Zap },
-  { href: '/admin/brands', label: 'Brands', icon: Building2 },
-  { href: '/admin/product-options', label: 'Product Options', icon: Palette },
-  { href: '/admin/trending-searches', label: 'Trending', icon: TrendingUp },
-  { href: '/admin/withdrawals', label: 'Withdrawals', icon: Banknote },
-  { href: '/admin/payments', label: 'Payment Gateways', icon: CreditCard },
-]
+function isActive(href: string, pathname: string) {
+  return href === '/admin' ? pathname === href : pathname.startsWith(href)
+}
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
+function SidebarContent({ toShip, onClose }: { toShip: number; onClose?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -38,131 +24,95 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   return (
     <>
-      {/* Brand */}
-      <div className="px-5 py-5 border-b border-gray-800 flex items-center justify-between shrink-0">
+      <div className="flex shrink-0 items-center justify-between px-5 py-5">
         <div>
-          <span className="text-white font-extrabold text-xl">
-            <span className="text-green-500">Telo</span>Mall
+          <span className="text-xl font-extrabold text-white">
+            <span className="text-emerald-400">Telo</span>Mall
           </span>
-          <p className="text-gray-600 text-xs mt-0.5">Admin Panel</p>
+          <p className="mt-0.5 text-xs text-emerald-200/50">Admin</p>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="Close menu" className="rounded-lg p-1 text-emerald-100/60 hover:text-white">
             <X size={20} />
           </button>
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const active = href === '/admin' ? pathname === href : pathname.startsWith(href)
-          return (
-            <Link key={href} href={href} onClick={onClose}>
-              <motion.div
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                }`}
-                whileHover={{ x: active ? 0 : 3 }}
-                transition={{ duration: 0.15 }}
-              >
-                <Icon size={16} />
-                {label}
-                {active && (
-                  <motion.div
-                    layoutId="active-pill"
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-white"
-                  />
-                )}
-              </motion.div>
-            </Link>
-          )
-        })}
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4" aria-label="Admin">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.title}>
+            <p className="px-3 pb-1.5 text-xs font-medium text-emerald-200/40">{group.title}</p>
+            <div className="space-y-0.5">
+              {group.items.map(({ href, label, icon: Icon }) => {
+                const active = isActive(href, pathname)
+                const badge = href === '/admin/orders' && toShip > 0 ? toShip : 0
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={onClose}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 ${
+                      active ? 'bg-emerald-500/15 text-white' : 'text-emerald-50/60 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={16} className={active ? 'text-emerald-400' : ''} />
+                    <span className="flex-1">{label}</span>
+                    {badge > 0 && (
+                      <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-amber-950" aria-label={`${badge} orders to ship`}>
+                        {badge}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {/* Bottom */}
-      <div className="p-3 space-y-1 border-t border-gray-800 shrink-0">
-        <Link href="/" target="_blank">
-          <motion.div
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-800 hover:text-white transition-colors"
-            whileHover={{ x: 3 }}
-          >
-            <ExternalLink size={16} />
-            View Store
-          </motion.div>
+      <div className="shrink-0 space-y-0.5 border-t border-white/10 p-3">
+        <Link href="/" target="_blank" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-emerald-50/60 hover:bg-white/5 hover:text-white">
+          <ExternalLink size={16} /> View store
         </Link>
-        <motion.button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-red-500/10 hover:text-red-400 w-full transition-colors"
-          whileHover={{ x: 3 }}
-        >
-          <LogOut size={16} />
-          Sign Out
-        </motion.button>
+        <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-emerald-50/60 hover:bg-red-500/10 hover:text-red-300">
+          <LogOut size={16} /> Sign out
+        </button>
       </div>
     </>
   )
 }
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ toShip = 0 }: { toShip?: number }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-  const currentPage = NAV.find((n) =>
-    n.href === '/admin' ? pathname === n.href : pathname.startsWith(n.href)
-  )
+  const currentPage = NAV_ITEMS.find((n) => isActive(n.href, pathname))
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-60 bg-gray-950 text-gray-400 flex-col shrink-0">
-        <SidebarContent />
+      <aside className="hidden w-60 shrink-0 flex-col bg-[#10231a] lg:flex">
+        <SidebarContent toShip={toShip} />
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-gray-950 flex items-center px-4 gap-3 border-b border-gray-800">
-        <button
-          onClick={() => setOpen(true)}
-          className="text-gray-400 hover:text-white p-1.5 rounded-lg transition-colors"
-          aria-label="Open menu"
-        >
+      {/* Top bar: page name + quick jump (mobile also holds the menu button) */}
+      <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:left-60">
+        <button onClick={() => setOpen(true)} aria-label="Open menu" className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden">
           <Menu size={22} />
         </button>
-        <span className="text-white font-extrabold text-lg leading-none">
-          <span className="text-green-500">Telo</span>Mall
-        </span>
-        {currentPage && (
-          <span className="text-gray-500 text-sm ml-1">/ {currentPage.label}</span>
-        )}
-      </div>
+        <span className="text-sm font-medium text-slate-700">{currentPage?.label ?? 'Admin'}</span>
+        <div className="ml-auto">
+          <QuickJump />
+        </div>
+      </header>
 
-      {/* Mobile drawer + backdrop */}
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setOpen(false)}
-              className="lg:hidden fixed inset-0 z-50 bg-black/60"
-            />
-            <motion.aside
-              key="drawer"
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'tween', duration: 0.25 }}
-              className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-72 bg-gray-950 text-gray-400 flex flex-col"
-            >
-              <SidebarContent onClose={() => setOpen(false)} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} className="fixed inset-0 z-50 bg-black/50 lg:hidden" />
+          <aside className="fixed bottom-0 left-0 top-0 z-50 flex w-72 flex-col bg-[#10231a] lg:hidden">
+            <SidebarContent toShip={toShip} onClose={() => setOpen(false)} />
+          </aside>
+        </>
+      )}
     </>
   )
 }

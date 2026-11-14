@@ -1,186 +1,189 @@
 export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { formatGHS } from '@/lib/utils'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { SearchScope, SearchItem } from '@/components/ui/InstantSearch'
+import { Search } from 'lucide-react'
+import OrdersTable, { type OrderRow } from '@/components/admin/OrdersTable'
 
 export const metadata: Metadata = { title: 'Orders' }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  paid: 'bg-blue-100 text-blue-800',
-  processing: 'bg-indigo-100 text-indigo-800',
-  shipped: 'bg-purple-100 text-purple-800',
-  delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-  refunded: 'bg-gray-100 text-gray-800',
-}
+const PAGE_SIZE = 20
+
+const TABS = [
+  { key: 'processing', label: 'To ship' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
+  { key: 'refunded', label: 'Refunded' },
+  { key: 'all', label: 'All paid' },
+] as const
+type TabKey = (typeof TABS)[number]['key']
+
+const RANGES = [
+  { key: 'all', label: 'Any time', days: 0 },
+  { key: 'today', label: 'Today', days: 1 },
+  { key: '7d', label: 'Last 7 days', days: 7 },
+  { key: '30d', label: 'Last 30 days', days: 30 },
+]
 
 interface Props {
-  searchParams: Promise<{ status?: string; page?: string; filter?: string }>
+  searchParams: Promise<{ tab?: string; q?: string; range?: string; preorder?: string; page?: string }>
 }
 
 export default async function AdminOrdersPage({ searchParams }: Props) {
   const params = await searchParams
-  const status = params.status ?? ''
-  const filter = params.filter ?? '' // 'preorder' | 'cod' | ''
-  const page = parseInt(params.page ?? '1', 10)
-  const PAGE_SIZE = 20
+  const tab: TabKey = TABS.some((t) => t.key === params.tab) ? (params.tab as TabKey) : 'processing'
+  // Strip characters that would break the PostgREST or() filter or act as wildcards.
+  const q = (params.q ?? '').replace(/[,()%*\\]/g, ' ').trim().slice(0, 60)
+  const range = RANGES.find((r) => r.key === params.range) ?? RANGES[0]
+  const preorderOnly = params.preorder === '1'
+  const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
   const from = (page - 1) * PAGE_SIZE
 
   const admin = createAdminClient()
-  let query = admin
-    .from('orders')
-    .select('id, order_number, buyer_name, buyer_phone, total, status, payment_type, payment_status, is_preorder, pre_order_ship_date, created_at', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, from + PAGE_SIZE - 1)
+  const since = range.days ? new Date(Date.now() - range.days * 86400000).toISOString() : null
 
-  if (filter === 'preorder') {
-    query = query.eq('is_preorder', true)
-  } else if (filter === 'cod') {
-    query = query.eq('payment_type', 'cod')
-  } else if (status) {
-    query = query.eq('status', status)
-  } else {
-    // Default: hide ghost pending orders (initiated but payment never completed).
-    query = query.neq('status', 'pending')
+  // Filters other than the tab are shared by the list and the tab counts.
+  function scoped(query: any) {
+    let qy = query
+    if (q) {
+      qy = qy.or(`order_number.ilike.%${q}%,buyer_name.ilike.%${q}%,buyer_phone.ilike.%${q}%,buyer_email.ilike.%${q}%`)
+    }
+    if (since) qy = qy.gte('created_at', since)
+    if (preorderOnly) qy = qy.eq('is_preorder', true)
+    return qy
+  }
+  // Admin only ever sees paid (or refunded) orders.
+  function tabFilter(query: any, key: TabKey) {
+    if (key === 'refunded') return query.eq('payment_status', 'refunded')
+    const paid = query.eq('payment_status', 'paid')
+    return key === 'all' ? paid : paid.eq('delivery_status', key)
   }
 
-  const { data: orders, count } = await query
+  const [list, ...counts] = await Promise.all([
+    tabFilter(
+      scoped(
+        admin
+          .from('orders')
+          .select('id, order_number, buyer_name, buyer_phone, total, payment_type, payment_status, delivery_status, is_preorder, created_at', { count: 'exact' })
+      ),
+      tab
+    )
+      .order('created_at', { ascending: tab === 'processing' }) // oldest unshipped first
+      .range(from, from + PAGE_SIZE - 1),
+    ...TABS.map((t) => tabFilter(scoped(admin.from('orders').select('id', { count: 'exact', head: true })), t.key)),
+  ])
 
-  const statuses = ['', 'pending', 'confirmed', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']
+  const rows = (list.data ?? []) as OrderRow[]
+  const total = list.count ?? 0
+  const tabCounts = Object.fromEntries(TABS.map((t, i) => [t.key, counts[i].count ?? 0])) as Record<TabKey, number>
+
+  const qs = (over: Record<string, string | undefined>) => {
+    const merged: Record<string, string | undefined> = {
+      tab,
+      q: q || undefined,
+      range: range.key === 'all' ? undefined : range.key,
+      preorder: preorderOnly ? '1' : undefined,
+      ...over,
+    }
+    const sp = new URLSearchParams()
+    for (const [k, v] of Object.entries(merged)) if (v) sp.set(k, v)
+    const s = sp.toString()
+    return s ? `/admin/orders?${s}` : '/admin/orders'
+  }
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Orders</h1>
-
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        <a
-          href="/admin/orders"
-          className={`px-3 py-1 rounded-full text-sm border transition ${
-            !status && !filter ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 text-gray-600 hover:border-green-600'
-          }`}
-        >
-          All
-        </a>
-        <a
-          href="/admin/orders?filter=preorder"
-          className={`px-3 py-1 rounded-full text-sm border transition ${
-            filter === 'preorder' ? 'bg-orange-500 text-white border-orange-500' : 'border-gray-300 text-gray-600 hover:border-orange-400'
-          }`}
-        >
-          Pre-orders
-        </a>
-        <a
-          href="/admin/orders?filter=cod"
-          className={`px-3 py-1 rounded-full text-sm border transition ${
-            filter === 'cod' ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 text-gray-600 hover:border-purple-400'
-          }`}
-        >
-          Cash on Delivery
-        </a>
-        <span className="w-px bg-gray-200 mx-1" />
-        {statuses.filter(Boolean).map((s) => (
-          <a
-            key={s}
-            href={`/admin/orders?status=${s}`}
-            className={`px-3 py-1 rounded-full text-sm border transition ${
-              status === s
-                ? 'bg-green-600 text-white border-green-600'
-                : 'border-gray-300 text-gray-600 hover:border-green-600'
-            }`}
-          >
-            {s.charAt(0).toUpperCase() + s.slice(1)}
-          </a>
-        ))}
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Orders</h1>
+        <p className="text-sm text-slate-500 mt-1">Paid orders only. Unpaid and failed payments never reach this list.</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-        <SearchScope placeholder="Search this page by order #, name, phone, status…" barClassName="mb-0 px-4 pt-3 pb-2">
-<table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-            <tr>
-              <th className="px-4 py-3 text-left">Order</th>
-              <th className="px-4 py-3 text-left">Customer</th>
-              <th className="px-4 py-3 text-left">Phone</th>
-              <th className="px-4 py-3 text-left">Total</th>
-              <th className="px-4 py-3 text-left">Payment</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Date</th>
-              <th className="px-4 py-3 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {orders?.map((order) => (
-              <SearchItem as="tr" key={order.id} text={`${order.order_number} ${order.buyer_name} ${order.buyer_phone} ${(order as any).buyer_email ?? ''} ${order.status}`} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono text-xs text-blue-600">
-                  <Link href={`/admin/orders/${order.id}`} className="hover:underline">
-                    {order.order_number}
-                  </Link>
-                  {order.is_preorder && (
-                    <span className="ml-2 text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
-                      PRE
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">{order.buyer_name}</td>
-                <td className="px-4 py-3 text-gray-500">{order.buyer_phone}</td>
-                <td className="px-4 py-3 font-medium">{formatGHS(order.total)}</td>
-                <td className="px-4 py-3">
-                  {order.payment_type === 'cod' ? (
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      order.payment_status === 'paid'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-purple-100 text-purple-700'
-                    }`}>
-                      {order.payment_status === 'paid' ? 'COD Paid' : 'COD Pending'}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400">Paystack</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`capitalize text-xs px-2 py-1 rounded-full ${STATUS_COLORS[order.status] ?? 'bg-gray-100'}`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-400">
-                  {new Date(order.created_at).toLocaleDateString('en-GH')}
-                </td>
-                <td className="px-4 py-3">
-                  <Link href={`/admin/orders/${order.id}`} className="text-blue-600 hover:underline text-xs">
-                    View
-                  </Link>
-                </td>
-              </SearchItem>
-            ))}
-          </tbody>
-        </table>
-</SearchScope>
+      <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="flex gap-1 overflow-x-auto border-b border-slate-200 px-2 pt-2" role="tablist">
+          {TABS.map((t) => {
+            const active = t.key === tab
+            return (
+              <Link
+                key={t.key}
+                href={qs({ tab: t.key, page: undefined })}
+                role="tab"
+                aria-selected={active}
+                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors ${
+                  active ? 'border-emerald-700 text-emerald-800' : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {t.label}
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[11px] tabular-nums ${
+                    t.key === 'processing' && tabCounts.processing > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {tabCounts[t.key]}
+                </span>
+              </Link>
+            )
+          })}
         </div>
-        {!orders?.length && (
-          <p className="text-center text-gray-400 py-12">No orders found.</p>
+
+        <form action="/admin/orders" method="get" className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-4 py-3">
+          <input type="hidden" name="tab" value={tab} />
+          <div className="relative flex-1 min-w-[220px] max-w-md">
+            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Search order number, name, phone or email"
+              aria-label="Search orders"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/15"
+            />
+          </div>
+          <select
+            name="range"
+            defaultValue={range.key}
+            aria-label="Date range"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none"
+          >
+            {RANGES.map((r) => (
+              <option key={r.key} value={r.key}>{r.label}</option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="preorder" value="1" defaultChecked={preorderOnly} className="h-4 w-4 rounded accent-emerald-700" />
+            Pre-orders only
+          </label>
+          <button type="submit" className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            Apply
+          </button>
+          {(q || range.key !== 'all' || preorderOnly) && (
+            <Link href={qs({ q: undefined, range: undefined, preorder: undefined, page: undefined })} className="text-sm text-slate-500 hover:underline">
+              Reset
+            </Link>
+          )}
+        </form>
+
+        <OrdersTable rows={rows} />
+
+        {pages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
+            <span>
+              Page {page} of {pages} · {total} orders
+            </span>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <Link href={qs({ page: String(page - 1) })} className="rounded-md border border-slate-200 px-3 py-1 hover:bg-slate-50">
+                  Previous
+                </Link>
+              )}
+              {page < pages && (
+                <Link href={qs({ page: String(page + 1) })} className="rounded-md border border-slate-200 px-3 py-1 hover:bg-slate-50">
+                  Next
+                </Link>
+              )}
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {(count ?? 0) > PAGE_SIZE && (
-        <div className="flex justify-center gap-2 mt-4">
-          {Array.from({ length: Math.ceil((count ?? 0) / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
-            <a
-              key={p}
-              href={`/admin/orders?${new URLSearchParams({ ...(status && { status }), ...(filter && { filter }), page: String(p) })}`}
-              className={`px-3 py-1 rounded border text-sm ${p === page ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 text-gray-600'}`}
-            >
-              {p}
-            </a>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
