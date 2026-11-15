@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, Truck, Megaphone, Ticket, Zap, Building2,
-  TrendingUp, Palette, Store, Banknote, CreditCard,
+  TrendingUp, Palette, Store, Banknote, CreditCard, LifeBuoy,
 } from 'lucide-react'
 
 export const NAV_GROUPS = [
@@ -37,6 +37,12 @@ export const NAV_GROUPS = [
       { href: '/admin/withdrawals', label: 'Withdrawals', icon: Banknote },
       { href: '/admin/payments', label: 'Payment Gateways', icon: CreditCard },
       { href: '/admin/delivery', label: 'Delivery Fees', icon: Truck },
+    ],
+  },
+  {
+    title: 'Settings',
+    items: [
+      { href: '/admin/support', label: 'Support Details', icon: LifeBuoy },
     ],
   },
 ]

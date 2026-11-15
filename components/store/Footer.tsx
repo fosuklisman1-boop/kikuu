@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Logo from '@/components/store/Logo'
 import { motion } from 'framer-motion'
 import { MapPin, Phone, Mail, ArrowUpRight } from 'lucide-react'
+import { buildSupportLinks, type SupportSettings } from '@/lib/support'
 
 function FacebookIcon({ size = 16 }: { size?: number }) {
   return (
@@ -44,7 +45,11 @@ const SOCIAL_LINKS = [
   { icon: WhatsAppIcon, label: 'WhatsApp', href: '#', color: 'hover:bg-green-500 hover:border-green-500' },
 ]
 
-export default function Footer() {
+export default function Footer({ support }: { support: SupportSettings }) {
+  const links = buildSupportLinks(support)
+  const phoneLink = links.find((l) => l.kind === 'phone')
+  const emailLink = links.find((l) => l.kind === 'email')
+  const whatsappLink = links.find((l) => l.kind === 'whatsapp')
   return (
     <footer className="bg-gray-950 text-gray-400">
       {/* Top gradient accent */}
@@ -65,21 +70,25 @@ export default function Footer() {
               <MapPin size={14} className="text-[#b45309] shrink-0" />
               <span>Accra, Ghana</span>
             </div>
-            <div className="flex items-center gap-2.5 text-gray-500">
-              <Phone size={14} className="text-[#b45309] shrink-0" />
-              <span>+233 XX XXX XXXX</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-gray-500">
-              <Mail size={14} className="text-[#b45309] shrink-0" />
-              <span>hello@telomall.com</span>
-            </div>
+            {phoneLink && (
+              <a href={phoneLink.href} className="flex items-center gap-2.5 text-gray-500 hover:text-white transition-colors">
+                <Phone size={14} className="text-[#b45309] shrink-0" />
+                <span>{phoneLink.display}</span>
+              </a>
+            )}
+            {emailLink && (
+              <a href={emailLink.href} className="flex items-center gap-2.5 text-gray-500 hover:text-white transition-colors">
+                <Mail size={14} className="text-[#b45309] shrink-0" />
+                <span>{emailLink.display}</span>
+              </a>
+            )}
           </div>
           {/* Social links */}
           <div className="flex items-center gap-2">
-            {SOCIAL_LINKS.map(({ icon: Icon, label, href, color }) => (
+            {SOCIAL_LINKS.filter(({ label }) => label !== 'WhatsApp' || whatsappLink).map(({ icon: Icon, label, href, color }) => (
               <Link
                 key={label}
-                href={href}
+                href={label === 'WhatsApp' && whatsappLink ? whatsappLink.href : href}
                 title={label}
                 className={`w-9 h-9 rounded-xl border border-gray-800 bg-gray-900 flex items-center justify-center text-gray-500 hover:text-white transition-all duration-200 ${color}`}
               >

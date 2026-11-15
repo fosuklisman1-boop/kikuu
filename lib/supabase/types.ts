@@ -255,6 +255,11 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['commission_settings']['Row'], 'updated_at'>
         Update: Partial<Database['public']['Tables']['commission_settings']['Insert']>
       }
+      support_settings: {
+        Row: { id: boolean; email: string; phone: string; whatsapp: string; updated_at: string }
+        Insert: Omit<Database['public']['Tables']['support_settings']['Row'], 'updated_at'>
+        Update: Partial<Database['public']['Tables']['support_settings']['Insert']>
+      }
       withdrawal_settings: {
         Row: { id: boolean; min_amount: number; updated_at: string }
         Insert: Omit<Database['public']['Tables']['withdrawal_settings']['Row'], 'updated_at'>
