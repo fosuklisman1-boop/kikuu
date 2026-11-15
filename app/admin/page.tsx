@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import Link from 'next/link'
+import RevenueChart from '@/components/admin/RevenueChart'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatGHS } from '@/lib/utils'
 import { DeliveryPill } from '@/components/admin/StatusPills'
@@ -96,7 +97,6 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     const b = buckets.find((x) => x.key === new Date(o.created_at).toISOString().slice(0, 10))
     if (b) { b.total += Number(o.total); b.count++ }
   }
-  const max = Math.max(...buckets.map((b) => b.total), 1)
 
   return (
     <div className="max-w-6xl">
@@ -180,23 +180,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
           {/* Revenue chart */}
           <section className="rounded-xl border border-slate-200 bg-white px-5 py-4">
             <h2 className="mb-4 text-sm font-semibold text-slate-900">Daily revenue</h2>
-            <div className="flex h-40 items-end gap-[3px]" role="img" aria-label={`Daily revenue for the last ${range.days} days`}>
-              {buckets.map((b) => (
-                <div key={b.key} className="group relative flex h-full flex-1 items-end">
-                  <div
-                    className={`w-full rounded-t ${b.total > 0 ? 'bg-emerald-600 group-hover:bg-emerald-700' : 'bg-slate-100'}`}
-                    style={{ height: `${b.total > 0 ? Math.max(4, (b.total / max) * 100) : 3}%` }}
-                  />
-                  <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs text-white group-hover:block">
-                    {b.label}: {formatGHS(b.total)} · {b.count} order{b.count === 1 ? '' : 's'}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-slate-400">
-              <span>{buckets[0].label}</span>
-              <span>{buckets[buckets.length - 1].label}</span>
-            </div>
+            <RevenueChart buckets={buckets} days={range.days} />
           </section>
 
           {/* Recent orders */}

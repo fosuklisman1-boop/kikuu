@@ -28,11 +28,14 @@ export default function FlashSaleForm({
   )
   const [productSearch, setProductSearch] = useState('')
 
-  const filteredProducts = allProducts.filter(
-    (p) =>
-      p.name.toLowerCase().includes(productSearch.toLowerCase()) &&
-      !items.some((i) => i.product_id === p.id)
-  )
+  // Every typed word must appear in the name or slug, in any order.
+  const terms = productSearch.toLowerCase().split(/\s+/).filter(Boolean)
+  const filteredProducts = terms.length
+    ? allProducts.filter((p) => {
+        const hay = `${p.name} ${p.slug}`.toLowerCase()
+        return terms.every((t) => hay.includes(t)) && !items.some((i) => i.product_id === p.id)
+      })
+    : []
 
   function addProduct(p: Product) {
     setItems((prev) => [
@@ -122,12 +125,18 @@ export default function FlashSaleForm({
           <input
             value={productSearch}
             onChange={(e) => setProductSearch(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault() }}
             placeholder="Search products to add…"
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
           />
-          {productSearch && filteredProducts.length > 0 && (
+          {productSearch.trim() && filteredProducts.length === 0 && (
+            <p className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-sm text-slate-400">
+              No matching products.
+            </p>
+          )}
+          {productSearch.trim() && filteredProducts.length > 0 && (
             <div className="absolute z-10 top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-              {filteredProducts.slice(0, 8).map((p) => (
+              {filteredProducts.slice(0, 30).map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -138,6 +147,9 @@ export default function FlashSaleForm({
                     <img src={p.images[0]} alt={p.name} className="w-8 h-8 object-cover rounded" />
                   )}
                   <span className="flex-1 truncate">{p.name}</span>
+                  {p.status === 'pre_order' && (
+                    <span className="text-[10px] font-semibold text-orange-700 bg-orange-50 border border-orange-200 rounded px-1.5 py-0.5 shrink-0">Pre-order</span>
+                  )}
                   <span className="text-slate-400 text-xs">{formatGHS(p.price)}</span>
                   <Plus size={14} className="text-emerald-600 shrink-0" />
                 </button>

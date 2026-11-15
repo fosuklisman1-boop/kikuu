@@ -9,7 +9,7 @@ export default async function NewFlashSalePage() {
   const { data: products } = await admin
     .from('products')
     .select('*')
-    .eq('status', 'active')
+    .in('status', ['active', 'pre_order'])
     .order('name')
 
   return (

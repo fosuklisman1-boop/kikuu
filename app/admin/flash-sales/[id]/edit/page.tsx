@@ -11,7 +11,7 @@ export default async function EditFlashSalePage({ params }: { params: Promise<{ 
   const admin = createAdminClient()
   const [{ data: sale }, { data: products }] = await Promise.all([
     admin.from('flash_sales').select('*, items:flash_sale_items(*, product:products(*))').eq('id', id).single(),
-    admin.from('products').select('*').eq('status', 'active').order('name'),
+    admin.from('products').select('*').in('status', ['active', 'pre_order']).order('name'),
   ])
   if (!sale) notFound()
 
